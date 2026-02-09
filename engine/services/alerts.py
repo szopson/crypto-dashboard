@@ -1,0 +1,348 @@
+"""
+Alert Monitoring Service.
+
+Monitors market conditions and sends Telegram alerts when:
+- RADAR classification changes (ACCUMULATE <-> NEUTRAL <-> SELL_THE_RALLY)
+- High confluence SNIPER setups appear
+- Price approaches key levels (Secondary Swing)
+"""
+import asyncio
+from datetime import datetime
+from typing import Optional
+from dataclasses import dataclass, field
+from loguru import logger
+
+from config import settings
+from data.exchange import get_exchange_client
+from calculations.radar import calculate_full_radar
+from calculations.structure import analyze_structure
+from calculations.sniper import analyze_sniper
+from services.telegram import get_telegram_service
+
+
+@dataclass
+class MarketState:
+    """Stores last known market state for change detection."""
+    radar_classification: dict[str, str] = field(default_factory=dict)  # TF -> classification
+    radar_scores: dict[str, float] = field(default_factory=dict)  # TF -> score
+    last_sniper_signal: Optional[str] = None
+    last_sniper_score: float = 0
+    last_price: float = 0
+    last_check: Optional[datetime] = None
+    alerted_setups: set = field(default_factory=set)  # Track already alerted setups
+
+
+class AlertMonitor:
+    """
+    Background monitoring service for trading alerts.
+    """
+
+    def __init__(
+        self,
+        check_interval_seconds: int = 300,  # 5 minutes default
+        radar_alert_enabled: bool = True,
+        sniper_alert_enabled: bool = True,
+        sniper_min_confluence: float = 3.5,  # Minimum confluence to alert
+    ):
+        self.check_interval = check_interval_seconds
+        self.radar_alert_enabled = radar_alert_enabled
+        self.sniper_alert_enabled = sniper_alert_enabled
+        self.sniper_min_confluence = sniper_min_confluence
+
+        self.state = MarketState()
+        self.running = False
+        self._task: Optional[asyncio.Task] = None
+
+        self.exchange = get_exchange_client()
+        self.telegram = get_telegram_service()
+
+    async def start(self):
+        """Start the monitoring loop."""
+        if self.running:
+            logger.warning("Alert monitor already running")
+            return
+
+        self.running = True
+        self._task = asyncio.create_task(self._monitor_loop())
+        logger.info(f"Alert monitor started (interval: {self.check_interval}s)")
+
+    async def stop(self):
+        """Stop the monitoring loop."""
+        self.running = False
+        if self._task:
+            self._task.cancel()
+            try:
+                await self._task
+            except asyncio.CancelledError:
+                pass
+        logger.info("Alert monitor stopped")
+
+    async def _monitor_loop(self):
+        """Main monitoring loop."""
+        # Initial state capture (no alerts on first run)
+        await self._capture_initial_state()
+
+        while self.running:
+            try:
+                await asyncio.sleep(self.check_interval)
+                await self._check_and_alert()
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                logger.error(f"Alert monitor error: {e}")
+                await asyncio.sleep(60)  # Wait before retry
+
+    async def _capture_initial_state(self):
+        """Capture initial market state without sending alerts."""
+        try:
+            logger.info("Capturing initial market state...")
+
+            # Get current price
+            price_data = self.exchange.get_current_price()
+            self.state.last_price = price_data.get("price", 0)
+
+            # Get funding rate
+            funding_data = self.exchange.fetch_funding_rate()
+            funding_rate = funding_data.get("funding_rate", 0)
+
+            # Capture RADAR state for each timeframe
+            for tf in settings.radar_timeframes:
+                ohlcv = self.exchange.fetch_ohlcv(timeframe=tf, limit=300)
+                radar = calculate_full_radar(ohlcv, funding_rate)
+
+                display_tf = self.exchange.get_display_timeframe(tf)
+                self.state.radar_classification[display_tf] = radar.get("classification", "NEUTRAL")
+                self.state.radar_scores[display_tf] = radar.get("score", 3.0)
+
+            # Capture SNIPER state
+            ohlcv_by_tf = {tf: self.exchange.fetch_ohlcv(timeframe=tf, limit=300)
+                          for tf in settings.timeframes}
+            sniper = analyze_sniper(ohlcv_by_tf, self.state.last_price, funding_rate)
+
+            confluence = sniper.get("confluence", {})
+            self.state.last_sniper_signal = confluence.get("signal", "NEUTRAL")
+            self.state.last_sniper_score = confluence.get("score", 0)
+
+            self.state.last_check = datetime.utcnow()
+
+            logger.info(f"Initial state captured: RADAR 1D={self.state.radar_classification.get('1D')}, "
+                       f"SNIPER={self.state.last_sniper_signal} ({self.state.last_sniper_score}/5)")
+
+        except Exception as e:
+            logger.error(f"Error capturing initial state: {e}")
+
+    async def _check_and_alert(self):
+        """Check market conditions and send alerts if needed."""
+        try:
+            # Get current data
+            price_data = self.exchange.get_current_price()
+            current_price = price_data.get("price", 0)
+
+            funding_data = self.exchange.fetch_funding_rate()
+            funding_rate = funding_data.get("funding_rate", 0)
+
+            # Check RADAR changes
+            if self.radar_alert_enabled:
+                await self._check_radar_changes(funding_rate)
+
+            # Check SNIPER setups
+            if self.sniper_alert_enabled:
+                await self._check_sniper_setups(current_price, funding_rate)
+
+            self.state.last_price = current_price
+            self.state.last_check = datetime.utcnow()
+
+        except Exception as e:
+            logger.error(f"Error in check_and_alert: {e}")
+
+    async def _check_radar_changes(self, funding_rate: float):
+        """Check for RADAR classification changes."""
+        for tf in settings.radar_timeframes:
+            try:
+                ohlcv = self.exchange.fetch_ohlcv(timeframe=tf, limit=300)
+                radar = calculate_full_radar(ohlcv, funding_rate)
+
+                display_tf = self.exchange.get_display_timeframe(tf)
+                new_classification = radar.get("classification", "NEUTRAL")
+                new_score = radar.get("score", 3.0)
+
+                old_classification = self.state.radar_classification.get(display_tf)
+
+                # Check for classification change
+                if old_classification and old_classification != new_classification:
+                    await self._send_radar_alert(
+                        timeframe=display_tf,
+                        old_class=old_classification,
+                        new_class=new_classification,
+                        score=new_score,
+                        radar_data=radar,
+                    )
+
+                # Update state
+                self.state.radar_classification[display_tf] = new_classification
+                self.state.radar_scores[display_tf] = new_score
+
+            except Exception as e:
+                logger.error(f"Error checking RADAR for {tf}: {e}")
+
+    async def _check_sniper_setups(self, current_price: float, funding_rate: float):
+        """Check for high confluence SNIPER setups."""
+        try:
+            ohlcv_by_tf = {tf: self.exchange.fetch_ohlcv(timeframe=tf, limit=300)
+                          for tf in settings.timeframes}
+
+            sniper = analyze_sniper(ohlcv_by_tf, current_price, funding_rate)
+            confluence = sniper.get("confluence", {})
+            setups = sniper.get("setups", [])
+
+            new_signal = confluence.get("signal", "NEUTRAL")
+            new_score = confluence.get("score", 0)
+
+            # Alert on high confluence setups
+            if new_score >= self.sniper_min_confluence and setups:
+                for setup in setups:
+                    # Create unique setup identifier
+                    setup_id = f"{setup['direction']}_{setup['entry_zone_type']}_{setup['entry_price']:.0f}"
+
+                    # Only alert if we haven't alerted this setup recently
+                    if setup_id not in self.state.alerted_setups:
+                        await self._send_sniper_alert(setup, confluence, current_price)
+                        self.state.alerted_setups.add(setup_id)
+
+                        # Keep only last 20 alerted setups
+                        if len(self.state.alerted_setups) > 20:
+                            self.state.alerted_setups = set(list(self.state.alerted_setups)[-20:])
+
+            # Alert on signal change (NEUTRAL -> STRONG_LONG/STRONG_SHORT)
+            old_signal = self.state.last_sniper_signal
+            if old_signal and old_signal != new_signal:
+                if new_signal in ["STRONG_LONG", "STRONG_SHORT"]:
+                    await self._send_signal_change_alert(old_signal, new_signal, new_score)
+
+            self.state.last_sniper_signal = new_signal
+            self.state.last_sniper_score = new_score
+
+        except Exception as e:
+            logger.error(f"Error checking SNIPER setups: {e}")
+
+    async def _send_radar_alert(
+        self,
+        timeframe: str,
+        old_class: str,
+        new_class: str,
+        score: float,
+        radar_data: dict,
+    ):
+        """Send RADAR classification change alert."""
+        emoji_map = {
+            "ACCUMULATE": "🟢",
+            "NEUTRAL": "🟡",
+            "SELL_THE_RALLY": "🔴",
+        }
+
+        old_emoji = emoji_map.get(old_class, "⚪")
+        new_emoji = emoji_map.get(new_class, "⚪")
+
+        # Determine if bullish or bearish change
+        class_order = ["SELL_THE_RALLY", "NEUTRAL", "ACCUMULATE"]
+        old_idx = class_order.index(old_class) if old_class in class_order else 1
+        new_idx = class_order.index(new_class) if new_class in class_order else 1
+
+        direction = "⬆️ BULLISH" if new_idx > old_idx else "⬇️ BEARISH"
+
+        components = radar_data.get("components", [])
+        components_str = "\n".join(f"  • {c}" for c in components[:4]) if components else "  • No details"
+
+        message = f"""
+📡 *RADAR ALERT - {timeframe}*
+
+{direction} SHIFT DETECTED
+
+{old_emoji} {old_class.replace("_", " ")}
+    ↓
+{new_emoji} *{new_class.replace("_", " ")}*
+
+*Score:* {score:.1f}/6
+
+*Components:*
+{components_str}
+
+_{datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}_
+"""
+
+        if self.telegram.is_available():
+            await self.telegram.send_message(message.strip())
+            logger.info(f"Sent RADAR alert: {timeframe} {old_class} -> {new_class}")
+
+    async def _send_sniper_alert(self, setup: dict, confluence: dict, current_price: float):
+        """Send SNIPER setup alert."""
+        direction = setup.get("direction", "UNKNOWN")
+        emoji = "🟢" if direction == "LONG" else "🔴"
+
+        entry_zone = setup.get("entry_zone", {})
+        take_profits = setup.get("take_profits", {})
+
+        message = f"""
+🎯 *SNIPER SETUP DETECTED*
+
+{emoji} *{direction}* - Confluence {setup.get('confluence_score', 0)}/5
+
+*Entry Zone:* {setup.get('entry_zone_type', 'N/A')}
+${entry_zone.get('low', 0):,.0f} - ${entry_zone.get('high', 0):,.0f}
+
+*Current Price:* ${current_price:,.0f}
+
+*Stop Loss:* ${setup.get('stop_loss', 0):,.0f}
+*Take Profits:*
+  • TP1: ${take_profits.get('tp1', 0):,.0f}
+  • TP2: ${take_profits.get('tp2', 0):,.0f}
+  • TP3: ${take_profits.get('tp3', 0):,.0f}
+
+*R:R:* {setup.get('risk_reward', 0):.1f}
+*Position Size:* {setup.get('position_size_pct', 0)}%
+*Timeframe:* {setup.get('timeframe', 'N/A')}
+
+*Signal:* {confluence.get('signal', 'NEUTRAL')}
+*Recommendation:* {confluence.get('recommendation', '')}
+
+_{datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}_
+"""
+
+        if self.telegram.is_available():
+            await self.telegram.send_message(message.strip())
+            logger.info(f"Sent SNIPER alert: {direction} setup")
+
+    async def _send_signal_change_alert(self, old_signal: str, new_signal: str, score: float):
+        """Send signal change alert."""
+        emoji = "🚀" if "LONG" in new_signal else "📉"
+
+        message = f"""
+{emoji} *SNIPER SIGNAL CHANGE*
+
+{old_signal} → *{new_signal}*
+
+Confluence Score: {score}/5
+
+_{datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}_
+"""
+
+        if self.telegram.is_available():
+            await self.telegram.send_message(message.strip())
+            logger.info(f"Sent signal change alert: {old_signal} -> {new_signal}")
+
+    async def force_check(self):
+        """Force an immediate check (for testing)."""
+        logger.info("Forcing alert check...")
+        await self._check_and_alert()
+
+
+# Singleton instance
+_alert_monitor: Optional[AlertMonitor] = None
+
+
+def get_alert_monitor() -> AlertMonitor:
+    """Get or create AlertMonitor instance."""
+    global _alert_monitor
+    if _alert_monitor is None:
+        _alert_monitor = AlertMonitor()
+    return _alert_monitor
