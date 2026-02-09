@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { useToast } from "@/components/ui/toast";
 import {
   Accordion,
   AccordionContent,
@@ -58,6 +59,7 @@ export function SniperAnalysis({ refreshInterval = 60000 }: SniperAnalysisProps)
   const [data, setData] = useState<SniperData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { addToast } = useToast();
 
   const fetchData = useCallback(async () => {
     try {
@@ -97,6 +99,25 @@ export function SniperAnalysis({ refreshInterval = 60000 }: SniperAnalysisProps)
 
   const formatPrice = (price: number) => {
     return price.toLocaleString(undefined, { maximumFractionDigits: 0 });
+  };
+
+  const copySetupToClipboard = (setup: TradeSetup) => {
+    const text = `${setup.direction} ${setup.timeframe} Setup
+Entry Zone: $${formatPrice(setup.entry_zone.low)} - $${formatPrice(setup.entry_zone.high)}
+Stop Loss: $${formatPrice(setup.stop_loss)}
+TP1: $${formatPrice(setup.take_profits.tp1)}
+TP2: $${formatPrice(setup.take_profits.tp2)}
+TP3: $${formatPrice(setup.take_profits.tp3)}
+R:R: ${setup.risk_reward.toFixed(1)}
+Position Size: ${setup.position_size_pct}%
+Confluence: ${setup.confluence_score.toFixed(1)}/6
+${setup.notes.length > 0 ? `Notes: ${setup.notes.join(", ")}` : ""}`;
+
+    navigator.clipboard.writeText(text).then(() => {
+      addToast("Setup copied to clipboard", "success");
+    }).catch(() => {
+      addToast("Failed to copy", "error");
+    });
   };
 
   if (loading) {
@@ -220,9 +241,19 @@ export function SniperAnalysis({ refreshInterval = 60000 }: SniperAnalysisProps)
                     >
                       {setup.direction} {setup.timeframe}
                     </Badge>
-                    <span className="text-sm text-muted-foreground">
-                      {setup.entry_zone_type.replace("_", " ")}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">
+                        {setup.entry_zone_type.replace("_", " ")}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => copySetupToClipboard(setup)}
+                      >
+                        Copy
+                      </Button>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4 text-sm">

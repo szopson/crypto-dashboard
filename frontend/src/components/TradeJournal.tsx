@@ -30,7 +30,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, TrendingUp, TrendingDown, Target, X } from "lucide-react";
+import { Plus, TrendingUp, TrendingDown, Target, Download } from "lucide-react";
 import { EquityCurveChart } from "./EquityCurveChart";
 
 interface Trade {
@@ -215,6 +215,63 @@ export default function TradeJournal() {
     return new Date(dateStr).toLocaleString();
   };
 
+  const exportToCSV = () => {
+    const headers = [
+      "ID", "Date", "Symbol", "Direction", "Status", "Entry Price", "Stop Loss",
+      "Take Profit 1", "Take Profit 2", "Exit Price", "Exit Reason", "P&L",
+      "P&L %", "R:R", "RADAR Score", "Bias", "Notes"
+    ];
+
+    const rows = trades.map(trade => [
+      trade.id,
+      new Date(trade.entry_time).toISOString(),
+      trade.symbol,
+      trade.direction,
+      trade.status,
+      trade.entry_price,
+      trade.stop_loss || "",
+      trade.take_profit_1 || "",
+      trade.take_profit_2 || "",
+      trade.exit_price || "",
+      trade.exit_reason || "",
+      trade.realized_pnl || "",
+      trade.realized_pnl_pct || "",
+      trade.risk_reward || "",
+      trade.radar_score || "",
+      trade.structural_bias || "",
+      `"${(trade.notes || "").replace(/"/g, '""')}"`
+    ]);
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map(row => row.join(","))
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `trades_${new Date().toISOString().split("T")[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportToJSON = () => {
+    const data = {
+      exported_at: new Date().toISOString(),
+      stats: stats,
+      trades: trades
+    };
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `trades_${new Date().toISOString().split("T")[0]}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -334,11 +391,11 @@ export default function TradeJournal() {
 
       {/* Trade List */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-2">
           <CardTitle>Trade Journal</CardTitle>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
             <Select value={filter} onValueChange={(v: "ALL" | "OPEN" | "CLOSED") => setFilter(v)}>
-              <SelectTrigger className="w-32">
+              <SelectTrigger className="w-24 sm:w-32">
                 <SelectValue placeholder="Filter" />
               </SelectTrigger>
               <SelectContent>
@@ -347,6 +404,19 @@ export default function TradeJournal() {
                 <SelectItem value="CLOSED">Closed</SelectItem>
               </SelectContent>
             </Select>
+
+            {trades.length > 0 && (
+              <div className="flex gap-1">
+                <Button variant="outline" size="sm" onClick={exportToCSV} title="Export to CSV">
+                  <Download className="w-4 h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">CSV</span>
+                </Button>
+                <Button variant="outline" size="sm" onClick={exportToJSON} title="Export to JSON">
+                  <Download className="w-4 h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">JSON</span>
+                </Button>
+              </div>
+            )}
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
