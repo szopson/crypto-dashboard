@@ -33,6 +33,9 @@ anthropic==0.18.1
 # Telegram
 python-telegram-bot==21.0.1
 
+# PDF Generation
+playwright==1.41.0
+
 # Development
 pytest==8.0.0
 pytest-asyncio==0.23.4

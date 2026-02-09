@@ -41,6 +41,7 @@ from services.scheduler import get_scheduler_service
 from services.sentiment import get_sentiment_service
 from services.backtest import get_backtest_service
 from services.project_analysis import get_project_analysis_service
+from services.pdf_report import generate_pdf_report
 
 
 router = APIRouter()
@@ -2809,6 +2810,73 @@ async def analyze_project_by_ticker(ticker: str, send_alert: bool = False):
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.error(f"Error analyzing project {ticker}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/project/analyze/pdf")
+async def analyze_project_pdf(request: ProjectAnalysisRequest):
+    """
+    Analyze a crypto project and return a PDF report.
+
+    Same as /project/analyze but returns a downloadable PDF file.
+    """
+    if not request.ticker and not request.website:
+        raise HTTPException(
+            status_code=400,
+            detail="Either ticker or website must be provided"
+        )
+
+    try:
+        analysis_service = get_project_analysis_service()
+        report = await analysis_service.analyze_project(
+            ticker=request.ticker,
+            website=request.website,
+        )
+
+        # Generate PDF
+        pdf_bytes = generate_pdf_report(report)
+
+        # Return PDF as downloadable file
+        filename = f"{report.ticker}_analysis_{datetime.utcnow().strftime('%Y%m%d')}.pdf"
+        return StreamingResponse(
+            io.BytesIO(pdf_bytes),
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error generating PDF report: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/project/report/{ticker}/pdf")
+async def get_project_pdf_by_ticker(ticker: str):
+    """
+    Analyze a crypto project by ticker and download PDF report.
+
+    Example: GET /api/project/report/SOL/pdf
+    """
+    try:
+        analysis_service = get_project_analysis_service()
+        report = await analysis_service.analyze_project(ticker=ticker)
+
+        # Generate PDF
+        pdf_bytes = generate_pdf_report(report)
+
+        # Return PDF as downloadable file
+        filename = f"{report.ticker}_analysis_{datetime.utcnow().strftime('%Y%m%d')}.pdf"
+        return StreamingResponse(
+            io.BytesIO(pdf_bytes),
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error generating PDF report for {ticker}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

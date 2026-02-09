@@ -806,6 +806,50 @@ class RiskAnalysisSchema(BaseModel):
     notes: str = ""
 
 
+class DefiMetricsSchema(BaseModel):
+    """DeFi protocol metrics from DefiLlama."""
+    tvl: Optional[float] = None
+    tvl_formatted: Optional[str] = None
+    tvl_change_1d: Optional[float] = None
+    tvl_change_7d: Optional[float] = None
+    tvl_change_30d: Optional[float] = None
+    mcap_tvl_ratio: Optional[float] = None
+    category: Optional[str] = None
+    chains: list[str] = []
+    protocol_url: Optional[str] = None
+
+
+class DevelopmentActivitySchema(BaseModel):
+    """GitHub development metrics."""
+    github_url: Optional[str] = None
+    stars: int = 0
+    forks: int = 0
+    watchers: int = 0
+    contributors: int = 0
+    open_issues: int = 0
+    last_commit_date: Optional[str] = None
+    commits_last_30d: int = 0
+    commits_last_year: int = 0
+    created_at: Optional[str] = None
+    primary_language: Optional[str] = None
+    license: Optional[str] = None
+    is_archived: bool = False
+    activity_score: int = 0
+
+
+class OnChainMetricsSchema(BaseModel):
+    """On-chain metrics from Dune Analytics."""
+    token_address: Optional[str] = None
+    chain: Optional[str] = None
+    holder_count: Optional[int] = None
+    top_10_holder_percent: Optional[float] = None
+    top_100_holder_percent: Optional[float] = None
+    active_addresses_7d: Optional[int] = None
+    active_addresses_30d: Optional[int] = None
+    transfer_count_7d: Optional[int] = None
+    decentralization_score: int = 0
+
+
 class InvestmentRecommendationSchema(BaseModel):
     """Final investment recommendation."""
     recommendation: str = "NEUTRAL"
@@ -841,6 +885,11 @@ class ProjectReportResponse(BaseModel):
     tokenomics: TokenomicsAnalysisSchema = TokenomicsAnalysisSchema()
     risk: RiskAnalysisSchema = RiskAnalysisSchema()
 
+    # Additional data sources
+    defi_metrics: DefiMetricsSchema = DefiMetricsSchema()
+    development: DevelopmentActivitySchema = DevelopmentActivitySchema()
+    onchain: OnChainMetricsSchema = OnChainMetricsSchema()
+
     # Final recommendation
     recommendation: InvestmentRecommendationSchema = InvestmentRecommendationSchema()
 
@@ -866,3 +915,25 @@ class HealthResponse(BaseModel):
     exchange: str
     symbol: str
     timestamp: str
+
+
+# === Report Generation Schemas ===
+
+class ReportGenerateRequest(BaseModel):
+    """Request to generate a PDF investment report."""
+    ticker: str = Field(..., min_length=1, max_length=10, description="Token ticker symbol")
+    report_type: str = Field(default="crypto", description="Type of report: crypto, defi, nft")
+    send_telegram: bool = Field(default=False, description="Send PDF to Telegram after generation")
+    telegram_chat_id: Optional[str] = Field(default=None, description="Override default Telegram chat ID")
+
+
+class ReportGenerateResponse(BaseModel):
+    """Response from report generation."""
+    success: bool
+    ticker: str
+    report_type: str
+    filename: Optional[str] = None
+    telegram_sent: bool = False
+    telegram_message_id: Optional[int] = None
+    error: Optional[str] = None
+    generation_time_seconds: float = 0

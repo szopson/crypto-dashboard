@@ -12,6 +12,7 @@ from loguru import logger
 from config import settings
 from database import init_db, close_db
 from api.routes import router
+from report.router import router as report_router
 from data.exchange import get_exchange_client
 from services.alerts import get_alert_monitor
 from services.scheduler import get_scheduler_service
@@ -103,6 +104,7 @@ app.add_middleware(
 
 # Include routes
 app.include_router(router, prefix="/api")
+app.include_router(report_router, prefix="/api/report")
 
 
 @app.get("/")

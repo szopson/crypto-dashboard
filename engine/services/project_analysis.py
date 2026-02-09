@@ -17,12 +17,16 @@ Analysis covers:
 """
 import httpx
 import json
+import asyncio
 from datetime import datetime, timezone
 from typing import Optional, Dict, List, Any
 from dataclasses import dataclass, field, asdict
 from loguru import logger
 
 from config import settings
+from services.defillama_service import get_defillama_service, DefiLlamaData
+from services.github_service import get_github_service, GitHubData
+from services.dune_service import get_dune_service, DuneData
 
 
 @dataclass
@@ -128,6 +132,53 @@ class RiskAnalysis:
 
 
 @dataclass
+class DefiMetrics:
+    """DeFi protocol metrics from DefiLlama."""
+    tvl: Optional[float] = None
+    tvl_formatted: Optional[str] = None
+    tvl_change_1d: Optional[float] = None
+    tvl_change_7d: Optional[float] = None
+    tvl_change_30d: Optional[float] = None
+    mcap_tvl_ratio: Optional[float] = None
+    category: Optional[str] = None
+    chains: List[str] = field(default_factory=list)
+    protocol_url: Optional[str] = None
+
+
+@dataclass
+class DevelopmentActivity:
+    """GitHub development metrics."""
+    github_url: Optional[str] = None
+    stars: int = 0
+    forks: int = 0
+    watchers: int = 0
+    contributors: int = 0
+    open_issues: int = 0
+    last_commit_date: Optional[str] = None
+    commits_last_30d: int = 0
+    commits_last_year: int = 0
+    created_at: Optional[str] = None
+    primary_language: Optional[str] = None
+    license: Optional[str] = None
+    is_archived: bool = False
+    activity_score: int = 0  # 0-10
+
+
+@dataclass
+class OnChainMetrics:
+    """On-chain metrics from Dune Analytics."""
+    token_address: Optional[str] = None
+    chain: Optional[str] = None
+    holder_count: Optional[int] = None
+    top_10_holder_percent: Optional[float] = None
+    top_100_holder_percent: Optional[float] = None
+    active_addresses_7d: Optional[int] = None
+    active_addresses_30d: Optional[int] = None
+    transfer_count_7d: Optional[int] = None
+    decentralization_score: int = 0  # 0-10
+
+
+@dataclass
 class InvestmentRecommendation:
     """Final investment recommendation."""
     recommendation: str = "NEUTRAL"  # STRONG_BUY, BUY, NEUTRAL, AVOID, STRONG_AVOID
@@ -164,6 +215,11 @@ class ProjectReport:
     tokenomics: TokenomicsAnalysis = field(default_factory=TokenomicsAnalysis)
     risk: RiskAnalysis = field(default_factory=RiskAnalysis)
 
+    # Additional data sources
+    defi_metrics: DefiMetrics = field(default_factory=DefiMetrics)
+    development: DevelopmentActivity = field(default_factory=DevelopmentActivity)
+    onchain: OnChainMetrics = field(default_factory=OnChainMetrics)
+
     # Final recommendation
     recommendation: InvestmentRecommendation = field(default_factory=InvestmentRecommendation)
 
@@ -192,6 +248,11 @@ class ProjectAnalysisService:
         self.n8n_webhook_analyze = getattr(settings, 'n8n_webhook_analyze', None)
         self.n8n_webhook_alert = getattr(settings, 'n8n_webhook_alert', None)
 
+        # Additional data services
+        self.defillama = get_defillama_service()
+        self.github = get_github_service()
+        self.dune = get_dune_service()
+
     async def search_perplexity(self, query: str, focus: str = "internet") -> dict:
         """
         Search using Perplexity API.
@@ -216,7 +277,7 @@ class ProjectAnalysisService:
                         "Content-Type": "application/json",
                     },
                     json={
-                        "model": "llama-3.1-sonar-large-128k-online",
+                        "model": "sonar",
                         "messages": [
                             {
                                 "role": "system",
@@ -228,7 +289,6 @@ class ProjectAnalysisService:
                             }
                         ],
                         "temperature": 0.2,
-                        "return_citations": True,
                     }
                 )
                 response.raise_for_status()
@@ -262,8 +322,18 @@ class ProjectAnalysisService:
                 if not coins:
                     return {"error": "Token not found on CoinGecko"}
 
-                # Get the first match
-                coin_id = coins[0].get("id")
+                # Prefer exact symbol match (case-insensitive)
+                ticker_upper = ticker.upper()
+                coin_id = None
+                for coin in coins:
+                    if coin.get("symbol", "").upper() == ticker_upper:
+                        coin_id = coin.get("id")
+                        break
+
+                # Fallback to first result if no exact match
+                if not coin_id:
+                    coin_id = coins[0].get("id")
+                    logger.warning(f"No exact symbol match for {ticker}, using first result: {coin_id}")
 
                 # Fetch detailed data
                 coin_response = await client.get(
@@ -314,10 +384,50 @@ class ProjectAnalysisService:
                     "genesis_date": coin_data.get("genesis_date"),
                     "sentiment_votes_up": coin_data.get("sentiment_votes_up_percentage"),
                     "sentiment_votes_down": coin_data.get("sentiment_votes_down_percentage"),
+                    "links": coin_data.get("links", {}),
+                    "contract_address": coin_data.get("contract_address"),
+                    "asset_platform_id": coin_data.get("asset_platform_id"),
                 }
         except Exception as e:
             logger.error(f"CoinGecko API error: {e}")
             return {"error": str(e)}
+
+    async def get_defillama_data(self, name: str) -> Optional[DefiLlamaData]:
+        """Fetch DeFi protocol data from DefiLlama."""
+        try:
+            data = await self.defillama.get_protocol_by_name(name)
+            if data:
+                logger.info(f"DefiLlama data found for {name}: TVL=${data.tvl:,.0f}" if data.tvl else f"DefiLlama data found for {name}")
+            return data
+        except Exception as e:
+            logger.error(f"DefiLlama fetch error: {e}")
+            return None
+
+    async def get_github_data(self, links: dict) -> Optional[GitHubData]:
+        """Fetch GitHub repository data from CoinGecko links."""
+        try:
+            data = await self.github.get_repo_from_links(links)
+            if data:
+                logger.info(f"GitHub data found: {data.owner}/{data.repo_name} - {data.stars} stars")
+            return data
+        except Exception as e:
+            logger.error(f"GitHub fetch error: {e}")
+            return None
+
+    async def get_dune_data(self, contract_address: str, chain: str = "ethereum") -> Optional[DuneData]:
+        """Fetch on-chain data from Dune Analytics."""
+        if not self.dune.is_configured():
+            logger.debug("Dune Analytics not configured, skipping")
+            return None
+
+        try:
+            data = await self.dune.get_token_data(contract_address, chain)
+            if data and data.holder_count:
+                logger.info(f"Dune data found: {data.holder_count} holders")
+            return data
+        except Exception as e:
+            logger.error(f"Dune fetch error: {e}")
+            return None
 
     async def research_project(self, ticker: str, website: str = None) -> dict:
         """
@@ -334,6 +444,9 @@ class ProjectAnalysisService:
             "ticker": ticker.upper(),
             "website": website,
             "coingecko": {},
+            "defillama": None,
+            "github": None,
+            "dune": None,
             "team_research": {},
             "product_research": {},
             "competition_research": {},
@@ -346,6 +459,38 @@ class ProjectAnalysisService:
         research["coingecko"] = await self.get_coingecko_data(ticker)
 
         project_name = research["coingecko"].get("name", ticker)
+
+        # 2. Fetch additional data sources in parallel
+        logger.info(f"Fetching DefiLlama, GitHub, and Dune data for {project_name}")
+        additional_tasks = []
+
+        # DefiLlama
+        additional_tasks.append(self.get_defillama_data(project_name))
+
+        # GitHub (from CoinGecko links)
+        links = research["coingecko"].get("links", {})
+        additional_tasks.append(self.get_github_data(links))
+
+        # Dune (if contract address available)
+        contract_address = research["coingecko"].get("contract_address")
+        chain = research["coingecko"].get("asset_platform_id", "ethereum")
+        if contract_address:
+            additional_tasks.append(self.get_dune_data(contract_address, chain))
+        else:
+            async def return_none():
+                return None
+            additional_tasks.append(return_none())
+
+        # Run all additional data fetches in parallel
+        additional_results = await asyncio.gather(*additional_tasks, return_exceptions=True)
+
+        # Process results
+        if not isinstance(additional_results[0], Exception):
+            research["defillama"] = additional_results[0]
+        if not isinstance(additional_results[1], Exception):
+            research["github"] = additional_results[1]
+        if len(additional_results) > 2 and not isinstance(additional_results[2], Exception):
+            research["dune"] = additional_results[2]
 
         # 2. Research team/founders
         logger.info(f"Researching team for {project_name}")
@@ -448,12 +593,65 @@ class ProjectAnalysisService:
             ) if market_data.get("current_price") else None,
         )
 
+        # Calculate tokenomics score based on available data
+        report.tokenomics.tokenomics_score = self._calculate_tokenomics_score(market_data)
+
         # Fill in sentiment from CoinGecko
         community = coingecko.get("community_data", {})
         report.sentiment = SentimentAnalysis(
             twitter_followers=community.get("twitter_followers"),
             telegram_members=community.get("telegram_users"),
         )
+
+        # Fill in DeFi metrics from DefiLlama
+        defillama_data: Optional[DefiLlamaData] = research.get("defillama")
+        if defillama_data:
+            report.defi_metrics = DefiMetrics(
+                tvl=defillama_data.tvl,
+                tvl_formatted=self._format_currency(defillama_data.tvl),
+                tvl_change_1d=defillama_data.tvl_change_1d,
+                tvl_change_7d=defillama_data.tvl_change_7d,
+                tvl_change_30d=defillama_data.tvl_change_30d,
+                mcap_tvl_ratio=defillama_data.mcap_tvl_ratio,
+                category=defillama_data.category,
+                chains=defillama_data.chains or [],
+                protocol_url=defillama_data.url,
+            )
+
+        # Fill in development activity from GitHub
+        github_data: Optional[GitHubData] = research.get("github")
+        if github_data:
+            report.development = DevelopmentActivity(
+                github_url=github_data.repo_url,
+                stars=github_data.stars,
+                forks=github_data.forks,
+                watchers=github_data.watchers,
+                contributors=github_data.contributors_count,
+                open_issues=github_data.open_issues,
+                last_commit_date=github_data.last_commit_date,
+                commits_last_30d=github_data.commits_last_30d,
+                commits_last_year=github_data.commits_last_year,
+                created_at=github_data.created_at,
+                primary_language=github_data.language,
+                license=github_data.license,
+                is_archived=github_data.is_archived,
+                activity_score=self._calculate_github_score(github_data),
+            )
+
+        # Fill in on-chain metrics from Dune
+        dune_data: Optional[DuneData] = research.get("dune")
+        if dune_data:
+            report.onchain = OnChainMetrics(
+                token_address=dune_data.token_address,
+                chain=dune_data.chain,
+                holder_count=dune_data.holder_count,
+                top_10_holder_percent=dune_data.top_10_holder_percent,
+                top_100_holder_percent=dune_data.top_100_holder_percent,
+                active_addresses_7d=dune_data.active_addresses_7d,
+                active_addresses_30d=dune_data.active_addresses_30d,
+                transfer_count_7d=dune_data.transfer_count_7d,
+                decentralization_score=self._calculate_decentralization_score(dune_data),
+            )
 
         # Use LLM to analyze research and fill structured report
         if self.openrouter_key or self.openai_key:
@@ -658,16 +856,128 @@ class ProjectAnalysisService:
 
         return report
 
+    def _calculate_tokenomics_score(self, market_data: dict) -> int:
+        """Calculate tokenomics score based on market data (0-10)."""
+        score = 5  # Base score
+
+        # Market cap scoring (larger = more established)
+        market_cap = market_data.get("market_cap")
+        if market_cap:
+            if market_cap >= 1_000_000_000:  # > $1B
+                score += 2
+            elif market_cap >= 100_000_000:  # > $100M
+                score += 1
+            elif market_cap < 10_000_000:  # < $10M (micro cap - risky)
+                score -= 1
+
+        # Circulating supply ratio (higher circulating = better for investors)
+        circulating = market_data.get("circulating_supply")
+        total = market_data.get("total_supply")
+        if circulating and total and total > 0:
+            ratio = circulating / total
+            if ratio >= 0.8:  # 80%+ circulating
+                score += 2
+            elif ratio >= 0.5:  # 50-80% circulating
+                score += 1
+            elif ratio < 0.2:  # < 20% - high dilution risk
+                score -= 2
+
+        # Price performance (recent trend)
+        price_change_30d = market_data.get("price_change_30d")
+        if price_change_30d is not None:
+            if price_change_30d > 50:
+                score += 1  # Strong momentum
+            elif price_change_30d < -50:
+                score -= 1  # Significant decline
+
+        # Distance from ATH (value opportunity or distress?)
+        ath_change = market_data.get("ath_change_percentage")
+        if ath_change is not None:
+            if ath_change > -20:  # Near ATH
+                score += 1
+            elif ath_change < -90:  # 90%+ from ATH - potential distress
+                score -= 1
+
+        # Clamp to 0-10
+        return max(0, min(10, score))
+
+    def _calculate_github_score(self, github_data: GitHubData) -> int:
+        """Calculate development activity score based on GitHub data (0-10)."""
+        score = 5  # Base score
+
+        # Stars (popularity indicator)
+        if github_data.stars >= 10000:
+            score += 2
+        elif github_data.stars >= 1000:
+            score += 1
+        elif github_data.stars < 100:
+            score -= 1
+
+        # Recent activity (commits in last 30 days)
+        if github_data.commits_last_30d >= 50:
+            score += 2
+        elif github_data.commits_last_30d >= 10:
+            score += 1
+        elif github_data.commits_last_30d == 0:
+            score -= 2
+
+        # Contributors (team size indicator)
+        if github_data.contributors_count >= 50:
+            score += 1
+        elif github_data.contributors_count < 5:
+            score -= 1
+
+        # Archived repos are bad
+        if github_data.is_archived:
+            score -= 3
+
+        # Clamp to 0-10
+        return max(0, min(10, score))
+
+    def _calculate_decentralization_score(self, dune_data: DuneData) -> int:
+        """Calculate decentralization score based on holder distribution (0-10)."""
+        score = 5  # Base score
+
+        # Top 10 holder concentration
+        if dune_data.top_10_holder_percent is not None:
+            if dune_data.top_10_holder_percent < 30:
+                score += 2  # Good distribution
+            elif dune_data.top_10_holder_percent < 50:
+                score += 1
+            elif dune_data.top_10_holder_percent > 80:
+                score -= 2  # Very concentrated
+
+        # Holder count
+        if dune_data.holder_count is not None:
+            if dune_data.holder_count >= 100000:
+                score += 2
+            elif dune_data.holder_count >= 10000:
+                score += 1
+            elif dune_data.holder_count < 1000:
+                score -= 1
+
+        # Active addresses (network usage)
+        if dune_data.active_addresses_7d is not None:
+            if dune_data.active_addresses_7d >= 10000:
+                score += 1
+            elif dune_data.active_addresses_7d < 100:
+                score -= 1
+
+        # Clamp to 0-10
+        return max(0, min(10, score))
+
     def _calculate_overall_score(self, report: ProjectReport) -> int:
         """Calculate overall investment score (0-100)."""
         weights = {
-            "team": 0.20,
-            "product": 0.25,
-            "market": 0.15,
-            "competition": 0.10,
-            "sentiment": 0.10,
+            "team": 0.15,
+            "product": 0.20,
+            "market": 0.12,
+            "competition": 0.08,
+            "sentiment": 0.08,
             "tokenomics": 0.10,
-            "risk_inverse": 0.10,  # Lower risk = higher score
+            "development": 0.12,  # GitHub activity
+            "decentralization": 0.07,  # On-chain metrics
+            "risk_inverse": 0.08,  # Lower risk = higher score
         }
 
         scores = {
@@ -677,6 +987,8 @@ class ProjectAnalysisService:
             "competition": report.competition.competition_score,
             "sentiment": report.sentiment.sentiment_score,
             "tokenomics": report.tokenomics.tokenomics_score,
+            "development": report.development.activity_score,
+            "decentralization": report.onchain.decentralization_score,
         }
 
         # Convert risk to inverse score

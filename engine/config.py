@@ -73,6 +73,12 @@ class Settings(BaseSettings):
     # Perplexity (for web research)
     perplexity_api_key: str = ""
 
+    # GitHub API (optional token for higher rate limits)
+    github_token: str = ""
+
+    # Dune Analytics API
+    dune_api_key: str = ""
+
     # Google OAuth (for future authentication)
     google_client_id: str = ""
     google_client_secret: str = ""
@@ -99,6 +105,13 @@ class Settings(BaseSettings):
     daily_briefing_hour: int = 8  # 8:00 AM
     daily_briefing_minute: int = 0
     daily_briefing_timezone: str = "Europe/Warsaw"
+
+    # Report Generation
+    report_playwright_timeout: int = 30000  # 30 seconds
+    report_template_dir: str = "report/templates"
+    report_output_dir: str = "/tmp/reports"
+    report_ai_model: str = "claude-sonnet-4-20250514"
+    report_ai_max_tokens: int = 4000
 
     class Config:
         env_file = ".env"

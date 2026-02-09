@@ -188,6 +188,62 @@ _{datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}_
             "timestamp": datetime.utcnow().isoformat(),
         }
 
+    async def send_document(
+        self,
+        document: bytes,
+        filename: str,
+        caption: str = "",
+        chat_id: Optional[str] = None,
+    ) -> dict:
+        """
+        Send a document to Telegram.
+
+        Args:
+            document: File bytes
+            filename: Filename for the document
+            caption: Optional caption text (max 1024 chars)
+            chat_id: Target chat ID (uses default if not provided)
+
+        Returns:
+            Dictionary with result
+        """
+        if not self.is_available():
+            return {
+                "success": False,
+                "error": "Telegram bot not configured",
+            }
+
+        target_chat = chat_id or self.chat_id
+        if not target_chat:
+            return {
+                "success": False,
+                "error": "No chat_id specified",
+            }
+
+        try:
+            from io import BytesIO
+
+            message = await self.bot.send_document(
+                chat_id=target_chat,
+                document=BytesIO(document),
+                filename=filename,
+                caption=caption[:1024] if caption else None,
+                parse_mode="Markdown",
+            )
+
+            return {
+                "success": True,
+                "message_id": message.message_id,
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+
+        except Exception as e:
+            logger.error(f"Telegram send document error: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+            }
+
     async def send_sniper_setup(
         self,
         setup: dict,
