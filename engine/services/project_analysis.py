@@ -189,6 +189,8 @@ class ProjectAnalysisService:
         self.perplexity_key = getattr(settings, 'perplexity_api_key', None)
         self.openrouter_key = getattr(settings, 'openrouter_api_key', None)
         self.openai_key = getattr(settings, 'openai_api_key', None)
+        self.n8n_webhook_analyze = getattr(settings, 'n8n_webhook_analyze', None)
+        self.n8n_webhook_alert = getattr(settings, 'n8n_webhook_alert', None)
 
     async def search_perplexity(self, query: str, focus: str = "internet") -> dict:
         """
@@ -712,13 +714,93 @@ class ProjectAnalysisService:
             return f"${value / 1_000:.2f}K"
         return f"${value:.2f}"
 
-    async def analyze_project(self, ticker: str = None, website: str = None) -> ProjectReport:
+    async def analyze_via_n8n(self, ticker: str, website: str = None) -> Optional[dict]:
+        """
+        Send project analysis request to n8n webhook.
+
+        Args:
+            ticker: Token ticker symbol
+            website: Optional project website URL
+
+        Returns:
+            Analysis result from n8n, or None if failed
+        """
+        if not self.n8n_webhook_analyze:
+            logger.warning("n8n analyze webhook not configured")
+            return None
+
+        try:
+            async with httpx.AsyncClient(timeout=120) as client:
+                response = await client.post(
+                    self.n8n_webhook_analyze,
+                    json={
+                        "ticker": ticker.upper(),
+                        "website": website,
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                    }
+                )
+                response.raise_for_status()
+                result = response.json()
+                logger.info(f"n8n analysis completed for {ticker}")
+                return result
+        except Exception as e:
+            logger.error(f"n8n webhook error: {e}")
+            return None
+
+    async def send_project_alert(self, ticker: str, report: ProjectReport) -> bool:
+        """
+        Send a new project alert to n8n webhook.
+
+        Args:
+            ticker: Token ticker symbol
+            report: Analysis report to send
+
+        Returns:
+            True if alert sent successfully
+        """
+        if not self.n8n_webhook_alert:
+            logger.warning("n8n alert webhook not configured")
+            return False
+
+        try:
+            async with httpx.AsyncClient(timeout=30) as client:
+                response = await client.post(
+                    self.n8n_webhook_alert,
+                    json={
+                        "ticker": ticker.upper(),
+                        "name": report.name,
+                        "overall_score": report.overall_score,
+                        "recommendation": report.recommendation.recommendation,
+                        "summary": report.recommendation.summary,
+                        "key_catalysts": report.recommendation.key_catalysts,
+                        "key_concerns": report.recommendation.key_concerns,
+                        "website": report.website,
+                        "category": report.category,
+                        "analyzed_at": report.analyzed_at,
+                    }
+                )
+                response.raise_for_status()
+                logger.info(f"Project alert sent to n8n for {ticker}")
+                return True
+        except Exception as e:
+            logger.error(f"n8n alert webhook error: {e}")
+            return False
+
+    async def analyze_project(
+        self,
+        ticker: str = None,
+        website: str = None,
+        use_n8n: bool = False,
+        send_alert: bool = False
+    ) -> ProjectReport:
         """
         Main entry point for project analysis.
 
         Args:
             ticker: Token ticker symbol (e.g., "SOL")
             website: Project website URL (optional)
+            use_n8n: If True, use n8n webhook for analysis
+            send_alert: If True, send alert to n8n after analysis
 
         Returns:
             Complete ProjectReport with investment analysis
@@ -731,15 +813,27 @@ class ProjectAnalysisService:
             # TODO: Extract ticker from website
             ticker = "UNKNOWN"
 
-        logger.info(f"Starting analysis for {ticker}")
+        logger.info(f"Starting analysis for {ticker} (use_n8n={use_n8n})")
 
-        # Conduct research
+        # Try n8n first if enabled
+        if use_n8n and self.n8n_webhook_analyze:
+            n8n_result = await self.analyze_via_n8n(ticker, website)
+            if n8n_result:
+                # Convert n8n result to ProjectReport if needed
+                # For now, n8n returns the same format
+                logger.info(f"Got analysis from n8n for {ticker}")
+
+        # Conduct research (local)
         research = await self.research_project(ticker, website)
 
         # Generate report
         report = await self.generate_report(research)
 
         logger.info(f"Analysis complete for {ticker}: Score {report.overall_score}/100")
+
+        # Send alert to n8n if enabled
+        if send_alert:
+            await self.send_project_alert(ticker, report)
 
         return report
 

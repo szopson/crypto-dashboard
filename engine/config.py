@@ -84,6 +84,10 @@ class Settings(BaseSettings):
     telegram_group_id: str = ""
     telegram_admin_chat_id: str = ""
 
+    # n8n Webhooks
+    n8n_webhook_analyze: str = ""
+    n8n_webhook_alert: str = ""
+
     # Alert Monitor
     alert_monitor_enabled: bool = True
     alert_check_interval_seconds: int = 300  # 5 minutes

@@ -2771,7 +2771,8 @@ async def analyze_project(request: ProjectAnalysisRequest):
         analysis_service = get_project_analysis_service()
         report = await analysis_service.analyze_project(
             ticker=request.ticker,
-            website=request.website
+            website=request.website,
+            send_alert=getattr(request, 'send_alert', False),
         )
 
         # Convert dataclass to dict for Pydantic response
@@ -2786,16 +2787,20 @@ async def analyze_project(request: ProjectAnalysisRequest):
 
 
 @router.get("/project/analyze/{ticker}", response_model=ProjectReportResponse)
-async def analyze_project_by_ticker(ticker: str):
+async def analyze_project_by_ticker(ticker: str, send_alert: bool = False):
     """
     Analyze a crypto project by ticker symbol.
 
     Shortcut endpoint for ticker-based analysis.
     Example: GET /api/project/analyze/SOL
+    Add ?send_alert=true to send notification to n8n
     """
     try:
         analysis_service = get_project_analysis_service()
-        report = await analysis_service.analyze_project(ticker=ticker)
+        report = await analysis_service.analyze_project(
+            ticker=ticker,
+            send_alert=send_alert,
+        )
 
         report_dict = analysis_service.report_to_dict(report)
         return ProjectReportResponse(**report_dict)
@@ -2813,6 +2818,7 @@ async def analyze_project_by_ticker(ticker: str):
 async def n8n_analyze_project(
     ticker: str = None,
     website: str = None,
+    send_alert: bool = True,
 ):
     """
     Webhook endpoint for n8n automation.
@@ -2824,6 +2830,8 @@ async def n8n_analyze_project(
     - Method: POST
     - URL: http://your-server:8000/api/webhook/n8n/analyze?ticker=SOL
     - Or with body: {"ticker": "SOL"} or {"website": "https://solana.com"}
+
+    By default, sends an alert to the configured n8n alert webhook.
     """
     if not ticker and not website:
         raise HTTPException(
@@ -2835,7 +2843,8 @@ async def n8n_analyze_project(
         analysis_service = get_project_analysis_service()
         report = await analysis_service.analyze_project(
             ticker=ticker,
-            website=website
+            website=website,
+            send_alert=send_alert,
         )
 
         report_dict = analysis_service.report_to_dict(report)
