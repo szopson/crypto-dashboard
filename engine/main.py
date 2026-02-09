@@ -116,6 +116,16 @@ async def root():
     }
 
 
+@app.get("/api/health")
+async def health_check():
+    """Health check endpoint for connection monitoring."""
+    return {
+        "status": "ok",
+        "app": settings.app_name,
+        "version": "1.0.0",
+    }
+
+
 if __name__ == "__main__":
     import uvicorn
 

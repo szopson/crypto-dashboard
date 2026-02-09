@@ -18,6 +18,9 @@ import { BacktestPanel } from "@/components/BacktestPanel";
 import { ProjectAnalyzer } from "@/components/ProjectAnalyzer";
 import { KeyboardShortcuts } from "@/components/KeyboardShortcuts";
 import { InstallPWA } from "@/components/InstallPWA";
+import { ConnectionStatus } from "@/components/ConnectionStatus";
+import { FloatingActions } from "@/components/FloatingActions";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -99,9 +102,13 @@ export default function Dashboard() {
   }
 
   return (
+    <ErrorBoundary>
     <div className="min-h-screen bg-background">
       {/* Keyboard Shortcuts Handler */}
       <KeyboardShortcuts onRefresh={refresh} onTabChange={setActiveTab} />
+
+      {/* Floating Action Button (Mobile) */}
+      <FloatingActions onRefresh={refresh} onTabChange={setActiveTab} />
 
       {/* Header */}
       <header className="border-b bg-card sticky top-0 z-50">
@@ -112,12 +119,13 @@ export default function Dashboard() {
             <SymbolSelector />
           </div>
           <div className="flex items-center gap-2 sm:gap-4">
+            <ConnectionStatus />
             {lastUpdate && (
               <span className="text-xs sm:text-sm text-muted-foreground hidden md:inline">
                 {lastUpdate.toLocaleTimeString()}
               </span>
             )}
-            <Button variant="outline" size="sm" onClick={refresh} className="h-9">
+            <Button variant="outline" size="sm" onClick={refresh} className="h-9 hidden sm:flex">
               Refresh
             </Button>
             <InstallPWA />
@@ -447,5 +455,6 @@ export default function Dashboard() {
         </Tabs>
       </main>
     </div>
+    </ErrorBoundary>
   );
 }

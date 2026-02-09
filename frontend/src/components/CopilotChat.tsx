@@ -13,11 +13,21 @@ interface Message {
   timestamp: string;
 }
 
+const SUGGESTED_PROMPTS = [
+  { label: "Market Bias", prompt: "What's the current market bias for BTC?" },
+  { label: "Entry Setup", prompt: "Is there a good entry setup right now?" },
+  { label: "Risk Analysis", prompt: "What are the key risks to watch?" },
+  { label: "RADAR Explain", prompt: "Explain the current RADAR score" },
+  { label: "Support/Resistance", prompt: "What are the key support and resistance levels?" },
+  { label: "Trade Idea", prompt: "Generate a trade idea based on current conditions" },
+];
+
 export function CopilotChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showSuggestions, setShowSuggestions] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -126,16 +136,38 @@ export function CopilotChat() {
     }
   };
 
+  const handleSuggestedPrompt = (prompt: string) => {
+    setInput(prompt);
+    setShowSuggestions(false);
+  };
+
+  const clearChat = () => {
+    setMessages([]);
+    setShowSuggestions(true);
+  };
+
   return (
     <Card className="h-full flex flex-col">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg">Trading Copilot</CardTitle>
-          <Badge variant="outline" className="text-xs">
-            Claude AI
-          </Badge>
+          <div className="flex items-center gap-2">
+            {messages.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearChat}
+                className="h-6 px-2 text-xs text-muted-foreground hover:text-destructive"
+              >
+                Clear
+              </Button>
+            )}
+            <Badge variant="outline" className="text-xs">
+              Claude AI
+            </Badge>
+          </div>
         </div>
-        <div className="flex gap-2 mt-2">
+        <div className="flex gap-2 mt-2 flex-wrap">
           <Button
             variant="outline"
             size="sm"
@@ -158,12 +190,27 @@ export function CopilotChat() {
         {/* Messages */}
         <ScrollArea className="flex-1 pr-4" ref={scrollRef}>
           <div className="space-y-4 pb-4">
-            {messages.length === 0 && (
-              <div className="text-center text-muted-foreground py-8">
-                <p>Ask questions about the market or request analysis.</p>
-                <p className="text-xs mt-2">
-                  Try: "What's the current market bias?" or "Should I go long here?"
-                </p>
+            {messages.length === 0 && showSuggestions && (
+              <div className="py-4 space-y-4">
+                <div className="text-center text-muted-foreground">
+                  <p className="font-medium">Ask questions about the market</p>
+                  <p className="text-xs mt-1">
+                    Or try one of these quick prompts:
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {SUGGESTED_PROMPTS.map((item, idx) => (
+                    <Button
+                      key={idx}
+                      variant="outline"
+                      size="sm"
+                      className="h-auto py-2 px-3 text-left justify-start"
+                      onClick={() => handleSuggestedPrompt(item.prompt)}
+                    >
+                      <span className="text-xs">{item.label}</span>
+                    </Button>
+                  ))}
+                </div>
               </div>
             )}
             {messages.map((msg, idx) => (
