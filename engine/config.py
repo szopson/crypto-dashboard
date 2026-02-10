@@ -78,6 +78,8 @@ class Settings(BaseSettings):
 
     # Dune Analytics API
     dune_api_key: str = ""
+    # Dune Query ID (combined holders + activity query)
+    dune_combined_query_id: int = 0
 
     # Google OAuth (for future authentication)
     google_client_id: str = ""

@@ -80,8 +80,19 @@ class PDFRenderer:
                 timeout=self.timeout,
             )
 
-            # Wait for fonts to load
-            await page.wait_for_timeout(2000)
+            # Wait for fonts to fully load
+            await page.wait_for_timeout(3000)
+
+            # Force font loading by waiting for document.fonts.ready
+            await page.evaluate("""
+                () => document.fonts.ready.then(() => {
+                    // Force layout recalculation
+                    document.body.offsetHeight;
+                })
+            """)
+
+            # Additional wait for rendering
+            await page.wait_for_timeout(1000)
 
             # Generate PDF with custom page size
             pdf_bytes = await page.pdf(

@@ -240,6 +240,19 @@ class TradeStats(Base):
     calculated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
+class WaitlistEntry(Base):
+    """
+    Waitlist signup entries.
+    Stores email signups from the landing page.
+    """
+    __tablename__ = "waitlist_entries"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    interest: Mapped[str] = mapped_column(String(100), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
 class AlertConfig(Base):
     """
     Custom alert configurations.

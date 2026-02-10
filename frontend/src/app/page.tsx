@@ -1,460 +1,212 @@
-"use client";
+import Link from "next/link";
+import type { Metadata } from "next";
+import { WaitlistForm } from "@/components/WaitlistForm";
+import { WaitlistCounter } from "@/components/WaitlistCounter";
 
-import { useState } from "react";
-import { useMarketData } from "@/hooks/useMarketData";
-import { useSymbol, formatSymbolShort, formatSymbol } from "@/contexts/SymbolContext";
-import { BiasGrid } from "@/components/BiasGrid";
-import { RadarScore } from "@/components/RadarScore";
-import { PriceDisplay } from "@/components/PriceDisplay";
-import { TradingViewChart } from "@/components/TradingViewChart";
-import { AlertsList } from "@/components/AlertsList";
-import { SniperAnalysis } from "@/components/SniperAnalysis";
-import { CopilotChat } from "@/components/CopilotChat";
-import TradeJournal from "@/components/TradeJournal";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import { SentimentBar } from "@/components/SentimentBar";
-import { SymbolSelector } from "@/components/SymbolSelector";
-import { BacktestPanel } from "@/components/BacktestPanel";
-import { ProjectAnalyzer } from "@/components/ProjectAnalyzer";
-import { KeyboardShortcuts } from "@/components/KeyboardShortcuts";
-import { InstallPWA } from "@/components/InstallPWA";
-import { ConnectionStatus } from "@/components/ConnectionStatus";
-import { FloatingActions } from "@/components/FloatingActions";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  SkeletonPrice,
-  SkeletonRadar,
-  SkeletonBiasGrid,
-  SkeletonSentimentBar,
-} from "@/components/ui/skeleton";
+export const metadata: Metadata = {
+  title: "Trading Command Center | Professional Crypto Analysis Tools",
+  description:
+    "Professional-grade crypto analysis tools, AI-powered investment reports, and smart alerts. Join the waitlist for early access.",
+  keywords: ["crypto", "trading", "bitcoin", "analysis", "AI", "investment", "alerts"],
+  openGraph: {
+    title: "Trading Command Center",
+    description: "Your edge in crypto trading. AI-powered analysis and reports.",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Trading Command Center",
+    description: "Your edge in crypto trading. AI-powered analysis and reports.",
+  },
+};
 
-export default function Dashboard() {
-  const { symbol } = useSymbol();
-  const { price, radar, bias, loading, error, lastUpdate, refresh } =
-    useMarketData(60000, symbol); // Refresh every 60 seconds
-  const [activeTab, setActiveTab] = useState("dashboard");
+const FEATURES = [
+  {
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10" />
+        <path d="M12 12L19 12" />
+        <path d="M12 2a10 10 0 0 1 0 20" strokeDasharray="4 4" />
+      </svg>
+    ),
+    title: "RADAR Analysis",
+    description:
+      "Multi-timeframe market regime detection using BBWP, Gaussian Channel, and Williams VIX Fix.",
+  },
+  {
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+        <polyline points="14 2 14 8 20 8" />
+        <line x1="16" y1="13" x2="8" y2="13" />
+        <line x1="16" y1="17" x2="8" y2="17" />
+        <polyline points="10 9 9 9 8 9" />
+      </svg>
+    ),
+    title: "AI Investment Reports",
+    description:
+      "Professional 8-page PDF reports with AI-powered analysis, SWOT, and investment ratings.",
+  },
+  {
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+        <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+      </svg>
+    ),
+    title: "Smart Alerts",
+    description:
+      "Automated Telegram notifications for regime changes, price levels, and trade setups.",
+  },
+  {
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="3" />
+        <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+      </svg>
+    ),
+    title: "SNIPER Setups",
+    description:
+      "High-confluence trade setups with precise entry zones, stop losses, and take profits.",
+  },
+  {
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+        <line x1="12" y1="6" x2="12" y2="12" />
+        <line x1="12" y1="16" x2="12" y2="16" />
+      </svg>
+    ),
+    title: "Trade Journal",
+    description:
+      "Track your trades with automatic context capture, P&L analytics, and performance insights.",
+  },
+  {
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+        <path d="M8 10h.01" />
+        <path d="M12 10h.01" />
+        <path d="M16 10h.01" />
+      </svg>
+    ),
+    title: "AI Copilot",
+    description:
+      "Chat with Claude about your trades. Get instant analysis and market insights.",
+  },
+];
 
-  if (loading && !price) {
-    return (
-      <div className="min-h-screen bg-background">
-        {/* Skeleton Header */}
-        <header className="border-b bg-card sticky top-0 z-50">
-          <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="h-6 w-40 bg-muted animate-pulse rounded hidden sm:block" />
-              <div className="h-9 w-28 bg-muted animate-pulse rounded-md" />
-            </div>
-            <div className="flex items-center gap-2 sm:gap-4">
-              <div className="h-9 w-20 bg-muted animate-pulse rounded-md" />
-              <div className="h-9 w-9 bg-muted animate-pulse rounded-md" />
-            </div>
-          </div>
-        </header>
-
-        {/* Skeleton Sentiment Bar */}
-        <div className="border-b">
-          <div className="container mx-auto">
-            <SkeletonSentimentBar />
-          </div>
-        </div>
-
-        {/* Skeleton Main Content */}
-        <main className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
-          {/* Skeleton Tabs */}
-          <div className="h-10 w-full max-w-2xl bg-muted animate-pulse rounded-lg" />
-
-          {/* Skeleton Dashboard */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-            <div className="sm:col-span-2 lg:col-span-1">
-              <SkeletonPrice />
-            </div>
-            <div className="sm:col-span-2 lg:col-span-2">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                <SkeletonRadar />
-                <SkeletonRadar />
-              </div>
-            </div>
-          </div>
-
-          <SkeletonBiasGrid />
-        </main>
-      </div>
-    );
-  }
-
-  if (error && !price) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Card className="max-w-md">
-          <CardContent className="pt-6 text-center">
-            <p className="text-destructive mb-4">Error: {error}</p>
-            <p className="text-sm text-muted-foreground mb-4">
-              Make sure the backend API is running on port 8000
-            </p>
-            <Button onClick={refresh}>Retry</Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
+export default function LandingPage() {
   return (
-    <ErrorBoundary>
-    <div className="min-h-screen bg-background">
-      {/* Keyboard Shortcuts Handler */}
-      <KeyboardShortcuts onRefresh={refresh} onTabChange={setActiveTab} />
-
-      {/* Floating Action Button (Mobile) */}
-      <FloatingActions onRefresh={refresh} onTabChange={setActiveTab} />
+    <div className="min-h-screen bg-[#050505] text-white">
+      {/* Background gradient effects */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-[128px]" />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-[128px]" />
+      </div>
 
       {/* Header */}
-      <header className="border-b bg-card sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <h1 className="text-lg sm:text-xl font-bold truncate hidden sm:block">Trading Command Center</h1>
-            <h1 className="text-lg font-bold sm:hidden">TCC</h1>
-            <SymbolSelector />
-          </div>
-          <div className="flex items-center gap-2 sm:gap-4">
-            <ConnectionStatus />
-            {lastUpdate && (
-              <span className="text-xs sm:text-sm text-muted-foreground hidden md:inline">
-                {lastUpdate.toLocaleTimeString()}
-              </span>
-            )}
-            <Button variant="outline" size="sm" onClick={refresh} className="h-9 hidden sm:flex">
-              Refresh
-            </Button>
-            <InstallPWA />
-            <ThemeToggle />
-          </div>
+      <header className="relative border-b border-white/[0.08] backdrop-blur-sm bg-black/20 sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <h1 className="text-xl font-bold tracking-tight">Trading Command Center</h1>
+          <Link
+            href="/app"
+            className="text-sm text-zinc-400 hover:text-white transition-colors"
+          >
+            Launch App
+          </Link>
         </div>
       </header>
 
-      {/* Sentiment Bar */}
-      <div className="border-b">
-        <div className="container mx-auto">
-          <SentimentBar />
-        </div>
-      </div>
+      {/* Hero Section */}
+      <section className="relative py-24 sm:py-32">
+        <div className="container mx-auto px-4 text-center">
+          <div className="max-w-3xl mx-auto space-y-8">
+            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-tight">
+              Your Edge in{" "}
+              <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+                Crypto Trading
+              </span>
+            </h2>
+            <p className="text-lg sm:text-xl text-zinc-400 max-w-2xl mx-auto leading-relaxed">
+              Professional-grade analysis tools, AI-powered reports, and smart
+              alerts. Everything you need to trade with confidence.
+            </p>
 
-      {/* Main content */}
-      <main className="container mx-auto px-2 sm:px-4 py-4 sm:py-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
-          <div className="overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0 scrollbar-hide">
-            <TabsList className="inline-flex w-max sm:w-full h-10 p-1 gap-0.5">
-              <TabsTrigger value="dashboard" className="text-xs sm:text-sm px-3 sm:px-4 whitespace-nowrap">Dashboard</TabsTrigger>
-              <TabsTrigger value="sniper" className="text-xs sm:text-sm px-3 sm:px-4 whitespace-nowrap">SNIPER</TabsTrigger>
-              <TabsTrigger value="journal" className="text-xs sm:text-sm px-3 sm:px-4 whitespace-nowrap">Journal</TabsTrigger>
-              <TabsTrigger value="copilot" className="text-xs sm:text-sm px-3 sm:px-4 whitespace-nowrap">Copilot</TabsTrigger>
-              <TabsTrigger value="research" className="text-xs sm:text-sm px-3 sm:px-4 whitespace-nowrap">Research</TabsTrigger>
-              <TabsTrigger value="chart" className="text-xs sm:text-sm px-3 sm:px-4 whitespace-nowrap">Chart</TabsTrigger>
-              <TabsTrigger value="backtest" className="text-xs sm:text-sm px-3 sm:px-4 whitespace-nowrap">Backtest</TabsTrigger>
-              <TabsTrigger value="alerts" className="text-xs sm:text-sm px-3 sm:px-4 whitespace-nowrap">Alerts</TabsTrigger>
-            </TabsList>
+            {/* Free Report Incentive */}
+            <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-5 py-2.5 text-sm backdrop-blur-sm">
+              <span className="text-emerald-400 font-semibold">FREE BONUS</span>
+              <span className="text-zinc-300">AI investment report on our top altcoin pick</span>
+            </div>
+
+            {/* Waitlist Form */}
+            <div className="max-w-lg mx-auto pt-4">
+              <WaitlistForm />
+            </div>
+
+            {/* Waitlist Counter */}
+            <WaitlistCounter />
           </div>
+        </div>
+      </section>
 
-          <TabsContent value="dashboard" className="space-y-4 sm:space-y-6">
-            {/* Top row: Price and RADAR scores */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-              {/* Price */}
-              <div className="sm:col-span-2 lg:col-span-1">
-                {price && <PriceDisplay price={price} />}
-              </div>
+      {/* Features Section */}
+      <section className="relative py-24 border-t border-white/[0.08]">
+        <div className="container mx-auto px-4">
+          <h3 className="text-2xl sm:text-3xl font-bold text-center mb-16 tracking-tight">
+            Everything You Need
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {FEATURES.map((feature) => (
+              <div
+                key={feature.title}
+                className="group relative bg-white/[0.03] border border-white/[0.08] rounded-2xl p-8 backdrop-blur-sm transition-all duration-300 hover:border-white/20 hover:-translate-y-1 hover:shadow-[0_10px_40px_-15px_rgba(0,255,157,0.15)] overflow-hidden"
+              >
+                {/* Subtle gradient overlay */}
+                <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none" />
 
-              {/* RADAR scores */}
-              <div className="sm:col-span-2 lg:col-span-2">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  {radar?.radars["1D"] && (
-                    <RadarScore radar={radar.radars["1D"]} showDetails />
-                  )}
-                  {radar?.radars["1W"] && (
-                    <RadarScore radar={radar.radars["1W"]} showDetails />
-                  )}
+                <div className="relative">
+                  <div className="w-10 h-10 mb-6 text-emerald-400">
+                    {feature.icon}
+                  </div>
+                  <h4 className="text-lg font-semibold mb-3 tracking-tight">{feature.title}</h4>
+                  <p className="text-sm text-zinc-400 leading-relaxed">
+                    {feature.description}
+                  </p>
                 </div>
               </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="relative py-24 border-t border-white/[0.08]">
+        <div className="container mx-auto px-4 text-center">
+          <div className="max-w-2xl mx-auto space-y-6">
+            <h3 className="text-2xl sm:text-3xl font-bold tracking-tight">
+              Ready to Level Up Your Trading?
+            </h3>
+            <p className="text-zinc-400">
+              Join the waitlist and be the first to get access when we launch.
+            </p>
+            <p className="text-emerald-400 font-medium">
+              + FREE AI investment report on our top altcoin pick
+            </p>
+            <div className="max-w-lg mx-auto pt-2">
+              <WaitlistForm />
             </div>
+          </div>
+        </div>
+      </section>
 
-            {/* Bias Grid */}
-            {bias && (
-              <BiasGrid
-                biases={bias.biases}
-                radars={radar?.radars}
-                currentPrice={bias.current_price}
-                overallBias={bias.overall_bias}
-                keyLevels={bias.key_levels as Array<{ price: number; type: string; timeframe: string; description: string }>}
-              />
-            )}
-
-            {/* Info section */}
-            <Card>
-              <CardContent className="pt-4 sm:pt-6">
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 text-xs sm:text-sm">
-                  <div>
-                    <h3 className="font-semibold mb-1 sm:mb-2">RADAR Guide</h3>
-                    <ul className="space-y-0.5 sm:space-y-1 text-muted-foreground">
-                      <li>
-                        <span className="text-green-500">5-6:</span> ACCUMULATE
-                      </li>
-                      <li>
-                        <span className="text-yellow-500">3-4:</span> NEUTRAL
-                      </li>
-                      <li>
-                        <span className="text-red-500">0-2:</span> SELL RALLY
-                      </li>
-                    </ul>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold mb-1 sm:mb-2">Structure</h3>
-                    <ul className="space-y-0.5 sm:space-y-1 text-muted-foreground">
-                      <li><span className="text-green-500">HH_HL:</span> Bullish</li>
-                      <li><span className="text-red-500">LH_LL:</span> Bearish</li>
-                      <li><span className="text-yellow-500">Mixed:</span> Choppy</li>
-                    </ul>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold mb-1 sm:mb-2">Secondary Swing</h3>
-                    <ul className="space-y-0.5 sm:space-y-1 text-muted-foreground">
-                      <li>SS = Invalidation</li>
-                      <li>Break SS = Flip</li>
-                      <li>Dist = vs SS</li>
-                    </ul>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold mb-1 sm:mb-2">Data Source</h3>
-                    <ul className="space-y-0.5 sm:space-y-1 text-muted-foreground">
-                      <li>Bybit</li>
-                      <li>{formatSymbol(symbol)} Perp</li>
-                      <li>Refresh: 60s</li>
-                    </ul>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="sniper" className="space-y-4 sm:space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-              <div className="lg:col-span-2 order-2 lg:order-1">
-                <SniperAnalysis />
-              </div>
-              <div className="space-y-3 sm:space-y-4 order-1 lg:order-2">
-                {price && <PriceDisplay price={price} />}
-                {radar?.radars["1D"] && (
-                  <RadarScore radar={radar.radars["1D"]} showDetails />
-                )}
-                {bias && (
-                  <Card>
-                    <CardContent className="pt-4">
-                      <h3 className="font-semibold mb-2">MTF Bias</h3>
-                      <div className="space-y-2 text-sm">
-                        {["1H", "4H", "1D", "1W"].map((tf) => {
-                          const b = bias.biases[tf as keyof typeof bias.biases];
-                          if (!b) return null;
-                          return (
-                            <div key={tf} className="flex justify-between">
-                              <span className="text-muted-foreground">{tf}</span>
-                              <div className="text-right">
-                                <span
-                                  className={
-                                    b.structural_bias === "BULLISH"
-                                      ? "text-green-500"
-                                      : b.structural_bias === "BEARISH"
-                                      ? "text-red-500"
-                                      : "text-yellow-500"
-                                  }
-                                >
-                                  {b.structural_bias}
-                                </span>
-                                {b.ss_distance_pct !== null && b.ss_distance_pct !== undefined && (
-                                  <span className="text-xs text-muted-foreground ml-2">
-                                    ({b.ss_distance_pct > 0 ? "+" : ""}{b.ss_distance_pct.toFixed(1)}%)
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="journal" className="space-y-6">
-            <TradeJournal />
-          </TabsContent>
-
-          <TabsContent value="copilot" className="space-y-4 sm:space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-              <div className="lg:col-span-2 h-[400px] sm:h-[500px] lg:h-[600px] order-2 lg:order-1">
-                <CopilotChat />
-              </div>
-              <div className="space-y-3 sm:space-y-4 order-1 lg:order-2">
-                {price && <PriceDisplay price={price} />}
-                {radar?.radars["1D"] && (
-                  <RadarScore radar={radar.radars["1D"]} showDetails />
-                )}
-                {bias && (
-                  <Card>
-                    <CardContent className="pt-4">
-                      <h3 className="font-semibold mb-2">Current Bias</h3>
-                      <div className="text-2xl font-bold mb-2">
-                        <span
-                          className={
-                            bias.overall_bias === "BULLISH"
-                              ? "text-green-500"
-                              : bias.overall_bias === "BEARISH"
-                              ? "text-red-500"
-                              : "text-yellow-500"
-                          }
-                        >
-                          {bias.overall_bias}
-                        </span>
-                      </div>
-                      <div className="space-y-1 text-sm">
-                        {["1D", "1W"].map((tf) => {
-                          const b = bias.biases[tf as keyof typeof bias.biases];
-                          if (!b) return null;
-                          return (
-                            <div key={tf} className="flex justify-between">
-                              <span className="text-muted-foreground">{tf}</span>
-                              <span>{b.structural_bias}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="research" className="space-y-4 sm:space-y-6">
-            <ProjectAnalyzer />
-          </TabsContent>
-
-          <TabsContent value="chart" className="space-y-4 sm:space-y-6">
-            {/* TradingView Chart */}
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 sm:gap-4">
-              <div className="lg:col-span-3 order-2 lg:order-1">
-                <TradingViewChart height={400} />
-              </div>
-              <div className="space-y-3 sm:space-y-4 order-1 lg:order-2">
-                {/* Side panel with bias info */}
-                {price && <PriceDisplay price={price} />}
-                {bias && (
-                  <Card>
-                    <CardContent className="pt-4">
-                      <h3 className="font-semibold mb-2">Quick Bias</h3>
-                      <div className="space-y-2 text-sm">
-                        {["1H", "4H", "1D", "1W"].map((tf) => {
-                          const b = bias.biases[tf as keyof typeof bias.biases];
-                          if (!b) return null;
-                          return (
-                            <div key={tf} className="flex justify-between">
-                              <span className="text-muted-foreground">{tf}</span>
-                              <span
-                                className={
-                                  b.structural_bias === "BULLISH"
-                                    ? "text-green-500"
-                                    : b.structural_bias === "BEARISH"
-                                    ? "text-red-500"
-                                    : "text-yellow-500"
-                                }
-                              >
-                                {b.structural_bias}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-                {radar?.radars["1D"] && (
-                  <Card>
-                    <CardContent className="pt-4">
-                      <h3 className="font-semibold mb-2">RADAR 1D</h3>
-                      <div className="text-2xl font-bold">
-                        <span
-                          className={
-                            radar.radars["1D"].classification === "ACCUMULATE"
-                              ? "text-green-500"
-                              : radar.radars["1D"].classification === "SELL_THE_RALLY"
-                              ? "text-red-500"
-                              : "text-yellow-500"
-                          }
-                        >
-                          {radar.radars["1D"].score.toFixed(1)}/6
-                        </span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {radar.radars["1D"].classification.replace("_", " ")}
-                      </p>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="backtest" className="space-y-4 sm:space-y-6">
-            <BacktestPanel />
-          </TabsContent>
-
-          <TabsContent value="alerts" className="space-y-4 sm:space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-              <AlertsList maxHeight={500} />
-              <Card>
-                <CardContent className="pt-6">
-                  <h3 className="font-semibold mb-4">TradingView Webhook Setup</h3>
-                  <div className="space-y-4 text-sm">
-                    <div>
-                      <p className="font-medium mb-2">Webhook URL:</p>
-                      <code className="block bg-muted px-3 py-2 rounded text-xs">
-                        https://your-domain.com/api/webhook/tradingview
-                      </code>
-                    </div>
-                    <div>
-                      <p className="font-medium mb-2">Alert Message Format (JSON):</p>
-                      <pre className="bg-muted px-3 py-2 rounded text-xs overflow-x-auto">
-{`{
-  "symbol": "{{ticker}}",
-  "action": "{{strategy.order.action}}",
-  "price": {{close}},
-  "timeframe": "{{interval}}",
-  "time": "{{time}}",
-  "alert_name": "My Alert",
-  "message": "Custom message"
-}`}
-                      </pre>
-                    </div>
-                    <div>
-                      <p className="font-medium mb-2">Available Variables:</p>
-                      <ul className="list-disc list-inside text-muted-foreground space-y-1">
-                        <li><code className="text-xs">{`{{ticker}}`}</code> - Symbol name</li>
-                        <li><code className="text-xs">{`{{close}}`}</code> - Close price</li>
-                        <li><code className="text-xs">{`{{open}}`}</code>, <code className="text-xs">{`{{high}}`}</code>, <code className="text-xs">{`{{low}}`}</code> - OHLC</li>
-                        <li><code className="text-xs">{`{{volume}}`}</code> - Volume</li>
-                        <li><code className="text-xs">{`{{interval}}`}</code> - Timeframe</li>
-                        <li><code className="text-xs">{`{{time}}`}</code> - Time of alert</li>
-                      </ul>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-        </Tabs>
-      </main>
+      {/* Footer */}
+      <footer className="relative py-8 border-t border-white/[0.08]">
+        <div className="container mx-auto px-4 text-center text-sm text-zinc-500">
+          <p>Trading Command Center</p>
+        </div>
+      </footer>
     </div>
-    </ErrorBoundary>
   );
 }

@@ -1,0 +1,70 @@
+version: "3.8"
+
+services:
+  backend:
+    build:
+      context: ./engine
+      dockerfile: Dockerfile
+    container_name: tcc-backend
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:///./data/trading.db
+    volumes:
+      - backend-data:/app/data
+    networks:
+      - traefik-public
+      - internal
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-public"
+      # API routing
+      - "traefik.http.routers.tcc-api.rule=Host(`tcc.yourdomain.com`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.tcc-api.entrypoints=websecure"
+      - "traefik.http.routers.tcc-api.tls.certresolver=letsencrypt"
+      - "traefik.http.services.tcc-api.loadbalancer.server.port=8000"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=https://tcc.yourdomain.com
+    container_name: tcc-frontend
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - BACKEND_URL=http://backend:8000
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - traefik-public
+      - internal
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik-public"
+      # Frontend routing
+      - "traefik.http.routers.tcc-frontend.rule=Host(`tcc.yourdomain.com`)"
+      - "traefik.http.routers.tcc-frontend.entrypoints=websecure"
+      - "traefik.http.routers.tcc-frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.tcc-frontend.loadbalancer.server.port=3000"
+      # Priority - API has higher priority
+      - "traefik.http.routers.tcc-frontend.priority=1"
+      - "traefik.http.routers.tcc-api.priority=2"
+
+volumes:
+  backend-data:
+
+networks:
+  traefik-public:
+    external: true
+  internal:
+    driver: bridge

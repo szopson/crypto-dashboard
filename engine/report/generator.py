@@ -27,12 +27,17 @@ from .chart_generator import (
     generate_peer_table_rows,
     generate_risk_items,
     generate_team_badges,
+    generate_radar_chart_svg,
+    generate_commit_activity_chart_svg,
+    generate_competitor_table_html,
+    generate_trading_levels_html,
 )
+from .tradingview_screenshot import get_tradingview_service
 from .data_sources.coingecko import get_coingecko_source
 from .data_sources.defillama import get_defillama_source
 from .data_sources.github_activity import get_github_source
 from .ai_synthesis import get_ai_synthesis_service
-from services.dune_service import get_dune_service
+from services.dune_service import get_dune_service, COINGECKO_TO_DUNE_CHAIN
 
 
 class ReportGeneratorService:
@@ -57,6 +62,7 @@ class ReportGeneratorService:
         self.github = get_github_source()
         self.dune = get_dune_service()
         self.ai_synthesis = get_ai_synthesis_service()
+        self.tradingview = get_tradingview_service()
         self.perplexity_key = getattr(settings, 'perplexity_api_key', None)
 
     async def generate_report(
@@ -163,23 +169,86 @@ class ReportGeneratorService:
             logger.warning(f"Perplexity search error: {e}")
             return {"content": "", "citations": []}
 
-    async def _fetch_dune_data(self, contract_address: str, chain: str) -> Dict[str, Any]:
+    async def _select_best_chain(self, platforms: Dict[str, str], ticker: str) -> tuple:
+        """
+        Select the best chain for a token based on TVL or priority.
+
+        Args:
+            platforms: Dict of {coingecko_chain: contract_address}
+            ticker: Token ticker for logging
+
+        Returns:
+            Tuple of (contract_address, dune_chain_name)
+        """
+        if not platforms:
+            logger.debug(f"No platforms found for {ticker}")
+            return "", "ethereum"
+
+        # Filter to only supported chains
+        supported_platforms = {}
+        for cg_chain, address in platforms.items():
+            if not address:
+                continue
+            dune_chain = COINGECKO_TO_DUNE_CHAIN.get(cg_chain)
+            if dune_chain:
+                supported_platforms[cg_chain] = (address, dune_chain)
+
+        if not supported_platforms:
+            logger.debug(f"No supported chains found for {ticker}")
+            return "", "ethereum"
+
+        # If only one supported platform, use it
+        if len(supported_platforms) == 1:
+            cg_chain, (address, dune_chain) = next(iter(supported_platforms.items()))
+            logger.info(f"Selected chain {dune_chain} for {ticker} (single platform)")
+            return address, dune_chain
+
+        # Priority: Ethereum first, then by TVL if we have DefiLlama data
+        # For now, use simple priority order
+        chain_priority = ["ethereum", "polygon", "arbitrum", "optimism", "bnb", "base", "avalanche"]
+
+        for preferred_chain in chain_priority:
+            for cg_chain, (address, dune_chain) in supported_platforms.items():
+                if dune_chain == preferred_chain:
+                    logger.info(f"Selected chain {dune_chain} for {ticker} (priority)")
+                    return address, dune_chain
+
+        # Fallback to first available
+        cg_chain, (address, dune_chain) = next(iter(supported_platforms.items()))
+        logger.info(f"Selected chain {dune_chain} for {ticker} (fallback)")
+        return address, dune_chain
+
+    async def _fetch_dune_data(self, ticker: str, contract_address: str, chain: str) -> Dict[str, Any]:
         """Fetch on-chain holder data from Dune Analytics."""
-        if not contract_address or not self.dune.is_configured():
+        logger.debug(f"Fetching Dune data for {ticker}")
+
+        if not self.dune.is_configured():
+            logger.debug("Dune not configured, skipping")
             return {}
 
         try:
-            data = await self.dune.get_token_data(contract_address, chain)
+            # First try using our token address map (more reliable)
+            data = await self.dune.get_data_by_ticker(ticker)
+
+            # Fallback to contract_address from CoinGecko
+            if not data and contract_address:
+                logger.debug(f"Trying fallback with contract: {contract_address}")
+                data = await self.dune.get_token_data(contract_address, chain)
+
             if data:
+                logger.info(f"Dune data fetched for {ticker}: holders={data.holder_count}, active_7d={data.active_addresses_7d}")
                 return {
                     "holder_count": data.holder_count,
                     "top_10_percent": data.top_10_holder_percent,
                     "top_100_percent": data.top_100_holder_percent,
                     "active_addresses_7d": data.active_addresses_7d,
+                    "transfer_count_7d": data.transfer_count_7d,
+                    "transfer_volume_7d": data.transfer_volume_7d,
                 }
+            logger.warning(f"No Dune data returned for {ticker}")
             return {}
         except Exception as e:
-            logger.warning(f"Dune fetch error: {e}")
+            logger.warning(f"Dune fetch error for {ticker}: {e}")
             return {}
 
     async def _gather_data(self, ticker: str) -> Dict[str, Any]:
@@ -210,8 +279,9 @@ class ReportGeneratorService:
         project_name = data["coingecko"].get("name", ticker)
 
         # Phase 3: Additional data sources (Dune + Perplexity)
-        contract_address = data["coingecko"].get("contract_address", "")
-        chain = data["coingecko"].get("asset_platform_id", "ethereum") or "ethereum"
+        # Auto-detect best chain from CoinGecko platforms
+        platforms = data["coingecko"].get("platforms", {})
+        contract_address, chain = await self._select_best_chain(platforms, ticker)
 
         # Research queries
         team_query = f"""
@@ -230,7 +300,7 @@ class ReportGeneratorService:
         """
 
         additional_results = await asyncio.gather(
-            self._fetch_dune_data(contract_address, chain),
+            self._fetch_dune_data(ticker, contract_address, chain),
             self._search_perplexity(team_query),
             self._search_perplexity(news_query),
             return_exceptions=True,
@@ -243,7 +313,67 @@ class ReportGeneratorService:
         if not isinstance(additional_results[2], Exception):
             data["perplexity"]["news"] = additional_results[2]
 
+        # Phase 4: TradingView chart and trading levels
+        current_price = data["coingecko"].get("current_price", 0)
+        high_24h = data["coingecko"].get("high_24h", 0)
+        low_24h = data["coingecko"].get("low_24h", 0)
+        ath = data["coingecko"].get("ath", 0)
+        price_change_30d = data["coingecko"].get("price_change_30d", 0)
+
+        # Calculate trading levels
+        if current_price and current_price > 0:
+            data["trading_levels"] = self.tradingview.calculate_advanced_levels(
+                current_price=current_price,
+                high_24h=high_24h or current_price * 1.02,
+                low_24h=low_24h or current_price * 0.98,
+                ath=ath or current_price * 2,
+                price_change_30d=price_change_30d or 0,
+            )
+        else:
+            data["trading_levels"] = {}
+
+        # Capture TradingView chart (async, may take a few seconds)
+        try:
+            chart_b64 = await self.tradingview.capture_chart_base64(
+                ticker=ticker,
+                interval="D",
+                timeframe_days=90,
+            )
+            data["chart_image"] = chart_b64
+        except Exception as e:
+            logger.warning(f"TradingView chart capture failed: {e}")
+            data["chart_image"] = None
+
+        # Phase 5: Fetch competitor data for comparison
+        category = data["defillama"].get("category", "")
+        competitors = self._get_competitor_tickers(ticker, category)
+        if competitors:
+            try:
+                competitor_data = await self.defillama.fetch_competitor_data(competitors)
+                data["competitors"] = competitor_data
+            except Exception as e:
+                logger.warning(f"Competitor data fetch failed: {e}")
+                data["competitors"] = {}
+        else:
+            data["competitors"] = {}
+
         return data
+
+    def _get_competitor_tickers(self, ticker: str, category: str) -> list:
+        """Get competitor tickers based on category."""
+        # Mapping of protocols to their competitors
+        competitor_map = {
+            "AAVE": ["COMP", "MKR", "MORPHO"],
+            "UNI": ["SUSHI", "CRV", "BAL"],
+            "COMP": ["AAVE", "MKR", "MORPHO"],
+            "MKR": ["AAVE", "COMP", "LQTY"],
+            "CRV": ["UNI", "BAL", "SUSHI"],
+            "LDO": ["RPL", "SWISE", "ANKR"],
+            "GMX": ["DYDX", "SNX", "KWENTA"],
+            "DYDX": ["GMX", "SNX", "PERP"],
+            "PENDLE": ["AURA", "CONVEX", "YFI"],
+        }
+        return competitor_map.get(ticker.upper(), [])
 
     def _prepare_template_data(
         self,
@@ -257,6 +387,8 @@ class ReportGeneratorService:
         gh = data.get("github", {})
         dune = data.get("dune", {})
         perplexity = data.get("perplexity", {})
+        trading_levels = data.get("trading_levels", {})
+        competitors = data.get("competitors", {})
 
         # Extract values with defaults
         name = cg.get("name", ticker)
@@ -469,6 +601,37 @@ class ReportGeneratorService:
             # Investment Signals
             "BULLISH_SIGNALS": self._generate_signals_html(analysis.get("bullish_catalysts", ["Market growth potential", "Strong fundamentals"]), "up"),
             "BEARISH_SIGNALS": self._generate_signals_html(analysis.get("bearish_concerns", ["Market volatility", "Regulatory risk"]), "down"),
+
+            # NEW: Radar Chart for Category Scores
+            "RADAR_CHART_SVG": self._generate_radar_chart(analysis),
+
+            # NEW: Commit Activity Chart
+            "COMMIT_ACTIVITY_CHART_SVG": generate_commit_activity_chart_svg(gh.get("commits_history", [])),
+            "GITHUB_REPO_URL": gh.get("repo_url", "#"),
+
+            # NEW: Price Chart
+            "CHART_IMAGE": data.get("chart_image", ""),
+
+            # NEW: Trading Levels
+            "ENTRY_ZONE_LOW": f"${trading_levels.get('entry_zone_low', 0):,.4f}" if trading_levels.get('entry_zone_low') else "N/A",
+            "ENTRY_ZONE_HIGH": f"${trading_levels.get('entry_zone_high', 0):,.4f}" if trading_levels.get('entry_zone_high') else "N/A",
+            "STOP_LOSS": f"${trading_levels.get('stop_loss', 0):,.4f}" if trading_levels.get('stop_loss') else "N/A",
+            "TAKE_PROFIT_1": f"${trading_levels.get('take_profit_1', 0):,.4f}" if trading_levels.get('take_profit_1') else "N/A",
+            "TAKE_PROFIT_2": f"${trading_levels.get('take_profit_2', 0):,.4f}" if trading_levels.get('take_profit_2') else "N/A",
+            "TAKE_PROFIT_3": f"${trading_levels.get('take_profit_3', 0):,.4f}" if trading_levels.get('take_profit_3') else "N/A",
+            "RISK_REWARD_RATIO": trading_levels.get("risk_reward_ratio", "N/A"),
+            "SUPPORT_LEVELS_HTML": self._generate_levels_html(trading_levels.get("support_levels", []), "support"),
+            "RESISTANCE_LEVELS_HTML": self._generate_levels_html(trading_levels.get("resistance_levels", []), "resistance"),
+
+            # NEW: Revenue/Fees (from DefiLlama)
+            "DAILY_FEES": self._format_large_number(dl.get("daily_fees")),
+            "DAILY_REVENUE": self._format_large_number(dl.get("daily_revenue")),
+            "MONTHLY_FEES": self._format_large_number(dl.get("monthly_fees")),
+            "FEES_CHANGE_7D": f"{dl.get('fees_change_7d', 0):+.1f}%" if dl.get('fees_change_7d') is not None else "N/A",
+            "FEES_CHANGE_CLASS": "positive" if (dl.get('fees_change_7d') or 0) > 0 else "negative",
+
+            # NEW: Competitor Comparison Table
+            "COMPETITOR_TABLE_ROWS": self._generate_competitor_table(ticker, data, competitors),
         }
 
     def _format_large_number(self, value: float, prefix: str = "$") -> str:
@@ -598,6 +761,69 @@ class ReportGeneratorService:
 
         arrow = "▲" if direction == "up" else "▼"
         return '\n'.join(f'<div class="signal-item"><span class="arrow {direction}">{arrow}</span> {signal}</div>' for signal in signals[:5])
+
+    def _generate_radar_chart(self, analysis: Dict[str, Any]) -> str:
+        """Generate radar chart SVG for category scores."""
+        categories = {
+            "Team": analysis.get("score_team", 5),
+            "Product": analysis.get("score_product", 5),
+            "Dev": analysis.get("score_dev", 5),
+            "Market": analysis.get("score_market", 5),
+            "Competition": analysis.get("score_competition", 5),
+            "Sentiment": analysis.get("score_sentiment", 5),
+            "Tokenomics": analysis.get("score_tokenomics", 5),
+            "Decentral": analysis.get("score_decentral", 5),
+        }
+        return generate_radar_chart_svg(categories, size=320)
+
+    def _generate_levels_html(self, levels: list, level_type: str = "support") -> str:
+        """Generate HTML for support/resistance levels."""
+        if not levels:
+            return '<div class="level-item">Data unavailable</div>'
+
+        css_class = "support" if level_type == "support" else "resistance"
+        return ''.join(
+            f'<div class="level-item {css_class}">${level:,.4f}</div>'
+            for level in levels[:3]
+        )
+
+    def _generate_competitor_table(
+        self,
+        ticker: str,
+        data: Dict[str, Any],
+        competitors: Dict[str, Dict[str, Any]],
+    ) -> str:
+        """Generate HTML table rows for competitor comparison."""
+        dl = data.get("defillama", {})
+        cg = data.get("coingecko", {})
+
+        # Build competitor list with current protocol first
+        all_competitors = []
+
+        # Current protocol
+        market_cap = cg.get("market_cap", 0)
+        tvl = dl.get("tvl", 0)
+        all_competitors.append({
+            "name": ticker,
+            "tvl": tvl,
+            "daily_fees": dl.get("daily_fees"),
+            "monthly_fees": dl.get("monthly_fees"),
+            "tvl_change_7d": dl.get("tvl_change_7d"),
+            "mc_tvl": market_cap / tvl if tvl else None,
+        })
+
+        # Add competitors
+        for comp_ticker, comp_data in competitors.items():
+            all_competitors.append({
+                "name": comp_ticker,
+                "tvl": comp_data.get("tvl"),
+                "daily_fees": comp_data.get("daily_fees"),
+                "monthly_fees": comp_data.get("monthly_fees"),
+                "tvl_change_7d": comp_data.get("tvl_change_7d"),
+                "mc_tvl": None,  # Would need additional API call
+            })
+
+        return generate_competitor_table_html(all_competitors, ticker)
 
     async def _send_to_telegram(
         self,

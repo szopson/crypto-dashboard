@@ -1,0 +1,93 @@
+  # ===================================
+  # Trading Command Center
+  # ===================================
+  # Dodaj te sekcje do swojego docker-compose.yml
+
+  tcc-backend:
+    build:
+      context: ./crypto-dashboard/engine
+      dockerfile: Dockerfile
+    container_name: tcc-backend
+    restart: always
+    environment:
+      - DEBUG=false
+      - DATABASE_URL=sqlite+aiosqlite:///./data/trading.db
+      - EXCHANGE_ID=bybit
+      - DEFAULT_SYMBOL=BTC/USDT:USDT
+      - ANTHROPIC_API_KEY=${TCC_ANTHROPIC_API_KEY}
+      - TELEGRAM_BOT_TOKEN=${TCC_TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TCC_TELEGRAM_CHAT_ID}
+      - COINGECKO_API_KEY=${TCC_COINGECKO_API_KEY}
+      - GITHUB_TOKEN=${TCC_GITHUB_TOKEN}
+      - DUNE_API_KEY=${TCC_DUNE_API_KEY}
+      - PERPLEXITY_API_KEY=${TCC_PERPLEXITY_API_KEY}
+      - CORS_ORIGINS=https://${TCC_SUBDOMAIN}.${DOMAIN_NAME}
+      - ALERT_MONITOR_ENABLED=true
+      - SCHEDULER_ENABLED=true
+      - DAILY_BRIEFING_ENABLED=true
+      - DAILY_BRIEFING_HOUR=8
+      - DAILY_BRIEFING_TIMEZONE=Europe/Warsaw
+    volumes:
+      - tcc_data:/app/data
+    ports:
+      - "127.0.0.1:8000:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - traefik.enable=true
+      # API routes
+      - traefik.http.routers.tcc-api.rule=Host(`${TCC_SUBDOMAIN}.${DOMAIN_NAME}`) && PathPrefix(`/api`)
+      - traefik.http.routers.tcc-api.tls=true
+      - traefik.http.routers.tcc-api.entrypoints=web,websecure
+      - traefik.http.routers.tcc-api.tls.certresolver=mytlschallenge
+      - traefik.http.routers.tcc-api.priority=10
+      - traefik.http.services.tcc-api.loadbalancer.server.port=8000
+      # Security headers
+      - traefik.http.middlewares.tcc-api.headers.SSLRedirect=true
+      - traefik.http.middlewares.tcc-api.headers.STSSeconds=315360000
+      - traefik.http.middlewares.tcc-api.headers.browserXSSFilter=true
+      - traefik.http.middlewares.tcc-api.headers.contentTypeNosniff=true
+      - traefik.http.middlewares.tcc-api.headers.forceSTSHeader=true
+      - traefik.http.middlewares.tcc-api.headers.STSIncludeSubdomains=true
+      - traefik.http.middlewares.tcc-api.headers.STSPreload=true
+      - traefik.http.routers.tcc-api.middlewares=tcc-api@docker
+
+  tcc-frontend:
+    build:
+      context: ./crypto-dashboard/frontend
+      dockerfile: Dockerfile
+    container_name: tcc-frontend
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - BACKEND_URL=http://tcc-backend:8000
+    ports:
+      - "127.0.0.1:3001:3000"
+    depends_on:
+      tcc-backend:
+        condition: service_healthy
+    labels:
+      - traefik.enable=true
+      # Frontend routes
+      - traefik.http.routers.tcc-frontend.rule=Host(`${TCC_SUBDOMAIN}.${DOMAIN_NAME}`)
+      - traefik.http.routers.tcc-frontend.tls=true
+      - traefik.http.routers.tcc-frontend.entrypoints=web,websecure
+      - traefik.http.routers.tcc-frontend.tls.certresolver=mytlschallenge
+      - traefik.http.routers.tcc-frontend.priority=1
+      - traefik.http.services.tcc-frontend.loadbalancer.server.port=3000
+      # Security headers
+      - traefik.http.middlewares.tcc-frontend.headers.SSLRedirect=true
+      - traefik.http.middlewares.tcc-frontend.headers.STSSeconds=315360000
+      - traefik.http.middlewares.tcc-frontend.headers.browserXSSFilter=true
+      - traefik.http.middlewares.tcc-frontend.headers.contentTypeNosniff=true
+      - traefik.http.middlewares.tcc-frontend.headers.forceSTSHeader=true
+      - traefik.http.middlewares.tcc-frontend.headers.STSIncludeSubdomains=true
+      - traefik.http.middlewares.tcc-frontend.headers.STSPreload=true
+      - traefik.http.routers.tcc-frontend.middlewares=tcc-frontend@docker
+
+# Dodaj do sekcji volumes:
+#   tcc_data:

@@ -53,16 +53,18 @@ class GitHubDataSource:
             ticker: Token symbol (e.g., "SOL", "ETH")
 
         Returns:
-            Dict with GitHub metrics
+            Dict with GitHub metrics including commit history
         """
         data = {
             "repo_name": None,
+            "repo_url": None,  # New: Direct link to repository
             "stars": None,
             "forks": None,
             "open_issues": None,
             "watchers": None,
             "contributors": None,
             "commits_4_weeks": None,
+            "commits_history": [],  # New: Weekly commits for last 52 weeks
             "last_commit": None,
             "language": None,
         }
@@ -79,6 +81,7 @@ class GitHubDataSource:
                 if response.status_code == 200:
                     repo = response.json()
                     data["repo_name"] = repo.get("full_name")
+                    data["repo_url"] = f"https://github.com/{repo_path}"  # New: repo URL
                     data["stars"] = repo.get("stargazers_count")
                     data["forks"] = repo.get("forks_count")
                     data["open_issues"] = repo.get("open_issues_count")
@@ -98,6 +101,16 @@ class GitHubDataSource:
                         data["commits_4_weeks"] = sum(
                             week.get("total", 0) for week in recent_weeks
                         )
+
+                        # New: Store full 52-week history for chart
+                        data["commits_history"] = [
+                            {
+                                "week": i,
+                                "commits": week.get("total", 0),
+                                "timestamp": week.get("week", 0),
+                            }
+                            for i, week in enumerate(activity[-52:])  # Last 52 weeks
+                        ]
 
                 # Get contributor count
                 response = await client.get(

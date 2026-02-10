@@ -14,9 +14,12 @@ class DefiLlamaDataSource:
     DefiLlama API client for DeFi protocol data.
 
     Free API, no authentication required.
+    Includes TVL, fees, and revenue data.
     """
 
     BASE_URL = "https://api.llama.fi"
+    FEES_URL = "https://api.llama.fi/summary/fees"
+    REVENUE_URL = "https://api.llama.fi/summary/revenue"
 
     # Common ticker to DefiLlama slug mapping
     TICKER_MAP = {
@@ -52,7 +55,7 @@ class DefiLlamaDataSource:
             ticker: Token symbol (e.g., "SOL", "ETH")
 
         Returns:
-            Dict with TVL, protocol data, chain data
+            Dict with TVL, protocol data, chain data, fees, and revenue
         """
         data = {
             "tvl": None,
@@ -64,6 +67,14 @@ class DefiLlamaDataSource:
             "category": None,
             "chains": [],
             "revenue": None,
+            # New: Fees and revenue data
+            "daily_fees": None,
+            "daily_revenue": None,
+            "monthly_fees": None,
+            "monthly_revenue": None,
+            "fees_change_7d": None,
+            "total_fees_all_time": None,
+            "total_revenue_all_time": None,
         }
 
         try:
@@ -86,6 +97,11 @@ class DefiLlamaDataSource:
 
                     if not data["tvl"]:
                         data["tvl"] = protocol_data.get("tvl")
+
+                # Fetch fees and revenue data
+                fees_data = await self._fetch_fees_data(client, ticker)
+                if fees_data:
+                    data.update(fees_data)
 
                 logger.info(f"DefiLlama data fetched for {ticker}")
 
@@ -167,6 +183,102 @@ class DefiLlamaDataSource:
         except Exception as e:
             logger.warning(f"DefiLlama protocol fetch failed: {e}")
             return None
+
+    async def _fetch_fees_data(
+        self,
+        client: httpx.AsyncClient,
+        ticker: str,
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Fetch protocol fees and revenue data from DefiLlama.
+
+        Uses the /summary/fees/{protocol} endpoint.
+        """
+        slug = self.TICKER_MAP.get(ticker.upper(), ticker.lower())
+
+        try:
+            # Try to fetch fees data
+            response = await client.get(f"{self.FEES_URL}/{slug}")
+            if response.status_code == 200:
+                fees_json = response.json()
+
+                result = {
+                    "daily_fees": fees_json.get("total24h"),
+                    "monthly_fees": fees_json.get("total30d"),
+                    "total_fees_all_time": fees_json.get("totalAllTime"),
+                    "fees_change_7d": fees_json.get("change_7d"),
+                }
+
+                # Try to fetch revenue data separately
+                try:
+                    rev_response = await client.get(f"{self.REVENUE_URL}/{slug}")
+                    if rev_response.status_code == 200:
+                        rev_json = rev_response.json()
+                        result["daily_revenue"] = rev_json.get("total24h")
+                        result["monthly_revenue"] = rev_json.get("total30d")
+                        result["total_revenue_all_time"] = rev_json.get("totalAllTime")
+                except Exception:
+                    # Revenue endpoint might not exist for all protocols
+                    # Estimate revenue as ~10-30% of fees (protocol dependent)
+                    if result.get("daily_fees"):
+                        result["daily_revenue"] = result["daily_fees"] * 0.2  # Conservative estimate
+                    if result.get("monthly_fees"):
+                        result["monthly_revenue"] = result["monthly_fees"] * 0.2
+
+                logger.debug(f"DefiLlama fees fetched for {ticker}: daily_fees={result.get('daily_fees')}")
+                return result
+
+            return None
+
+        except Exception as e:
+            logger.warning(f"DefiLlama fees fetch failed for {ticker}: {e}")
+            return None
+
+    async def fetch_competitor_data(
+        self,
+        tickers: list,
+    ) -> Dict[str, Dict[str, Any]]:
+        """
+        Fetch data for multiple protocols for comparison.
+
+        Args:
+            tickers: List of protocol tickers to compare
+
+        Returns:
+            Dict mapping ticker to its data
+        """
+        results = {}
+
+        try:
+            async with httpx.AsyncClient(timeout=30) as client:
+                for ticker in tickers:
+                    data = {
+                        "tvl": None,
+                        "tvl_change_7d": None,
+                        "daily_fees": None,
+                        "daily_revenue": None,
+                        "monthly_fees": None,
+                    }
+
+                    # Fetch protocol data
+                    protocol_data = await self._fetch_protocol_data(client, ticker)
+                    if protocol_data:
+                        data["tvl"] = protocol_data.get("tvl")
+                        data["tvl_change_7d"] = protocol_data.get("change_7d")
+
+                    # Fetch fees
+                    fees_data = await self._fetch_fees_data(client, ticker)
+                    if fees_data:
+                        data["daily_fees"] = fees_data.get("daily_fees")
+                        data["daily_revenue"] = fees_data.get("daily_revenue")
+                        data["monthly_fees"] = fees_data.get("monthly_fees")
+
+                    results[ticker] = data
+
+        except Exception as e:
+            logger.error(f"DefiLlama competitor fetch error: {e}")
+
+        return results
 
 
 # Singleton

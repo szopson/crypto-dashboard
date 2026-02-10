@@ -147,6 +147,11 @@ class CoinGeckoDataSource:
                 # Developer data
                 data["developer_data"] = coin_data.get("developer_data", {})
 
+                # Platform/chain data (for Dune queries)
+                platforms = coin_data.get("platforms", {})
+                # Filter out empty addresses
+                data["platforms"] = {k: v for k, v in platforms.items() if v}
+
                 logger.info(f"CoinGecko data fetched for {ticker}")
 
         except httpx.HTTPStatusError as e:
