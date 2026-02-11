@@ -30,6 +30,8 @@ class MarketState:
     last_price: float = 0
     last_check: Optional[datetime] = None
     alerted_setups: set = field(default_factory=set)  # Track already alerted setups
+    last_alerted_signal: Optional[str] = None  # Track last signal we alerted on
+    last_signal_alert_time: Optional[datetime] = None  # Cooldown tracking
 
 
 class AlertMonitor:
@@ -213,11 +215,25 @@ class AlertMonitor:
                         if len(self.state.alerted_setups) > 20:
                             self.state.alerted_setups = set(list(self.state.alerted_setups)[-20:])
 
-            # Alert on signal change (NEUTRAL -> STRONG_LONG/STRONG_SHORT)
+            # Alert on signal change (only for significant changes, with cooldown)
             old_signal = self.state.last_sniper_signal
             if old_signal and old_signal != new_signal:
                 if new_signal in ["STRONG_LONG", "STRONG_SHORT"]:
-                    await self._send_signal_change_alert(old_signal, new_signal, new_score)
+                    # Only alert if:
+                    # 1. We haven't alerted this signal before, OR
+                    # 2. At least 30 minutes have passed since last alert
+                    should_alert = False
+                    if self.state.last_alerted_signal != new_signal:
+                        should_alert = True
+                    elif self.state.last_signal_alert_time:
+                        time_since_alert = (datetime.utcnow() - self.state.last_signal_alert_time).total_seconds()
+                        if time_since_alert > 1800:  # 30 minutes cooldown
+                            should_alert = True
+
+                    if should_alert:
+                        await self._send_signal_change_alert(old_signal, new_signal, new_score)
+                        self.state.last_alerted_signal = new_signal
+                        self.state.last_signal_alert_time = datetime.utcnow()
 
             self.state.last_sniper_signal = new_signal
             self.state.last_sniper_score = new_score
