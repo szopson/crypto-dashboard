@@ -337,6 +337,61 @@
   .flow-icon { font-size: 20px; }
   .flow-text { font-size: 14px; font-weight: 600; }
   .na-placeholder { color: var(--text-muted); font-style: italic; }
+
+  /* Page break control - prevent awkward page splits */
+  .scoreboard-grid,
+  .qoq-grid,
+  .team-layout,
+  .ownership-layout,
+  .metrics-grid,
+  .flex-layout,
+  .swot-grid,
+  .risk-layout,
+  .intel-grid,
+  .signals-layout,
+  .competition-layout,
+  .strategy-layout,
+  .macro-grid,
+  .price-chart-section,
+  .revenue-highlight,
+  .verdict-boxes {
+      page-break-inside: avoid;
+      break-inside: avoid;
+  }
+
+  .scoreboard-item,
+  .qoq-card,
+  .team-card,
+  .risk-card,
+  .swot-card,
+  .intel-section,
+  .signals-card,
+  .competition-card,
+  .macro-card,
+  .info-box,
+  .moat-box,
+  .policy-box,
+  .level-card {
+      page-break-inside: avoid;
+      break-inside: avoid;
+  }
+
+  table, .peer-table, .scores-table {
+      page-break-inside: avoid;
+      break-inside: avoid;
+  }
+
+  img, svg, .chart-container, .pie-chart-container, .radar-chart-container, .commit-chart-container {
+      page-break-inside: avoid;
+      break-inside: avoid;
+      max-width: 100%;
+      height: auto;
+  }
+
+  h2, h3 {
+      page-break-after: avoid;
+      break-after: avoid;
+  }
 </style>
 </head>
 <body>
