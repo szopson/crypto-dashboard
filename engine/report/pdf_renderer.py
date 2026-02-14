@@ -51,8 +51,6 @@ class PDFRenderer:
     async def render(
         self,
         html_content: str,
-        width: str = "1440px",
-        height: str = "810px",
         print_background: bool = True,
     ) -> bytes:
         """
@@ -60,8 +58,6 @@ class PDFRenderer:
 
         Args:
             html_content: Complete HTML document string
-            width: Page width (default: 1440px for 16:9 landscape)
-            height: Page height (default: 810px for 16:9 landscape)
             print_background: Include background colors/images
 
         Returns:
@@ -94,10 +90,9 @@ class PDFRenderer:
             # Additional wait for rendering
             await page.wait_for_timeout(1000)
 
-            # Generate PDF with custom page size
+            # Generate PDF using CSS @page size
             pdf_bytes = await page.pdf(
-                width=width,
-                height=height,
+                prefer_css_page_size=True,
                 print_background=print_background,
                 margin={
                     "top": "0",

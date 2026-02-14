@@ -8,6 +8,11 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+  @page {
+    size: 1440px 810px;
+    margin: 0;
+  }
+
   :root {
     --bg-primary: #0d1117; --bg-secondary: #161b22; --bg-card: #1c2333; --bg-card-alt: #212d3b;
     --bg-highlight: #1a3a5c; --bg-info: #0d2847; --bg-info-border: #1a4a7a;
@@ -18,7 +23,7 @@
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg-primary); color: var(--text-primary); line-height: 1.6; font-size: 14px; }
-  .page { width: 1440px; min-height: 810px; padding: 60px 80px; position: relative; page-break-after: always; background: var(--bg-primary); }
+  .page { width: 1440px; height: 810px; padding: 60px 80px; position: relative; page-break-after: always; page-break-inside: avoid; break-inside: avoid; overflow: hidden; background: var(--bg-primary); }
   .page:last-child { page-break-after: auto; }
   .page-watermark { position: absolute; top: 28px; right: 40px; font-size: 11px; color: var(--text-muted); opacity: 0.5; letter-spacing: 2px; text-transform: uppercase; }
   .page-footer { position: absolute; bottom: 25px; left: 80px; right: 80px; display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); }
