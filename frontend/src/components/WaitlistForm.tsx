@@ -194,7 +194,7 @@ export function WaitlistForm() {
         type="submit"
         size="lg"
         className="w-full h-12 text-base font-semibold bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white border-0"
-        disabled={loading || !email || !consent || (TURNSTILE_SITE_KEY && !turnstileToken)}
+        disabled={loading || !email || !consent || (!!TURNSTILE_SITE_KEY && !turnstileToken)}
       >
         {loading ? "Joining..." : "Get Early Access"}
       </Button>
