@@ -6,59 +6,65 @@ services:
       context: ./engine
       dockerfile: Dockerfile
     container_name: tcc-backend
-    restart: unless-stopped
+    restart: always
     env_file:
       - ./engine/.env
     environment:
       - DATABASE_URL=${DATABASE_URL}
-    ports:
-      - "8000:8000"
     networks:
-      - tcc-network
+      - traefik-public
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 10s
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.tcc-api.rule=Host(`${DOMAIN}`) && PathPrefix(`/api`)
+      - traefik.http.routers.tcc-api.tls=true
+      - traefik.http.routers.tcc-api.entrypoints=websecure
+      - traefik.http.routers.tcc-api.tls.certresolver=mytlschallenge
+      - traefik.http.routers.tcc-api.priority=2
+      - traefik.http.services.tcc-api.loadbalancer.server.port=8000
+      - traefik.http.middlewares.tcc-api.headers.SSLRedirect=true
+      - traefik.http.middlewares.tcc-api.headers.STSSeconds=315360000
+      - traefik.http.middlewares.tcc-api.headers.browserXSSFilter=true
+      - traefik.http.middlewares.tcc-api.headers.contentTypeNosniff=true
+      - traefik.http.routers.tcc-api.middlewares=tcc-api@docker
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+        - NEXT_PUBLIC_API_URL=https://${DOMAIN}
         - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
         - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
         - NEXT_PUBLIC_TURNSTILE_SITE_KEY=${NEXT_PUBLIC_TURNSTILE_SITE_KEY}
     container_name: tcc-frontend
-    restart: unless-stopped
+    restart: always
     environment:
       - BACKEND_URL=http://backend:8000
-    ports:
-      - "3000:3000"
     depends_on:
       backend:
         condition: service_healthy
     networks:
-      - tcc-network
-
-  nginx:
-    image: nginx:alpine
-    container_name: tcc-nginx
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/ssl:/etc/nginx/ssl:ro
-    depends_on:
-      - frontend
-      - backend
-    networks:
-      - tcc-network
+      - traefik-public
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.tcc.rule=Host(`${DOMAIN}`)
+      - traefik.http.routers.tcc.tls=true
+      - traefik.http.routers.tcc.entrypoints=websecure
+      - traefik.http.routers.tcc.tls.certresolver=mytlschallenge
+      - traefik.http.routers.tcc.priority=1
+      - traefik.http.services.tcc.loadbalancer.server.port=3000
+      - traefik.http.middlewares.tcc.headers.SSLRedirect=true
+      - traefik.http.middlewares.tcc.headers.STSSeconds=315360000
+      - traefik.http.middlewares.tcc.headers.browserXSSFilter=true
+      - traefik.http.middlewares.tcc.headers.contentTypeNosniff=true
+      - traefik.http.routers.tcc.middlewares=tcc@docker
 
 networks:
-  tcc-network:
-    driver: bridge
+  traefik-public:
+    external: true
