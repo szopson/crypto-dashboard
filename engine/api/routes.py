@@ -3000,3 +3000,257 @@ async def n8n_quick_score(ticker: str):
             "error": str(e),
             "timestamp": datetime.utcnow().isoformat(),
         }
+
+
+# =============================================================================
+# ICT SIGNAL ENDPOINTS
+# =============================================================================
+
+
+@router.get("/ict/signals")
+async def get_ict_signals(
+    symbol: str = Query(default=None, description="Trading symbol"),
+    ltf: str = Query(default="15m", description="Lower timeframe"),
+    htf: str = Query(default="4h", description="Higher timeframe"),
+):
+    """
+    Get current ICT trading signals.
+
+    Analyzes the market using ICT methodology:
+    - HTF bias from 4H structure
+    - Liquidity sweep detection
+    - Displacement confirmation
+    - AMD pattern recognition
+    - Entry zones (FVG/OB/IFVG)
+
+    Returns actionable signals with entry, stop loss, and take profit levels.
+    """
+    try:
+        from calculations.ict_signals import analyze_ict_setup
+
+        # Get symbol
+        target_symbol = symbol or settings.default_symbol
+        exchange = get_exchange_client()
+
+        # Fetch LTF data
+        ltf_data = await exchange.fetch_ohlcv(target_symbol, ltf, limit=200)
+
+        # Fetch HTF data
+        htf_data = await exchange.fetch_ohlcv(target_symbol, htf, limit=100)
+
+        # Get current price
+        price_data = await exchange.fetch_current_price(target_symbol)
+        current_price = price_data.get("last", ltf_data[-1]["close"] if ltf_data else 0)
+
+        # Analyze ICT setup
+        result = analyze_ict_setup(
+            ltf_ohlcv=ltf_data,
+            htf_ohlcv=htf_data,
+            current_price=current_price,
+            timeframe=ltf,
+        )
+
+        return {
+            "success": True,
+            "timestamp": datetime.utcnow().isoformat(),
+            "symbol": target_symbol,
+            "timeframes": {"ltf": ltf, "htf": htf},
+            **result,
+        }
+
+    except Exception as e:
+        logger.error(f"ICT signals error: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "timestamp": datetime.utcnow().isoformat(),
+        }
+
+
+@router.get("/ict/amd")
+async def get_amd_pattern(
+    symbol: str = Query(default=None, description="Trading symbol"),
+    timeframe: str = Query(default="15m", description="Timeframe"),
+):
+    """
+    Get current AMD (Accumulation-Manipulation-Distribution) pattern state.
+
+    Returns the current phase of the AMD cycle:
+    - ACCUMULATION: Consolidation, waiting for manipulation
+    - MANIPULATION: Liquidity sweep in progress
+    - DISTRIBUTION: Reversal confirmed, entry opportunity
+    - NONE: No pattern detected
+    """
+    try:
+        from calculations.amd import analyze_amd
+        from calculations.structure import analyze_structure
+        from calculations.zones import analyze_zones, Zone
+
+        target_symbol = symbol or settings.default_symbol
+        exchange = get_exchange_client()
+
+        # Fetch data
+        ohlcv_data = await exchange.fetch_ohlcv(target_symbol, timeframe, limit=200)
+
+        # Get HTF bias
+        htf_data = await exchange.fetch_ohlcv(target_symbol, "4h", limit=100)
+        htf_structure = analyze_structure(htf_data, "4h")
+        htf_bias = htf_structure.get("bias", "NEUTRAL")
+
+        # Get HTF zones
+        htf_zones = []
+        htf_zone_analysis = analyze_zones(htf_data)
+        for z in htf_zone_analysis.get("fvgs", []) + htf_zone_analysis.get("order_blocks", []):
+            htf_zones.append(Zone(
+                zone_type=z["type"],
+                high=z["high"],
+                low=z["low"],
+                formed_at=datetime.utcnow(),
+                formed_index=0,
+            ))
+
+        # Get current price
+        price_data = await exchange.fetch_current_price(target_symbol)
+        current_price = price_data.get("last", ohlcv_data[-1]["close"])
+
+        # Analyze AMD
+        result = analyze_amd(ohlcv_data, htf_bias, htf_zones, current_price)
+
+        return {
+            "success": True,
+            "timestamp": datetime.utcnow().isoformat(),
+            "symbol": target_symbol,
+            "timeframe": timeframe,
+            **result,
+        }
+
+    except Exception as e:
+        logger.error(f"AMD pattern error: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "timestamp": datetime.utcnow().isoformat(),
+        }
+
+
+@router.get("/ict/liquidity")
+async def get_liquidity_analysis(
+    symbol: str = Query(default=None, description="Trading symbol"),
+    timeframe: str = Query(default="15m", description="Timeframe"),
+):
+    """
+    Get liquidity analysis.
+
+    Returns:
+    - Recent liquidity sweeps (price taking out stops and rejecting)
+    - Untouched liquidity pools (potential targets)
+    """
+    try:
+        from calculations.liquidity import analyze_liquidity
+
+        target_symbol = symbol or settings.default_symbol
+        exchange = get_exchange_client()
+
+        # Fetch data
+        ohlcv_data = await exchange.fetch_ohlcv(target_symbol, timeframe, limit=200)
+
+        # Get current price
+        price_data = await exchange.fetch_current_price(target_symbol)
+        current_price = price_data.get("last", ohlcv_data[-1]["close"])
+
+        # Analyze liquidity
+        result = analyze_liquidity(ohlcv_data, current_price)
+
+        return {
+            "success": True,
+            "timestamp": datetime.utcnow().isoformat(),
+            "symbol": target_symbol,
+            "timeframe": timeframe,
+            **result,
+        }
+
+    except Exception as e:
+        logger.error(f"Liquidity analysis error: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "timestamp": datetime.utcnow().isoformat(),
+        }
+
+
+@router.get("/ict/displacement")
+async def get_displacement_analysis(
+    symbol: str = Query(default=None, description="Trading symbol"),
+    timeframe: str = Query(default="15m", description="Timeframe"),
+):
+    """
+    Get displacement candle analysis.
+
+    Displacement candles indicate strong momentum:
+    - Large body relative to range (>70%)
+    - Unusual range (>1.5x ATR)
+    - Often creates FVG
+    """
+    try:
+        from calculations.displacement import analyze_displacement
+
+        target_symbol = symbol or settings.default_symbol
+        exchange = get_exchange_client()
+
+        # Fetch data
+        ohlcv_data = await exchange.fetch_ohlcv(target_symbol, timeframe, limit=200)
+
+        # Get current price
+        price_data = await exchange.fetch_current_price(target_symbol)
+        current_price = price_data.get("last", ohlcv_data[-1]["close"])
+
+        # Analyze displacement
+        result = analyze_displacement(ohlcv_data, current_price)
+
+        return {
+            "success": True,
+            "timestamp": datetime.utcnow().isoformat(),
+            "symbol": target_symbol,
+            "timeframe": timeframe,
+            **result,
+        }
+
+    except Exception as e:
+        logger.error(f"Displacement analysis error: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "timestamp": datetime.utcnow().isoformat(),
+        }
+
+
+@router.get("/ict/session")
+async def get_session_info_endpoint():
+    """
+    Get current trading session information.
+
+    Returns:
+    - Current session (ASIAN, LONDON, NY, etc.)
+    - Whether in a killzone (high probability window)
+    - Next killzone timing
+    """
+    try:
+        from calculations.sessions import get_session_info, get_next_killzone
+
+        session = get_session_info()
+        next_kz = get_next_killzone()
+
+        return {
+            "success": True,
+            "timestamp": datetime.utcnow().isoformat(),
+            **session,
+            "next_killzone": next_kz,
+        }
+
+    except Exception as e:
+        logger.error(f"Session info error: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "timestamp": datetime.utcnow().isoformat(),
+        }

@@ -14,7 +14,11 @@ from dataclasses import dataclass
 @dataclass
 class Zone:
     """Represents a trading zone (OB or FVG)."""
-    zone_type: Literal["BULLISH_OB", "BEARISH_OB", "BULLISH_FVG", "BEARISH_FVG"]
+    zone_type: Literal[
+        "BULLISH_OB", "BEARISH_OB",
+        "BULLISH_FVG", "BEARISH_FVG",
+        "BULLISH_IFVG", "BEARISH_IFVG"  # Inverse FVGs
+    ]
     high: float
     low: float
     formed_at: datetime
@@ -22,6 +26,8 @@ class Zone:
     is_active: bool = True
     mitigated: bool = False
     mitigated_at: Optional[datetime] = None
+    is_ifvg: bool = False  # True if this is an Inverse FVG
+    original_type: Optional[str] = None  # Original FVG type before inversion
 
 
 def detect_fvg(ohlcv_data: list[dict]) -> list[Zone]:
@@ -109,6 +115,128 @@ def detect_fvg(ohlcv_data: list[dict]) -> list[Zone]:
 
     # Return only active FVGs
     return [f for f in fvgs if f.is_active]
+
+
+def detect_ifvg(ohlcv_data: list[dict]) -> list[Zone]:
+    """
+    Detect Inverse Fair Value Gaps (IFVG) in price data.
+
+    An IFVG is a mitigated FVG that flips polarity:
+    - Bullish FVG gets filled → becomes BEARISH_IFVG (resistance)
+    - Bearish FVG gets filled → becomes BULLISH_IFVG (support)
+
+    The IFVG zone is the portion of the original FVG that was traded through.
+
+    Args:
+        ohlcv_data: List of OHLCV dictionaries
+
+    Returns:
+        List of IFVG zones
+    """
+    if len(ohlcv_data) < 3:
+        return []
+
+    ifvgs = []
+
+    for i in range(1, len(ohlcv_data) - 1):
+        prev_candle = ohlcv_data[i - 1]
+        current_candle = ohlcv_data[i]
+        next_candle = ohlcv_data[i + 1]
+
+        timestamp = current_candle.get("datetime") or current_candle.get("timestamp")
+        if isinstance(timestamp, (int, float)):
+            timestamp = datetime.utcfromtimestamp(timestamp / 1000)
+        elif isinstance(timestamp, str):
+            timestamp = datetime.fromisoformat(timestamp.replace("Z", "+00:00").replace("+00:00", ""))
+
+        # Check for Bullish FVG
+        if prev_candle["high"] < next_candle["low"]:
+            fvg_high = next_candle["low"]
+            fvg_low = prev_candle["high"]
+
+            # Check if this FVG gets mitigated in subsequent candles
+            for j in range(i + 2, len(ohlcv_data)):
+                candle = ohlcv_data[j]
+
+                # FVG is mitigated when price trades into it
+                if candle["low"] <= fvg_high:
+                    # Check if it traded THROUGH the FVG (not just touched)
+                    if candle["low"] < fvg_low:
+                        # Full mitigation - FVG becomes IFVG (resistance)
+                        mitigation_timestamp = candle.get("datetime") or candle.get("timestamp")
+                        if isinstance(mitigation_timestamp, (int, float)):
+                            mitigation_timestamp = datetime.utcfromtimestamp(mitigation_timestamp / 1000)
+                        elif isinstance(mitigation_timestamp, str):
+                            mitigation_timestamp = datetime.fromisoformat(
+                                mitigation_timestamp.replace("Z", "+00:00").replace("+00:00", "")
+                            )
+
+                        ifvgs.append(Zone(
+                            zone_type="BEARISH_IFVG",
+                            high=fvg_high,
+                            low=fvg_low,
+                            formed_at=mitigation_timestamp,
+                            formed_index=j,
+                            is_active=True,
+                            mitigated=False,
+                            is_ifvg=True,
+                            original_type="BULLISH_FVG",
+                        ))
+                    break
+
+        # Check for Bearish FVG
+        if prev_candle["low"] > next_candle["high"]:
+            fvg_high = prev_candle["low"]
+            fvg_low = next_candle["high"]
+
+            # Check if this FVG gets mitigated in subsequent candles
+            for j in range(i + 2, len(ohlcv_data)):
+                candle = ohlcv_data[j]
+
+                # FVG is mitigated when price trades into it
+                if candle["high"] >= fvg_low:
+                    # Check if it traded THROUGH the FVG (not just touched)
+                    if candle["high"] > fvg_high:
+                        # Full mitigation - FVG becomes IFVG (support)
+                        mitigation_timestamp = candle.get("datetime") or candle.get("timestamp")
+                        if isinstance(mitigation_timestamp, (int, float)):
+                            mitigation_timestamp = datetime.utcfromtimestamp(mitigation_timestamp / 1000)
+                        elif isinstance(mitigation_timestamp, str):
+                            mitigation_timestamp = datetime.fromisoformat(
+                                mitigation_timestamp.replace("Z", "+00:00").replace("+00:00", "")
+                            )
+
+                        ifvgs.append(Zone(
+                            zone_type="BULLISH_IFVG",
+                            high=fvg_high,
+                            low=fvg_low,
+                            formed_at=mitigation_timestamp,
+                            formed_index=j,
+                            is_active=True,
+                            mitigated=False,
+                            is_ifvg=True,
+                            original_type="BEARISH_FVG",
+                        ))
+                    break
+
+    # Check which IFVGs have been mitigated (price returned and respected)
+    for ifvg in ifvgs:
+        for j in range(ifvg.formed_index + 1, len(ohlcv_data)):
+            candle = ohlcv_data[j]
+
+            # BEARISH_IFVG (resistance) mitigated if price breaks above
+            if ifvg.zone_type == "BEARISH_IFVG" and candle["close"] > ifvg.high:
+                ifvg.mitigated = True
+                ifvg.is_active = False
+                break
+
+            # BULLISH_IFVG (support) mitigated if price breaks below
+            if ifvg.zone_type == "BULLISH_IFVG" and candle["close"] < ifvg.low:
+                ifvg.mitigated = True
+                ifvg.is_active = False
+                break
+
+    return [z for z in ifvgs if z.is_active]
 
 
 def detect_order_blocks(
@@ -254,6 +382,7 @@ def get_zones_near_price(
 def analyze_zones(
     ohlcv_data: list[dict],
     current_price: float = None,
+    include_ifvg: bool = True,
 ) -> dict:
     """
     Complete zone analysis for OHLCV data.
@@ -261,6 +390,7 @@ def analyze_zones(
     Args:
         ohlcv_data: OHLCV data
         current_price: Current price
+        include_ifvg: Include Inverse FVGs in analysis
 
     Returns:
         Dictionary with zone analysis
@@ -268,6 +398,7 @@ def analyze_zones(
     if not ohlcv_data or len(ohlcv_data) < 10:
         return {
             "fvgs": [],
+            "ifvgs": [],
             "order_blocks": [],
             "nearby_zones": [],
         }
@@ -278,6 +409,7 @@ def analyze_zones(
     # Detect zones
     fvgs = detect_fvg(ohlcv_data)
     obs = detect_order_blocks(ohlcv_data)
+    ifvgs = detect_ifvg(ohlcv_data) if include_ifvg else []
 
     # Format for output
     fvg_list = [
@@ -291,6 +423,18 @@ def analyze_zones(
         for z in fvgs[-10:]  # Last 10
     ]
 
+    ifvg_list = [
+        {
+            "type": z.zone_type,
+            "high": z.high,
+            "low": z.low,
+            "formed_at": z.formed_at.isoformat() if z.formed_at else None,
+            "is_active": z.is_active,
+            "original_type": z.original_type,
+        }
+        for z in ifvgs[-10:]  # Last 10
+    ]
+
     ob_list = [
         {
             "type": z.zone_type,
@@ -302,12 +446,13 @@ def analyze_zones(
         for z in obs[-10:]  # Last 10
     ]
 
-    # Get zones near current price
-    all_zones = fvgs + obs
+    # Get zones near current price (include IFVGs)
+    all_zones = fvgs + obs + ifvgs
     nearby = get_zones_near_price(all_zones, current_price)
 
     return {
         "fvgs": fvg_list,
+        "ifvgs": ifvg_list,
         "order_blocks": ob_list,
         "nearby_zones": nearby,
         "current_price": current_price,

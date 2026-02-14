@@ -32,4 +32,4 @@ export function getSupabaseClient() {
 }
 
 // Export types for convenience
-export type { User, Session } from "@supabase/supabase-js";
+export type { User, Session, AuthChangeEvent } from "@supabase/supabase-js";

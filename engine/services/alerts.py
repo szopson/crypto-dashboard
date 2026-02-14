@@ -32,6 +32,10 @@ class MarketState:
     alerted_setups: set = field(default_factory=set)  # Track already alerted setups
     last_alerted_signal: Optional[str] = None  # Track last signal we alerted on
     last_signal_alert_time: Optional[datetime] = None  # Cooldown tracking
+    # ICT state
+    last_ict_signal_id: Optional[str] = None  # Track last ICT signal
+    last_ict_alert_time: Optional[datetime] = None  # ICT cooldown
+    last_amd_phase: Optional[str] = None  # Track AMD phase changes
 
 
 class AlertMonitor:
@@ -45,11 +49,15 @@ class AlertMonitor:
         radar_alert_enabled: bool = True,
         sniper_alert_enabled: bool = True,
         sniper_min_confluence: float = 3.5,  # Minimum confluence to alert
+        ict_alert_enabled: bool = True,
+        ict_min_confidence: float = 0.6,  # Minimum ICT signal confidence
     ):
         self.check_interval = check_interval_seconds
         self.radar_alert_enabled = radar_alert_enabled
         self.sniper_alert_enabled = sniper_alert_enabled
         self.sniper_min_confluence = sniper_min_confluence
+        self.ict_alert_enabled = ict_alert_enabled
+        self.ict_min_confidence = ict_min_confidence
 
         self.state = MarketState()
         self.running = False
@@ -150,6 +158,10 @@ class AlertMonitor:
             # Check SNIPER setups
             if self.sniper_alert_enabled:
                 await self._check_sniper_setups(current_price, funding_rate)
+
+            # Check ICT signals
+            if self.ict_alert_enabled:
+                await self._check_ict_signals(current_price)
 
             self.state.last_price = current_price
             self.state.last_check = datetime.utcnow()
@@ -345,6 +357,144 @@ _{datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}_
         if self.telegram.is_available():
             await self.telegram.send_message(message.strip())
             logger.info(f"Sent signal change alert: {old_signal} -> {new_signal}")
+
+    async def _check_ict_signals(self, current_price: float):
+        """Check for ICT trading signals."""
+        try:
+            from calculations.ict_signals import analyze_ict_setup
+            from calculations.sessions import is_killzone
+
+            # Only check during killzones for higher quality signals
+            if not is_killzone():
+                return
+
+            # Fetch data
+            ltf_data = self.exchange.fetch_ohlcv(timeframe="15m", limit=200)
+            htf_data = self.exchange.fetch_ohlcv(timeframe="4h", limit=100)
+
+            # Analyze ICT setup
+            result = analyze_ict_setup(
+                ltf_ohlcv=ltf_data,
+                htf_ohlcv=htf_data,
+                current_price=current_price,
+                timeframe="15m",
+            )
+
+            signal = result.get("signal")
+            amd = result.get("amd", {})
+
+            # Check for AMD phase change
+            new_phase = amd.get("phase", "NONE")
+            if self.state.last_amd_phase and new_phase != self.state.last_amd_phase:
+                if new_phase == "MANIPULATION":
+                    # Alert on manipulation phase (potential trade coming)
+                    await self._send_amd_phase_alert(amd, current_price)
+
+            self.state.last_amd_phase = new_phase
+
+            # Check for valid ICT signal
+            if signal and signal.get("confidence", 0) >= self.ict_min_confidence:
+                # Create unique signal ID
+                signal_id = f"{signal['direction']}_{signal['entry_price']:.0f}"
+
+                # Check cooldown (15 minutes for ICT signals)
+                should_alert = False
+                if self.state.last_ict_signal_id != signal_id:
+                    should_alert = True
+                elif self.state.last_ict_alert_time:
+                    time_since = (datetime.utcnow() - self.state.last_ict_alert_time).total_seconds()
+                    if time_since > 900:  # 15 minute cooldown
+                        should_alert = True
+
+                if should_alert:
+                    await self._send_ict_signal_alert(signal, result.get("session", {}), current_price)
+                    self.state.last_ict_signal_id = signal_id
+                    self.state.last_ict_alert_time = datetime.utcnow()
+
+        except Exception as e:
+            logger.error(f"Error checking ICT signals: {e}")
+
+    async def _send_ict_signal_alert(self, signal: dict, session: dict, current_price: float):
+        """Send ICT trading signal alert."""
+        direction = signal.get("direction", "UNKNOWN")
+        emoji = "🟢" if direction == "LONG" else "🔴"
+        confidence = signal.get("confidence", 0)
+
+        entry_zone = signal.get("entry_zone", {})
+        take_profits = signal.get("take_profits", {})
+        components = signal.get("components", {})
+        risk_reward = signal.get("risk_reward", {})
+
+        session_name = session.get("session", "UNKNOWN")
+        in_killzone = session.get("in_killzone", False)
+        kz_emoji = "🎯" if in_killzone else ""
+
+        message = f"""
+🔮 *ICT SIGNAL* {kz_emoji}
+
+{emoji} *{direction}* - Confidence {confidence:.0%}
+
+*Entry Type:* {signal.get('entry_type', 'N/A')}
+*Entry Zone:* ${entry_zone.get('low', 0):,.0f} - ${entry_zone.get('high', 0):,.0f}
+
+*Current Price:* ${current_price:,.0f}
+
+*Stop Loss:* ${signal.get('stop_loss', 0):,.0f}
+*Take Profits:*
+  • TP1: ${take_profits.get('tp1', 0):,.0f} (1:1)
+  • TP2: ${take_profits.get('tp2', 0):,.0f} (2:1)
+
+*R:R:* {risk_reward.get('rr_ratio', 0):.1f}
+
+*Pattern:*
+  • HTF Bias: {components.get('htf_bias', 'N/A')}
+  • AMD Phase: {components.get('amd_phase', 'N/A')}
+  • MSS: {'✓' if components.get('mss_confirmed') else '✗'}
+  • FVG: {'✓' if components.get('fvg_formed') else '✗'}
+
+*Session:* {session_name}
+
+_{datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}_
+"""
+
+        if self.telegram.is_available():
+            await self.telegram.send_message(message.strip())
+            logger.info(f"Sent ICT signal alert: {direction}")
+
+    async def _send_amd_phase_alert(self, amd: dict, current_price: float):
+        """Send AMD phase change alert (manipulation = potential setup coming)."""
+        direction = amd.get("direction", "UNKNOWN")
+        details = amd.get("details", {})
+        manipulation = details.get("manipulation", {})
+
+        emoji = "⚡"
+        if direction == "BULLISH":
+            emoji = "🐂"
+        elif direction == "BEARISH":
+            emoji = "🐻"
+
+        message = f"""
+{emoji} *MANIPULATION DETECTED*
+
+Price swept liquidity - watch for reversal!
+
+*Direction:* {direction}
+*Swept Level:* ${manipulation.get('swept_level', 0):,.0f}
+*Sweep Extreme:* ${manipulation.get('sweep_extreme', 0):,.0f}
+
+*Current Price:* ${current_price:,.0f}
+
+Wait for:
+  1. Displacement candle
+  2. Market Structure Shift
+  3. FVG/OB entry zone
+
+_{datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}_
+"""
+
+        if self.telegram.is_available():
+            await self.telegram.send_message(message.strip())
+            logger.info(f"Sent AMD manipulation alert: {direction}")
 
     async def force_check(self):
         """Force an immediate check (for testing)."""
