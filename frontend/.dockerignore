@@ -1,43 +1,10 @@
-# Dependencies
-node_modules/
-.pnpm-store/
-
-# Build outputs
-.next/
-out/
-build/
-dist/
-
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-
-# Testing
-coverage/
-.nyc_output/
-
-# Local files
+node_modules
+.next
+.git
+.gitignore
+*.md
 .env
 .env.local
-.env.*.local
-
-# Logs
+.env*.local
 npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Git
-.git/
-.gitignore
-
-# Docker
-Dockerfile
-docker-compose*.yml
-
-# Misc
 .DS_Store
-Thumbs.db
-*.md
-!README.md
