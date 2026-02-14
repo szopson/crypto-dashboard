@@ -37,7 +37,7 @@ python-telegram-bot==21.0.1
 playwright==1.41.0
 
 # Supabase (Wealth Dashboard)
-supabase==2.4.0
+supabase>=2.10.0
 
 # Stock data (Wealth Dashboard)
 yfinance==0.2.37
