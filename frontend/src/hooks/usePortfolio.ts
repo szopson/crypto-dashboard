@@ -166,7 +166,7 @@ export function usePortfolio(): UsePortfolioReturn {
               ...h,
               current_price: priceData?.price_usd || h.manual_price || 0,
               current_value: (priceData?.price_usd || h.manual_price || 0) * Number(h.quantity),
-              change_24h_pct: priceData?.change_24h_pct,
+              change_24h_pct: priceData?.change_24h_pct ?? undefined,
             };
           });
           setHoldings(holdingsWithPrices);
