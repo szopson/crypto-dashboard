@@ -14,9 +14,19 @@ class Base(DeclarativeBase):
     pass
 
 
+def get_async_database_url(url: str) -> str:
+    """Convert database URL to async-compatible format."""
+    # PostgreSQL: convert to asyncpg driver
+    if url.startswith("postgresql://"):
+        return url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    if url.startswith("postgres://"):
+        return url.replace("postgres://", "postgresql+asyncpg://", 1)
+    return url
+
+
 # Create async engine
 engine = create_async_engine(
-    settings.database_url,
+    get_async_database_url(settings.database_url),
     echo=settings.debug,
 )
 
