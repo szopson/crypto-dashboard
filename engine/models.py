@@ -250,6 +250,7 @@ class WaitlistEntry(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     interest: Mapped[str] = mapped_column(String(100), nullable=True)
+    marketing_consent: Mapped[bool] = mapped_column(default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 

@@ -33,11 +33,16 @@ from .chart_generator import (
     generate_trading_levels_html,
 )
 from .tradingview_screenshot import get_tradingview_service
-from .data_sources.coingecko import get_coingecko_source
+from .data_sources.coingecko import get_coingecko_source, TokenNotFoundError
 from .data_sources.defillama import get_defillama_source
 from .data_sources.github_activity import get_github_source
+from .data_sources.bitcoin_cycle import get_bitcoin_cycle_analyzer
+from .data_sources.geckoterminal import get_geckoterminal_source
+from .data_sources.santiment import get_santiment_source
+from .data_sources.whale_alert import get_whale_alert_source
 from .ai_synthesis import get_ai_synthesis_service
 from services.dune_service import get_dune_service, COINGECKO_TO_DUNE_CHAIN
+from .cache import get_report_cache
 
 
 class ReportGeneratorService:
@@ -50,6 +55,7 @@ class ReportGeneratorService:
     - GitHub: Stars, commits, contributors
     - Dune Analytics: On-chain holder data
     - Perplexity: Web research (team, news, sentiment)
+    - Bitcoin Cycle: Macro market analysis
     """
 
     PERPLEXITY_URL = "https://api.perplexity.ai/chat/completions"
@@ -61,6 +67,10 @@ class ReportGeneratorService:
         self.defillama = get_defillama_source()
         self.github = get_github_source()
         self.dune = get_dune_service()
+        self.bitcoin_cycle = get_bitcoin_cycle_analyzer()
+        self.geckoterminal = get_geckoterminal_source()
+        self.santiment = get_santiment_source()
+        self.whale_alert = get_whale_alert_source()
         self.ai_synthesis = get_ai_synthesis_service()
         self.tradingview = get_tradingview_service()
         self.perplexity_key = getattr(settings, 'perplexity_api_key', None)
@@ -71,6 +81,7 @@ class ReportGeneratorService:
         report_type: str = "crypto",
         send_telegram: bool = False,
         telegram_chat_id: Optional[str] = None,
+        force_refresh: bool = False,
     ) -> Dict[str, Any]:
         """
         Generate a complete PDF investment report.
@@ -80,11 +91,28 @@ class ReportGeneratorService:
             report_type: Type of report
             send_telegram: Whether to send PDF to Telegram
             telegram_chat_id: Override default chat ID
+            force_refresh: If True, bypass cache and regenerate
 
         Returns:
             Dict with success status, PDF bytes, and metadata
         """
         start_time = time.time()
+        ticker = ticker.upper()
+        cache = get_report_cache()
+
+        # Check cache first (unless force_refresh)
+        if not force_refresh:
+            cached_pdf = cache.get(ticker)
+            if cached_pdf:
+                logger.info(f"Returning cached report for {ticker}")
+                return {
+                    "success": True,
+                    "pdf_bytes": cached_pdf,
+                    "ticker": ticker,
+                    "cached": True,
+                    "generation_time": 0,
+                }
+
         logger.info(f"Starting report generation for {ticker}")
 
         try:
@@ -119,14 +147,25 @@ class ReportGeneratorService:
             generation_time = time.time() - start_time
             logger.info(f"Report generated for {ticker} in {generation_time:.2f}s")
 
+            # Cache the generated report
+            cache.set(ticker, pdf_bytes, metadata={
+                "generation_time": round(generation_time, 2),
+                "report_type": report_type,
+            })
+
             return {
                 "success": True,
                 "pdf_bytes": pdf_bytes,
+                "ticker": ticker,
+                "cached": False,
                 "telegram_sent": telegram_result is not None and telegram_result.get("success"),
                 "telegram_message_id": telegram_result.get("message_id") if telegram_result else None,
                 "generation_time_seconds": round(generation_time, 2),
             }
 
+        except TokenNotFoundError:
+            # Let TokenNotFoundError bubble up to router for proper 404 handling
+            raise
         except Exception as e:
             logger.error(f"Report generation failed for {ticker}: {e}")
             return {
@@ -171,7 +210,10 @@ class ReportGeneratorService:
 
     async def _select_best_chain(self, platforms: Dict[str, str], ticker: str) -> tuple:
         """
-        Select the best chain for a token based on TVL or priority.
+        Select the best chain for a token based on chain TVL from DefiLlama.
+
+        Uses chain TVL as a proxy for liquidity - tokens on chains with higher
+        TVL typically have better liquidity and more reliable on-chain data.
 
         Args:
             platforms: Dict of {coingecko_chain: contract_address}
@@ -203,17 +245,54 @@ class ReportGeneratorService:
             logger.info(f"Selected chain {dune_chain} for {ticker} (single platform)")
             return address, dune_chain
 
-        # Priority: Ethereum first, then by TVL if we have DefiLlama data
-        # For now, use simple priority order
+        # Try to select based on chain TVL from DefiLlama
+        try:
+            chains_tvl = await self.defillama.get_chains_tvl()
+
+            if chains_tvl:
+                # Map Dune chain names to DefiLlama chain names for TVL lookup
+                dune_to_defillama = {
+                    "ethereum": "ethereum",
+                    "polygon": "polygon",
+                    "arbitrum": "arbitrum",
+                    "optimism": "optimism",
+                    "bnb": "bsc",
+                    "base": "base",
+                    "avalanche": "avalanche",
+                    "fantom": "fantom",
+                    "solana": "solana",
+                }
+
+                best_tvl = 0
+                best_address = ""
+                best_chain = ""
+
+                for cg_chain, (address, dune_chain) in supported_platforms.items():
+                    defillama_chain = dune_to_defillama.get(dune_chain, dune_chain)
+                    tvl = chains_tvl.get(defillama_chain, 0)
+
+                    if tvl > best_tvl:
+                        best_tvl = tvl
+                        best_address = address
+                        best_chain = dune_chain
+
+                if best_address:
+                    logger.info(f"Selected chain {best_chain} for {ticker} (TVL: ${best_tvl/1e9:.1f}B)")
+                    return best_address, best_chain
+
+        except Exception as e:
+            logger.warning(f"TVL-based selection failed for {ticker}: {e}")
+
+        # Fallback to priority order if TVL lookup fails
         chain_priority = ["ethereum", "polygon", "arbitrum", "optimism", "bnb", "base", "avalanche"]
 
         for preferred_chain in chain_priority:
             for cg_chain, (address, dune_chain) in supported_platforms.items():
                 if dune_chain == preferred_chain:
-                    logger.info(f"Selected chain {dune_chain} for {ticker} (priority)")
+                    logger.info(f"Selected chain {dune_chain} for {ticker} (priority fallback)")
                     return address, dune_chain
 
-        # Fallback to first available
+        # Final fallback to first available
         cg_chain, (address, dune_chain) = next(iter(supported_platforms.items()))
         logger.info(f"Selected chain {dune_chain} for {ticker} (fallback)")
         return address, dune_chain
@@ -253,24 +332,34 @@ class ReportGeneratorService:
 
     async def _gather_data(self, ticker: str) -> Dict[str, Any]:
         """Gather data from all sources in parallel."""
-        # Phase 1: Basic data sources
+        # Phase 1: Basic data sources + Bitcoin cycle (macro context)
+        # Note: CoinGecko is fetched separately with raise_on_not_found=True for proper 404 handling
+        coingecko_data = await self.coingecko.fetch(ticker, raise_on_not_found=True)
+
         basic_results = await asyncio.gather(
-            self.coingecko.fetch(ticker),
             self.defillama.fetch(ticker),
             self.github.fetch(ticker),
+            self.bitcoin_cycle.fetch(),  # Fetch BTC cycle data in parallel
+            self.santiment.fetch(ticker),  # Social sentiment
+            self.whale_alert.fetch(ticker),  # Whale tracking
             return_exceptions=True,
         )
 
         data = {
-            "coingecko": basic_results[0] if not isinstance(basic_results[0], Exception) else {},
-            "defillama": basic_results[1] if not isinstance(basic_results[1], Exception) else {},
-            "github": basic_results[2] if not isinstance(basic_results[2], Exception) else {},
+            "coingecko": coingecko_data,
+            "defillama": basic_results[0] if not isinstance(basic_results[0], Exception) else {},
+            "github": basic_results[1] if not isinstance(basic_results[1], Exception) else {},
+            "bitcoin_cycle": basic_results[2] if not isinstance(basic_results[2], Exception) else {},
+            "santiment": basic_results[3] if not isinstance(basic_results[3], Exception) else {},
+            "whale_alert": basic_results[4] if not isinstance(basic_results[4], Exception) else {},
             "dune": {},
             "perplexity": {},
+            "geckoterminal": {},
+            "unlocks": {},
         }
 
         # Log any errors
-        sources = ["coingecko", "defillama", "github"]
+        sources = ["defillama", "github", "bitcoin_cycle", "santiment", "whale_alert"]
         for i, result in enumerate(basic_results):
             if isinstance(result, Exception):
                 logger.warning(f"Data source {sources[i]} failed: {result}")
@@ -303,6 +392,8 @@ class ReportGeneratorService:
             self._fetch_dune_data(ticker, contract_address, chain),
             self._search_perplexity(team_query),
             self._search_perplexity(news_query),
+            self.geckoterminal.fetch(contract_address, chain),  # DEX liquidity
+            self.defillama.fetch_unlocks(ticker),  # Token unlocks
             return_exceptions=True,
         )
 
@@ -312,6 +403,10 @@ class ReportGeneratorService:
             data["perplexity"]["team"] = additional_results[1]
         if not isinstance(additional_results[2], Exception):
             data["perplexity"]["news"] = additional_results[2]
+        if not isinstance(additional_results[3], Exception):
+            data["geckoterminal"] = additional_results[3]
+        if not isinstance(additional_results[4], Exception):
+            data["unlocks"] = additional_results[4]
 
         # Phase 4: TradingView chart and trading levels
         current_price = data["coingecko"].get("current_price", 0)
@@ -389,6 +484,11 @@ class ReportGeneratorService:
         perplexity = data.get("perplexity", {})
         trading_levels = data.get("trading_levels", {})
         competitors = data.get("competitors", {})
+        btc_cycle = data.get("bitcoin_cycle", {})
+        geckoterminal = data.get("geckoterminal", {})
+        santiment = data.get("santiment", {})
+        whale_alert = data.get("whale_alert", {})
+        unlocks = data.get("unlocks", {})
 
         # Extract values with defaults
         name = cg.get("name", ticker)
@@ -632,6 +732,66 @@ class ReportGeneratorService:
 
             # NEW: Competitor Comparison Table
             "COMPETITOR_TABLE_ROWS": self._generate_competitor_table(ticker, data, competitors),
+
+            # NEW: Bitcoin Cycle & Macro Context
+            "BTC_PRICE": f"${btc_cycle.get('btc_price', 0):,.0f}" if btc_cycle.get('btc_price') else "N/A",
+            "BTC_DOMINANCE": f"{btc_cycle.get('btc_dominance', 0):.1f}%" if btc_cycle.get('btc_dominance') else "N/A",
+            "BTC_DOMINANCE_CHANGE": f"{btc_cycle.get('btc_dominance_change_30d', 0):+.1f}%" if btc_cycle.get('btc_dominance_change_30d') is not None else "N/A",
+            "CYCLE_PHASE": btc_cycle.get("cycle_phase", "unknown").replace("_", " ").title(),
+            "CYCLE_CONFIDENCE": f"{btc_cycle.get('cycle_confidence', 0):.0f}%",
+            "ALTSEASON_SCORE": str(btc_cycle.get("altseason_score", 50)),
+            "ALTSEASON_PHASE": btc_cycle.get("altseason_phase", "neutral").replace("_", " ").title(),
+            "ALTSEASON_CLASS": "positive" if btc_cycle.get("altseason_score", 50) >= 60 else ("negative" if btc_cycle.get("altseason_score", 50) <= 40 else "neutral"),
+            "FEAR_GREED_INDEX": str(btc_cycle.get("fear_greed_index", 50)),
+            "FEAR_GREED_LABEL": btc_cycle.get("fear_greed_label", "Neutral"),
+            "FEAR_GREED_CLASS": self._get_fear_greed_class(btc_cycle.get("fear_greed_index", 50)),
+            "DAYS_SINCE_HALVING": str(btc_cycle.get("days_since_halving", 0)),
+            "HALVING_CYCLE_PERCENT": f"{btc_cycle.get('halving_cycle_percent', 0):.1f}%",
+            "MACRO_OUTLOOK": btc_cycle.get("macro_outlook", "neutral").title(),
+            "MACRO_OUTLOOK_CLASS": btc_cycle.get("macro_outlook", "neutral"),
+            "BTC_CYCLE_RECOMMENDATION": btc_cycle.get("recommendation", "Monitor market conditions"),
+
+            # NEW: DEX Liquidity (GeckoTerminal)
+            "DEX_TOTAL_LIQUIDITY": self._format_large_number(geckoterminal.get("total_liquidity_usd")),
+            "DEX_24H_VOLUME": self._format_large_number(geckoterminal.get("total_volume_24h")),
+            "DEX_POOL_COUNT": str(geckoterminal.get("pool_count", 0)),
+            "DEX_TOP_POOL_NAME": geckoterminal.get("top_pool_name", "N/A"),
+            "DEX_TOP_POOL_LIQUIDITY": self._format_large_number(geckoterminal.get("top_pool_liquidity")),
+            "DEX_TOP_POOL_DEX": geckoterminal.get("top_pool_dex", "N/A").upper(),
+            "LIQUIDITY_DEPTH_RATING": geckoterminal.get("liquidity_depth_rating", "unknown").replace("_", " ").title(),
+            "LIQUIDITY_DEPTH_CLASS": self._get_liquidity_class(geckoterminal.get("liquidity_depth_rating", "unknown")),
+            "DEX_BUY_SELL_RATIO": f"{geckoterminal.get('buy_sell_ratio', 50):.0f}%" if geckoterminal.get("buy_sell_ratio") else "N/A",
+
+            # NEW: Token Unlocks (DefiLlama)
+            "HAS_UNLOCKS": "true" if unlocks.get("has_unlocks") else "false",
+            "NEXT_UNLOCK_DATE": unlocks.get("next_unlock_date", "N/A"),
+            "NEXT_UNLOCK_AMOUNT": f"{unlocks.get('next_unlock_amount', 0):,.0f}" if unlocks.get("next_unlock_amount") else "N/A",
+            "NEXT_UNLOCK_USD": self._format_large_number(unlocks.get("next_unlock_usd")),
+            "NEXT_UNLOCK_PERCENT": f"{unlocks.get('next_unlock_percent', 0):.2f}%" if unlocks.get("next_unlock_percent") else "N/A",
+            "UNLOCKS_30D_TOTAL": self._format_large_number(unlocks.get("unlocks_30d_total")),
+            "UNLOCKS_30D_PERCENT": f"{unlocks.get('unlocks_30d_percent', 0):.2f}%" if unlocks.get("unlocks_30d_percent") else "N/A",
+            "UNLOCK_RISK_LEVEL": unlocks.get("unlock_risk_level", "low").title(),
+            "UNLOCK_RISK_CLASS": unlocks.get("unlock_risk_level", "low"),
+
+            # NEW: Social Sentiment (Santiment)
+            "HAS_SENTIMENT": "true" if santiment.get("has_sentiment_data") else "false",
+            "SOCIAL_VOLUME_24H": f"{santiment.get('social_volume_24h', 0):,}" if santiment.get("social_volume_24h") else "N/A",
+            "SOCIAL_VOLUME_CHANGE": f"{santiment.get('social_volume_change', 0):+.1f}%" if santiment.get("social_volume_change") is not None else "N/A",
+            "SENTIMENT_SCORE": str(santiment.get("sentiment_score", 50)),
+            "SENTIMENT_LABEL": santiment.get("sentiment_label", "neutral").replace("_", " ").title(),
+            "SENTIMENT_CLASS": self._get_sentiment_class(santiment.get("sentiment_label", "neutral")),
+            "SOCIAL_DOMINANCE": f"{santiment.get('social_dominance', 0):.2f}%" if santiment.get("social_dominance") else "N/A",
+
+            # NEW: Whale Tracking (Whale Alert)
+            "HAS_WHALE_DATA": "true" if whale_alert.get("has_whale_data") else "false",
+            "WHALE_TX_COUNT_7D": str(whale_alert.get("whale_tx_count_7d", 0)),
+            "WHALE_LARGEST_TX": whale_alert.get("whale_largest_tx", "N/A"),
+            "WHALE_LARGEST_TX_USD": self._format_large_number(whale_alert.get("whale_largest_tx_usd")),
+            "WHALE_NET_FLOW": self._format_large_number(whale_alert.get("whale_net_flow")),
+            "WHALE_FLOW_DIRECTION": whale_alert.get("whale_flow_direction", "neutral").title(),
+            "WHALE_FLOW_CLASS": whale_alert.get("whale_flow_direction", "neutral"),
+            "WHALE_EXCHANGE_INFLOW": self._format_large_number(whale_alert.get("whale_exchange_inflow")),
+            "WHALE_EXCHANGE_OUTFLOW": self._format_large_number(whale_alert.get("whale_exchange_outflow")),
         }
 
     def _format_large_number(self, value: float, prefix: str = "$") -> str:
@@ -648,6 +808,39 @@ class ReportGeneratorService:
             return f"{prefix}{value/1_000:.2f}K"
         else:
             return f"{prefix}{value:.2f}"
+
+    def _get_fear_greed_class(self, value: int) -> str:
+        """Get CSS class for Fear & Greed index value."""
+        if value <= 25:
+            return "extreme-fear"
+        elif value <= 45:
+            return "fear"
+        elif value <= 55:
+            return "neutral"
+        elif value <= 75:
+            return "greed"
+        else:
+            return "extreme-greed"
+
+    def _get_liquidity_class(self, rating: str) -> str:
+        """Get CSS class for liquidity depth rating."""
+        rating_map = {
+            "excellent": "excellent",
+            "good": "good",
+            "moderate": "moderate",
+            "low": "low",
+            "very_low": "very-low",
+        }
+        return rating_map.get(rating, "unknown")
+
+    def _get_sentiment_class(self, label: str) -> str:
+        """Get CSS class for sentiment label."""
+        if "bullish" in label:
+            return "bullish"
+        elif "bearish" in label:
+            return "bearish"
+        else:
+            return "neutral"
 
     def _infer_chain(self, ticker: str, cg_data: Dict) -> str:
         """Infer blockchain from ticker or categories."""

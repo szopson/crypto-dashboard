@@ -234,6 +234,33 @@ class DefiLlamaDataSource:
             logger.warning(f"DefiLlama fees fetch failed for {ticker}: {e}")
             return None
 
+    async def get_chains_tvl(self) -> Dict[str, float]:
+        """
+        Fetch TVL for all chains from DefiLlama.
+
+        Returns:
+            Dict mapping chain name (lowercase) to TVL in USD
+        """
+        try:
+            async with httpx.AsyncClient(timeout=30) as client:
+                response = await client.get(f"{self.BASE_URL}/v2/chains")
+                response.raise_for_status()
+                chains = response.json()
+
+                result = {}
+                for chain in chains:
+                    chain_name = chain.get("name", "").lower()
+                    tvl = chain.get("tvl", 0)
+                    if chain_name and tvl:
+                        result[chain_name] = tvl
+
+                logger.debug(f"Fetched TVL for {len(result)} chains")
+                return result
+
+        except Exception as e:
+            logger.warning(f"Failed to fetch chains TVL: {e}")
+            return {}
+
     async def fetch_competitor_data(
         self,
         tickers: list,
@@ -279,6 +306,131 @@ class DefiLlamaDataSource:
             logger.error(f"DefiLlama competitor fetch error: {e}")
 
         return results
+
+    async def fetch_unlocks(self, ticker: str) -> Dict[str, Any]:
+        """
+        Fetch token unlock schedule from DefiLlama.
+
+        Args:
+            ticker: Token symbol (e.g., "ARB", "OP")
+
+        Returns:
+            Dict with unlock schedule data
+        """
+        from datetime import datetime, timedelta
+
+        data = {
+            "has_unlocks": False,
+            "next_unlock_date": None,
+            "next_unlock_amount": None,
+            "next_unlock_usd": None,
+            "next_unlock_percent": None,
+            "unlocks_30d_total": None,
+            "unlocks_30d_percent": None,
+            "unlock_risk_level": "low",
+            "total_locked": None,
+            "total_unlocked": None,
+            "unlock_events": [],
+        }
+
+        slug = self.TICKER_MAP.get(ticker.upper(), ticker.lower())
+
+        try:
+            async with httpx.AsyncClient(timeout=30) as client:
+                response = await client.get(f"{self.BASE_URL}/unlocks/{slug}")
+
+                if response.status_code != 200:
+                    logger.debug(f"No unlock data for {ticker}")
+                    return data
+
+                unlocks_json = response.json()
+
+                # Check if we have unlock events
+                events = unlocks_json.get("events", [])
+                if not events:
+                    logger.debug(f"No unlock events for {ticker}")
+                    return data
+
+                data["has_unlocks"] = True
+                now = datetime.utcnow()
+                thirty_days_later = now + timedelta(days=30)
+
+                # Get token metadata
+                token_price = unlocks_json.get("tokenPrice", {}).get("price", 0)
+                max_supply = unlocks_json.get("maxSupply", 0)
+
+                # Find next unlock and calculate 30-day totals
+                next_unlock = None
+                unlocks_30d_amount = 0
+
+                for event in events:
+                    # Parse timestamp (milliseconds)
+                    timestamp_ms = event.get("timestamp", 0)
+                    if not timestamp_ms:
+                        continue
+
+                    event_date = datetime.utcfromtimestamp(timestamp_ms / 1000)
+                    amount = event.get("noOfTokens", 0)
+
+                    # Is this the next upcoming unlock?
+                    if event_date > now:
+                        if next_unlock is None or event_date < datetime.utcfromtimestamp(next_unlock["timestamp"] / 1000):
+                            next_unlock = event
+
+                        # Is it within 30 days?
+                        if event_date <= thirty_days_later:
+                            unlocks_30d_amount += amount
+
+                # Process next unlock
+                if next_unlock:
+                    next_date = datetime.utcfromtimestamp(next_unlock["timestamp"] / 1000)
+                    next_amount = next_unlock.get("noOfTokens", 0)
+                    next_usd = next_amount * token_price if token_price else 0
+                    next_percent = (next_amount / max_supply * 100) if max_supply else 0
+
+                    data["next_unlock_date"] = next_date.strftime("%Y-%m-%d")
+                    data["next_unlock_amount"] = next_amount
+                    data["next_unlock_usd"] = next_usd
+                    data["next_unlock_percent"] = round(next_percent, 2)
+
+                    # Add top unlock events (next 5)
+                    upcoming = [e for e in events if e.get("timestamp", 0) > now.timestamp() * 1000]
+                    upcoming.sort(key=lambda x: x.get("timestamp", 0))
+                    data["unlock_events"] = [
+                        {
+                            "date": datetime.utcfromtimestamp(e["timestamp"] / 1000).strftime("%Y-%m-%d"),
+                            "amount": e.get("noOfTokens", 0),
+                            "description": e.get("description", ""),
+                        }
+                        for e in upcoming[:5]
+                    ]
+
+                # Process 30-day totals
+                if unlocks_30d_amount > 0:
+                    unlocks_30d_usd = unlocks_30d_amount * token_price if token_price else 0
+                    unlocks_30d_percent = (unlocks_30d_amount / max_supply * 100) if max_supply else 0
+
+                    data["unlocks_30d_total"] = unlocks_30d_usd
+                    data["unlocks_30d_percent"] = round(unlocks_30d_percent, 2)
+
+                    # Determine risk level based on 30-day unlock percentage
+                    if unlocks_30d_percent >= 5:
+                        data["unlock_risk_level"] = "high"
+                    elif unlocks_30d_percent >= 2:
+                        data["unlock_risk_level"] = "medium"
+                    else:
+                        data["unlock_risk_level"] = "low"
+
+                # Get locked/unlocked totals if available
+                data["total_locked"] = unlocks_json.get("totalLocked")
+                data["total_unlocked"] = unlocks_json.get("totalUnlocked")
+
+                logger.info(f"DefiLlama unlocks fetched for {ticker}: next={data['next_unlock_date']}, 30d_total=${data.get('unlocks_30d_total', 0):,.0f}")
+
+        except Exception as e:
+            logger.warning(f"DefiLlama unlocks fetch failed for {ticker}: {e}")
+
+        return data
 
 
 # Singleton

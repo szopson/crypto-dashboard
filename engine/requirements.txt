@@ -36,6 +36,15 @@ python-telegram-bot==21.0.1
 # PDF Generation
 playwright==1.41.0
 
+# Supabase (Wealth Dashboard)
+supabase==2.4.0
+
+# Stock data (Wealth Dashboard)
+yfinance==0.2.37
+
+# JWT validation
+python-jose[cryptography]==3.3.0
+
 # Development
 pytest==8.0.0
 pytest-asyncio==0.23.4

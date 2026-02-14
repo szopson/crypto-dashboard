@@ -12,7 +12,7 @@ export function WaitlistCounter() {
       .catch(() => setCount(null));
   }, []);
 
-  if (count === null || count < 3) return null;
+  if (count === null || count < 15) return null;
 
   return (
     <p className="text-sm text-zinc-500">

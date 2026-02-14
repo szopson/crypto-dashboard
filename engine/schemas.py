@@ -937,3 +937,238 @@ class ReportGenerateResponse(BaseModel):
     telegram_message_id: Optional[int] = None
     error: Optional[str] = None
     generation_time_seconds: float = 0
+
+
+# =============================================================================
+# WEALTH DASHBOARD SCHEMAS
+# =============================================================================
+
+from datetime import date
+from decimal import Decimal
+from enum import Enum
+from pydantic import ConfigDict
+
+
+class AssetClass(str, Enum):
+    """Supported asset classes."""
+    CRYPTO = "crypto"
+    STOCK = "stock"
+    ETF = "etf"
+    BOND = "bond"
+    REAL_ESTATE = "real_estate"
+    CASH = "cash"
+    COMMODITY = "commodity"
+
+
+class DividendFrequency(str, Enum):
+    """Dividend payment frequencies."""
+    MONTHLY = "monthly"
+    QUARTERLY = "quarterly"
+    SEMI_ANNUALLY = "semi-annually"
+    ANNUALLY = "annually"
+
+
+# Portfolio Schemas
+
+class PortfolioBase(BaseModel):
+    """Base portfolio fields."""
+    name: str = Field(..., min_length=1, max_length=100)
+    description: Optional[str] = Field(None, max_length=500)
+
+
+class PortfolioCreate(PortfolioBase):
+    """Schema for creating a portfolio."""
+    is_default: bool = False
+
+
+class PortfolioUpdate(BaseModel):
+    """Schema for updating a portfolio."""
+    name: Optional[str] = Field(None, min_length=1, max_length=100)
+    description: Optional[str] = Field(None, max_length=500)
+    is_default: Optional[bool] = None
+
+
+class PortfolioResponse(PortfolioBase):
+    """Schema for portfolio response."""
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    user_id: str
+    is_default: bool
+    created_at: datetime
+    updated_at: datetime
+    holdings_count: Optional[int] = None
+    total_value_usd: Optional[float] = None
+
+
+class PortfolioSummary(BaseModel):
+    """Aggregated portfolio summary."""
+    portfolio_id: str
+    portfolio_name: str
+    total_value_usd: float
+    total_cost_basis_usd: float
+    total_gain_loss_usd: float
+    total_gain_loss_pct: float
+    change_24h_usd: float
+    change_24h_pct: float
+    holdings_count: int
+    last_updated: datetime
+
+
+# Holding Schemas
+
+class HoldingBase(BaseModel):
+    """Base holding fields."""
+    asset_class: AssetClass
+    ticker: str = Field(..., min_length=1, max_length=20)
+    name: str = Field(..., min_length=1, max_length=200)
+    quantity: Decimal = Field(..., gt=0, decimal_places=8)
+    country_code: str = Field(default="US", min_length=2, max_length=2)
+
+
+class HoldingCreate(HoldingBase):
+    """Schema for creating a holding."""
+    portfolio_id: str
+    cost_basis: Optional[Decimal] = Field(None, ge=0, decimal_places=2)
+    purchase_date: Optional[date] = None
+    manual_price: Optional[Decimal] = Field(None, ge=0, decimal_places=2)
+    annual_yield_pct: Optional[Decimal] = Field(None, ge=0, le=100, decimal_places=2)
+    dividend_frequency: Optional[DividendFrequency] = None
+    notes: Optional[str] = Field(None, max_length=1000)
+    tags: Optional[list[str]] = None
+
+
+class HoldingUpdate(BaseModel):
+    """Schema for updating a holding."""
+    quantity: Optional[Decimal] = Field(None, gt=0, decimal_places=8)
+    cost_basis: Optional[Decimal] = Field(None, ge=0, decimal_places=2)
+    purchase_date: Optional[date] = None
+    manual_price: Optional[Decimal] = Field(None, ge=0, decimal_places=2)
+    annual_yield_pct: Optional[Decimal] = Field(None, ge=0, le=100, decimal_places=2)
+    dividend_frequency: Optional[DividendFrequency] = None
+    country_code: Optional[str] = Field(None, min_length=2, max_length=2)
+    notes: Optional[str] = Field(None, max_length=1000)
+    tags: Optional[list[str]] = None
+
+
+class HoldingResponse(HoldingBase):
+    """Schema for holding response (without price)."""
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    portfolio_id: str
+    user_id: str
+    cost_basis: Optional[Decimal] = None
+    purchase_date: Optional[date] = None
+    manual_price: Optional[Decimal] = None
+    manual_price_updated_at: Optional[datetime] = None
+    annual_yield_pct: Optional[Decimal] = None
+    dividend_frequency: Optional[str] = None
+    notes: Optional[str] = None
+    tags: Optional[list[str]] = None
+    created_at: datetime
+    updated_at: datetime
+
+
+class HoldingWithPrice(HoldingResponse):
+    """Holding with computed price and value fields."""
+    current_price_usd: Optional[float] = None
+    price_source: Optional[str] = None
+    current_value_usd: Optional[float] = None
+    gain_loss_usd: Optional[float] = None
+    gain_loss_pct: Optional[float] = None
+    change_24h_pct: Optional[float] = None
+    annual_income_usd: Optional[float] = None
+    weight_pct: Optional[float] = None
+
+
+# Analytics Schemas
+
+class AssetAllocation(BaseModel):
+    """Asset class allocation breakdown."""
+    asset_class: AssetClass
+    value_usd: float
+    percentage: float
+    holdings_count: int
+    color: str
+
+
+class GeographyAllocation(BaseModel):
+    """Geographic allocation breakdown."""
+    country_code: str
+    country_name: str
+    value_usd: float
+    percentage: float
+
+
+class IncomeSource(BaseModel):
+    """Individual income source."""
+    holding_id: str
+    ticker: str
+    name: str
+    asset_class: AssetClass
+    annual_income_usd: float
+    yield_pct: float
+
+
+class IncomeBreakdown(BaseModel):
+    """Income/yield breakdown."""
+    total_annual_income_usd: float
+    average_yield_pct: float
+    by_asset_class: list[dict]
+    by_holding: list[IncomeSource]
+
+
+class PortfolioAnalytics(BaseModel):
+    """Complete portfolio analytics."""
+    summary: PortfolioSummary
+    allocation_by_class: list[AssetAllocation]
+    allocation_by_geography: list[GeographyAllocation]
+    income: IncomeBreakdown
+    top_holdings: list[HoldingWithPrice]
+
+
+class AIInsights(BaseModel):
+    """AI-generated portfolio insights."""
+    summary: str
+    highlights: list[str]
+    concerns: list[str]
+    opportunities: list[str]
+    generated_at: datetime
+
+
+# Asset & Price Schemas
+
+class AssetSearchResult(BaseModel):
+    """Asset search result for autocomplete."""
+    asset_class: AssetClass
+    ticker: str
+    name: str
+    symbol: Optional[str] = None
+    logo_url: Optional[str] = None
+    market_cap_rank: Optional[int] = None
+    country_code: Optional[str] = None
+    sector: Optional[str] = None
+
+
+class WealthPriceResponse(BaseModel):
+    """Price data response for wealth dashboard."""
+    asset_class: AssetClass
+    ticker: str
+    price_usd: float
+    change_24h_pct: Optional[float] = None
+    market_cap: Optional[float] = None
+    volume_24h: Optional[float] = None
+    source: str
+    fetched_at: datetime
+
+
+class BatchPriceRequest(BaseModel):
+    """Request for batch price fetching."""
+    assets: list[dict]
+
+
+class BatchPriceResponse(BaseModel):
+    """Response for batch price fetching."""
+    prices: dict[str, WealthPriceResponse]
+    errors: dict[str, str]

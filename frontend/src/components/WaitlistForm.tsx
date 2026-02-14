@@ -1,6 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
+
+// Turnstile types
+declare global {
+  interface Window {
+    turnstile?: {
+      render: (
+        element: HTMLElement,
+        options: {
+          sitekey: string;
+          callback: (token: string) => void;
+          "expired-callback": () => void;
+          theme?: "light" | "dark" | "auto";
+        }
+      ) => string;
+      reset: (widgetId?: string) => void;
+    };
+  }
+}
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -10,6 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import Link from "next/link";
 
 const INTERESTS = [
   { value: "radar", label: "RADAR Analysis" },
@@ -19,12 +38,53 @@ const INTERESTS = [
   { value: "all", label: "All Features" },
 ];
 
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+
 export function WaitlistForm() {
   const [email, setEmail] = useState("");
   const [interest, setInterest] = useState("");
+  const [consent, setConsent] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
+  const turnstileRef = useRef<HTMLDivElement>(null);
+
+  // Load Turnstile script and render widget
+  useEffect(() => {
+    if (!TURNSTILE_SITE_KEY || typeof window === "undefined") return;
+
+    const scriptId = "turnstile-script";
+    if (!document.getElementById(scriptId)) {
+      const script = document.createElement("script");
+      script.id = scriptId;
+      script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
+      script.async = true;
+      script.defer = true;
+      document.head.appendChild(script);
+    }
+
+    const renderWidget = () => {
+      if (turnstileRef.current && window.turnstile) {
+        window.turnstile.render(turnstileRef.current, {
+          sitekey: TURNSTILE_SITE_KEY,
+          callback: (token: string) => setTurnstileToken(token),
+          "expired-callback": () => setTurnstileToken(null),
+          theme: "dark",
+        });
+      }
+    };
+
+    // Wait for script to load
+    const checkTurnstile = setInterval(() => {
+      if (window.turnstile) {
+        clearInterval(checkTurnstile);
+        renderWidget();
+      }
+    }, 100);
+
+    return () => clearInterval(checkTurnstile);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,7 +95,12 @@ export function WaitlistForm() {
       const res = await fetch("/api/waitlist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, interest: interest || null }),
+        body: JSON.stringify({
+          email,
+          interest: interest || null,
+          marketing_consent: consent,
+          turnstile_token: turnstileToken,
+        }),
       });
 
       const data = await res.json();
@@ -99,18 +164,41 @@ export function WaitlistForm() {
           </SelectContent>
         </Select>
       </div>
+
+      {/* GDPR Consent Checkbox */}
+      <label className="flex items-start gap-3 cursor-pointer group">
+        <input
+          type="checkbox"
+          checked={consent}
+          onChange={(e) => setConsent(e.target.checked)}
+          className="mt-1 h-4 w-4 rounded border-white/20 bg-white/5 text-emerald-500 focus:ring-emerald-500/20 focus:ring-offset-0"
+        />
+        <span className="text-sm text-zinc-400 leading-relaxed">
+          I agree to receive marketing emails and accept the{" "}
+          <Link href="/terms" className="text-emerald-400 hover:text-emerald-300 underline">
+            Terms of Service
+          </Link>{" "}
+          and{" "}
+          <Link href="/privacy" className="text-emerald-400 hover:text-emerald-300 underline">
+            Privacy Policy
+          </Link>
+        </span>
+      </label>
+
+      {/* Turnstile Widget */}
+      {TURNSTILE_SITE_KEY && (
+        <div ref={turnstileRef} className="flex justify-center" />
+      )}
+
       <Button
         type="submit"
         size="lg"
         className="w-full h-12 text-base font-semibold bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white border-0"
-        disabled={loading || !email}
+        disabled={loading || !email || !consent || (TURNSTILE_SITE_KEY && !turnstileToken)}
       >
         {loading ? "Joining..." : "Get Early Access"}
       </Button>
       {error && <p className="text-red-400 text-sm text-center">{error}</p>}
-      <p className="text-xs text-zinc-500 text-center">
-        No spam. We'll only contact you about early access and updates.
-      </p>
     </form>
   );
 }

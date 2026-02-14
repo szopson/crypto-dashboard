@@ -269,6 +269,74 @@
   .peer-table.enhanced .highlight-row td { color: var(--text-white); font-weight: 500; }
   .positive { color: var(--accent-green) !important; }
   .negative { color: var(--accent-red) !important; }
+
+  /* Bitcoin Cycle & Macro Context */
+  .macro-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 30px; }
+  .macro-card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 20px; text-align: center; }
+  .macro-card .macro-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .macro-card .macro-value { font-size: 24px; font-weight: 700; color: var(--text-white); }
+  .macro-card .macro-sublabel { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+  .macro-card.bullish { border-color: rgba(63,185,80,0.3); background: rgba(63,185,80,0.05); }
+  .macro-card.bullish .macro-value { color: var(--accent-green); }
+  .macro-card.bearish { border-color: rgba(248,81,73,0.3); background: rgba(248,81,73,0.05); }
+  .macro-card.bearish .macro-value { color: var(--accent-red); }
+  .macro-card.neutral { border-color: rgba(210,153,34,0.3); background: rgba(210,153,34,0.05); }
+  .macro-card.neutral .macro-value { color: var(--accent-yellow); }
+  .cycle-indicator { display: flex; align-items: center; gap: 16px; background: var(--bg-secondary); border-radius: 8px; padding: 16px 24px; margin-bottom: 20px; }
+  .cycle-phase { flex: 1; }
+  .cycle-phase-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; }
+  .cycle-phase-value { font-size: 20px; font-weight: 600; color: var(--text-white); }
+  .cycle-bar { flex: 2; }
+  .cycle-bar-track { width: 100%; height: 12px; background: var(--bg-card); border-radius: 6px; position: relative; overflow: hidden; }
+  .cycle-bar-fill { height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan)); }
+  .cycle-bar-labels { display: flex; justify-content: space-between; margin-top: 6px; font-size: 10px; color: var(--text-muted); }
+  .fear-greed-meter { display: flex; align-items: center; gap: 20px; background: var(--bg-secondary); border-radius: 8px; padding: 16px 24px; }
+  .fear-greed-meter .fg-value { font-size: 48px; font-weight: 700; min-width: 80px; text-align: center; }
+  .fear-greed-meter .fg-value.extreme-fear { color: var(--accent-red); }
+  .fear-greed-meter .fg-value.fear { color: #ff7b72; }
+  .fear-greed-meter .fg-value.neutral { color: var(--accent-yellow); }
+  .fear-greed-meter .fg-value.greed { color: #7ee787; }
+  .fear-greed-meter .fg-value.extreme-greed { color: var(--accent-green); }
+  .fear-greed-meter .fg-label { font-size: 14px; font-weight: 600; color: var(--text-white); }
+  .fear-greed-meter .fg-desc { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+  .macro-recommendation { background: var(--bg-info); border: 1px solid var(--bg-info-border); border-radius: 8px; padding: 20px 24px; margin-top: 20px; }
+  .macro-recommendation .rec-label { font-size: 12px; color: var(--accent-blue); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .macro-recommendation .rec-text { font-size: 14px; color: var(--text-white); line-height: 1.6; }
+
+  /* On-Chain & Social Intelligence Section */
+  .intel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .intel-section { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 24px; }
+  .intel-section h3 { font-size: 16px; color: var(--accent-blue); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .intel-section h3::before { content: ""; width: 4px; height: 16px; background: var(--accent-blue); border-radius: 2px; }
+  .intel-metrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .intel-metric { background: var(--bg-secondary); border-radius: 6px; padding: 12px 16px; }
+  .intel-metric .label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .intel-metric .value { font-size: 18px; font-weight: 600; color: var(--text-white); margin-top: 4px; }
+  .intel-metric .sublabel { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+  .intel-highlight { background: var(--bg-highlight); border: 1px solid var(--border-accent); border-radius: 6px; padding: 16px; margin-top: 12px; }
+  .intel-highlight .highlight-label { font-size: 12px; color: var(--accent-cyan); font-weight: 600; }
+  .intel-highlight .highlight-value { font-size: 14px; color: var(--text-white); margin-top: 4px; }
+  .rating-pill { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+  .rating-pill.excellent { background: rgba(63,185,80,0.15); color: var(--accent-green); }
+  .rating-pill.good { background: rgba(63,185,80,0.1); color: #7ee787; }
+  .rating-pill.moderate { background: rgba(210,153,34,0.15); color: var(--accent-yellow); }
+  .rating-pill.low { background: rgba(248,81,73,0.1); color: #ff7b72; }
+  .rating-pill.very-low { background: rgba(248,81,73,0.15); color: var(--accent-red); }
+  .rating-pill.bullish { background: rgba(63,185,80,0.15); color: var(--accent-green); }
+  .rating-pill.bearish { background: rgba(248,81,73,0.15); color: var(--accent-red); }
+  .rating-pill.neutral { background: rgba(210,153,34,0.15); color: var(--accent-yellow); }
+  .rating-pill.high { background: rgba(248,81,73,0.15); color: var(--accent-red); }
+  .rating-pill.medium { background: rgba(210,153,34,0.15); color: var(--accent-yellow); }
+  .flow-indicator { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 6px; margin-top: 12px; }
+  .flow-indicator.accumulating { background: rgba(63,185,80,0.1); border: 1px solid rgba(63,185,80,0.3); }
+  .flow-indicator.accumulating .flow-text { color: var(--accent-green); }
+  .flow-indicator.distributing { background: rgba(248,81,73,0.1); border: 1px solid rgba(248,81,73,0.3); }
+  .flow-indicator.distributing .flow-text { color: var(--accent-red); }
+  .flow-indicator.neutral { background: rgba(210,153,34,0.1); border: 1px solid rgba(210,153,34,0.3); }
+  .flow-indicator.neutral .flow-text { color: var(--accent-yellow); }
+  .flow-icon { font-size: 20px; }
+  .flow-text { font-size: 14px; font-weight: 600; }
+  .na-placeholder { color: var(--text-muted); font-style: italic; }
 </style>
 </head>
 <body>
@@ -342,7 +410,72 @@
 <div class="page-footer"><span>{{PROJECT_NAME}} | {{TICKER}}</span><span>Page 9</span></div></div>
 <div class="page"><div class="page-watermark">TRADING COMMAND CENTER</div><h2>7. Business & Strategy Flash</h2><div class="strategy-layout"><div class="strategy-text">{{STRATEGY_LEFT_CONTENT}}</div><div class="strategy-text">{{STRATEGY_RIGHT_CONTENT}}</div></div><div class="page-footer"><span>{{PROJECT_NAME}} | {{TICKER}}</span><span>Page 8</span></div></div>
 <div class="page"><div class="page-watermark">TRADING COMMAND CENTER</div><h2>8. Monetary-Policy Sensitivity</h2><div class="policy-box"><h3><span class="warning-icon">!</span> Rate Cut Impact</h3><p><span class="rate-impact">{{RATE_CUT_IMPACT}}</span></p><p style="margin-top:12px;">{{RATE_SENSITIVITY_NOTE}}</p></div><div class="page-footer"><span>{{PROJECT_NAME}} | {{TICKER}}</span><span>Page 9</span></div></div>
-<div class="page"><div class="page-watermark">TRADING COMMAND CENTER</div><h2>9. SWOT</h2><div class="swot-grid"><div class="swot-card strengths"><h3>Strengths</h3><ul>{{SWOT_STRENGTHS}}</ul></div><div class="swot-card opportunities"><h3>Opportunities</h3><ul>{{SWOT_OPPORTUNITIES}}</ul></div><div class="swot-card weaknesses"><h3>Weaknesses</h3><ul>{{SWOT_WEAKNESSES}}</ul></div><div class="swot-card threats"><h3>Threats</h3><ul>{{SWOT_THREATS}}</ul></div></div><div class="page-footer"><span>{{PROJECT_NAME}} | {{TICKER}}</span><span>Page 10</span></div></div>
+<div class="page"><div class="page-watermark">TRADING COMMAND CENTER</div><h2>9. Market Macro Context</h2>
+<div class="macro-grid">
+<div class="macro-card"><div class="macro-label">BTC Price</div><div class="macro-value">{{BTC_PRICE}}</div><div class="macro-sublabel">Bitcoin</div></div>
+<div class="macro-card"><div class="macro-label">BTC Dominance</div><div class="macro-value">{{BTC_DOMINANCE}}</div><div class="macro-sublabel">{{BTC_DOMINANCE_CHANGE}} (30d)</div></div>
+<div class="macro-card {{ALTSEASON_CLASS}}"><div class="macro-label">Altseason Score</div><div class="macro-value">{{ALTSEASON_SCORE}}</div><div class="macro-sublabel">{{ALTSEASON_PHASE}}</div></div>
+<div class="macro-card {{MACRO_OUTLOOK_CLASS}}"><div class="macro-label">Macro Outlook</div><div class="macro-value">{{MACRO_OUTLOOK}}</div><div class="macro-sublabel">{{CYCLE_CONFIDENCE}} confidence</div></div>
+</div>
+<div class="cycle-indicator">
+<div class="cycle-phase"><div class="cycle-phase-label">Cycle Phase</div><div class="cycle-phase-value">{{CYCLE_PHASE}}</div></div>
+<div class="cycle-bar"><div class="cycle-bar-track"><div class="cycle-bar-fill" style="width: {{HALVING_CYCLE_PERCENT}};"></div></div><div class="cycle-bar-labels"><span>Halving</span><span>{{DAYS_SINCE_HALVING}} days since halving</span><span>Next Halving</span></div></div>
+</div>
+<div class="fear-greed-meter">
+<div class="fg-value {{FEAR_GREED_CLASS}}">{{FEAR_GREED_INDEX}}</div>
+<div><div class="fg-label">Fear & Greed Index: {{FEAR_GREED_LABEL}}</div><div class="fg-desc">Sentiment indicator based on market volatility, momentum, and social metrics</div></div>
+</div>
+<div class="macro-recommendation"><div class="rec-label">Cycle-Based Recommendation</div><div class="rec-text">{{BTC_CYCLE_RECOMMENDATION}}</div></div>
+<div class="page-footer"><span>{{PROJECT_NAME}} | {{TICKER}}</span><span>Page 10</span></div></div>
+<div class="page"><div class="page-watermark">TRADING COMMAND CENTER</div><h2>10. On-Chain & Social Intelligence</h2>
+<div class="intel-grid">
+<div class="intel-section">
+<h3>DEX Liquidity</h3>
+<div class="intel-metrics">
+<div class="intel-metric"><div class="label">Total Liquidity</div><div class="value">{{DEX_TOTAL_LIQUIDITY}}</div></div>
+<div class="intel-metric"><div class="label">24h Volume</div><div class="value">{{DEX_24H_VOLUME}}</div></div>
+<div class="intel-metric"><div class="label">Active Pools</div><div class="value">{{DEX_POOL_COUNT}}</div></div>
+<div class="intel-metric"><div class="label">Buy Ratio</div><div class="value">{{DEX_BUY_SELL_RATIO}}</div></div>
+</div>
+<div class="intel-highlight">
+<div class="highlight-label">Top Pool</div>
+<div class="highlight-value">{{DEX_TOP_POOL_NAME}} on {{DEX_TOP_POOL_DEX}} ({{DEX_TOP_POOL_LIQUIDITY}})</div>
+</div>
+<div style="margin-top:12px;"><span class="rating-pill {{LIQUIDITY_DEPTH_CLASS}}">{{LIQUIDITY_DEPTH_RATING}} Liquidity</span></div>
+</div>
+<div class="intel-section">
+<h3>Token Unlocks</h3>
+<div class="intel-metrics">
+<div class="intel-metric"><div class="label">Next Unlock</div><div class="value">{{NEXT_UNLOCK_DATE}}</div></div>
+<div class="intel-metric"><div class="label">Amount</div><div class="value">{{NEXT_UNLOCK_USD}}</div><div class="sublabel">{{NEXT_UNLOCK_PERCENT}} of supply</div></div>
+<div class="intel-metric"><div class="label">30d Total</div><div class="value">{{UNLOCKS_30D_TOTAL}}</div><div class="sublabel">{{UNLOCKS_30D_PERCENT}} of supply</div></div>
+<div class="intel-metric"><div class="label">Risk Level</div><div class="value"><span class="rating-pill {{UNLOCK_RISK_CLASS}}">{{UNLOCK_RISK_LEVEL}}</span></div></div>
+</div>
+</div>
+<div class="intel-section">
+<h3>Social Sentiment</h3>
+<div class="intel-metrics">
+<div class="intel-metric"><div class="label">Sentiment</div><div class="value">{{SENTIMENT_SCORE}}/100</div><div class="sublabel"><span class="rating-pill {{SENTIMENT_CLASS}}">{{SENTIMENT_LABEL}}</span></div></div>
+<div class="intel-metric"><div class="label">24h Mentions</div><div class="value">{{SOCIAL_VOLUME_24H}}</div><div class="sublabel">{{SOCIAL_VOLUME_CHANGE}} vs avg</div></div>
+<div class="intel-metric"><div class="label">Dominance</div><div class="value">{{SOCIAL_DOMINANCE}}</div><div class="sublabel">of crypto mentions</div></div>
+</div>
+</div>
+<div class="intel-section">
+<h3>Whale Activity</h3>
+<div class="intel-metrics">
+<div class="intel-metric"><div class="label">Large Txs (7d)</div><div class="value">{{WHALE_TX_COUNT_7D}}</div></div>
+<div class="intel-metric"><div class="label">Largest Tx</div><div class="value">{{WHALE_LARGEST_TX_USD}}</div></div>
+<div class="intel-metric"><div class="label">Exchange Inflow</div><div class="value">{{WHALE_EXCHANGE_INFLOW}}</div></div>
+<div class="intel-metric"><div class="label">Exchange Outflow</div><div class="value">{{WHALE_EXCHANGE_OUTFLOW}}</div></div>
+</div>
+<div class="flow-indicator {{WHALE_FLOW_CLASS}}">
+<span class="flow-icon">{{WHALE_FLOW_DIRECTION}}</span>
+<span class="flow-text">Net Flow: {{WHALE_NET_FLOW}}</span>
+</div>
+</div>
+</div>
+<div class="page-footer"><span>{{PROJECT_NAME}} | {{TICKER}}</span><span>Page 11</span></div></div>
+<div class="page"><div class="page-watermark">TRADING COMMAND CENTER</div><h2>11. SWOT</h2><div class="swot-grid"><div class="swot-card strengths"><h3>Strengths</h3><ul>{{SWOT_STRENGTHS}}</ul></div><div class="swot-card opportunities"><h3>Opportunities</h3><ul>{{SWOT_OPPORTUNITIES}}</ul></div><div class="swot-card weaknesses"><h3>Weaknesses</h3><ul>{{SWOT_WEAKNESSES}}</ul></div><div class="swot-card threats"><h3>Threats</h3><ul>{{SWOT_THREATS}}</ul></div></div><div class="page-footer"><span>{{PROJECT_NAME}} | {{TICKER}}</span><span>Page 10</span></div></div>
 <div class="page"><div class="page-watermark">TRADING COMMAND CENTER</div><h2>10. Risk Assessment</h2><div class="risk-layout"><div><div class="risk-card"><h4>⚠️ Key Risks</h4><ul>{{RISK_ITEMS}}</ul></div><div class="risk-analysis">{{RISK_ANALYSIS}}</div></div><div class="risk-meter"><div class="risk-meter-item"><div class="risk-meter-label">Overall Risk</div><div class="risk-meter-value {{OVERALL_RISK}}">{{OVERALL_RISK}}</div></div><div class="risk-meter-item"><div class="risk-meter-label">Regulatory Risk</div><div class="risk-meter-value {{REGULATORY_RISK}}">{{REGULATORY_RISK}}</div></div><div class="risk-meter-item"><div class="risk-meter-label">Technical Risk</div><div class="risk-meter-value {{TECHNICAL_RISK}}">{{TECHNICAL_RISK}}</div></div><div class="risk-meter-item"><div class="risk-meter-label">Market Risk</div><div class="risk-meter-value {{MARKET_RISK}}">{{MARKET_RISK}}</div></div></div></div><div class="page-footer"><span>{{PROJECT_NAME}} | {{TICKER}}</span><span>Page 11</span></div></div>
 <div class="page"><div class="page-watermark">TRADING COMMAND CENTER</div><h2>11. Catalysts & Event Risks</h2><div class="catalyst-timeline"><div class="catalyst-line"></div>{{CATALYST_ITEMS}}</div><div class="catalyst-commentary">{{CATALYST_COMMENTARY}}</div><div class="page-footer"><span>{{PROJECT_NAME}} | {{TICKER}}</span><span>Page 12</span></div></div>
 <div class="page"><div class="page-watermark">TRADING COMMAND CENTER</div><h2>12. Investment Signals</h2>

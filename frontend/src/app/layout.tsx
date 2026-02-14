@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { SymbolProvider } from "@/contexts/SymbolContext";
+import { AuthProvider } from "@/contexts/AuthContext";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 import { ToastProvider } from "@/components/ui/toast";
 import "./globals.css";
@@ -30,11 +32,11 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
+      { url: "/icons/logo-transparent.png", type: "image/png" },
       { url: "/icons/icon.svg", type: "image/svg+xml" },
     ],
     apple: [
-      { url: "/icons/icon-152x152.png", sizes: "152x152", type: "image/png" },
-      { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/logo-transparent.png", type: "image/png" },
     ],
   },
 };
@@ -57,6 +59,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN && (
+          <Script
+            defer
+            data-domain={process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN}
+            src="https://plausible.io/js/script.js"
+            strategy="afterInteractive"
+          />
+        )}
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
@@ -66,12 +78,14 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <SymbolProvider>
-            <ToastProvider>
-              {children}
-              <ServiceWorkerRegistration />
-            </ToastProvider>
-          </SymbolProvider>
+          <AuthProvider>
+            <SymbolProvider>
+              <ToastProvider>
+                {children}
+                <ServiceWorkerRegistration />
+              </ToastProvider>
+            </SymbolProvider>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

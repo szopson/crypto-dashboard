@@ -3,26 +3,58 @@ Waitlist API Router.
 
 Handles email signups from landing page.
 """
+from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
-from fastapi import APIRouter, HTTPException
+from time import time
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, field_validator
 import re
+import httpx
 from sqlalchemy import select
 from loguru import logger
 
+from config import settings
 from database import async_session_maker
 from models import WaitlistEntry
 from services.telegram import get_telegram_service
 
+# Resend email client
+try:
+    import resend
+    RESEND_AVAILABLE = True
+except ImportError:
+    RESEND_AVAILABLE = False
+
+# Turnstile secret key
+TURNSTILE_SECRET_KEY = getattr(settings, "turnstile_secret_key", None)
+
 router = APIRouter(prefix="/waitlist", tags=["waitlist"])
+
+# Simple in-memory rate limiter
+_rate_limit_store: dict[str, list[float]] = defaultdict(list)
+RATE_LIMIT = 5  # requests
+RATE_WINDOW = 60  # seconds
+
+
+def _check_rate_limit(ip: str) -> bool:
+    """Check if IP is within rate limit. Returns True if allowed."""
+    now = time()
+    # Clean old entries
+    _rate_limit_store[ip] = [t for t in _rate_limit_store[ip] if now - t < RATE_WINDOW]
+    if len(_rate_limit_store[ip]) >= RATE_LIMIT:
+        return False
+    _rate_limit_store[ip].append(now)
+    return True
 
 
 class WaitlistSignup(BaseModel):
     """Waitlist signup request."""
     email: str
     interest: str | None = None
+    marketing_consent: bool = False
+    turnstile_token: str | None = None
 
     @field_validator("email")
     @classmethod
@@ -33,6 +65,28 @@ class WaitlistSignup(BaseModel):
         return v.lower()
 
 
+async def verify_turnstile(token: str, ip: str) -> bool:
+    """Verify Turnstile token with Cloudflare."""
+    if not TURNSTILE_SECRET_KEY:
+        return True  # Skip validation if no secret key configured
+
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+                data={
+                    "secret": TURNSTILE_SECRET_KEY,
+                    "response": token,
+                    "remoteip": ip,
+                },
+            )
+            result = response.json()
+            return result.get("success", False)
+    except Exception as e:
+        logger.warning(f"Turnstile verification failed: {e}")
+        return False
+
+
 class WaitlistResponse(BaseModel):
     """Waitlist signup response."""
     success: bool
@@ -40,12 +94,34 @@ class WaitlistResponse(BaseModel):
 
 
 @router.post("", response_model=WaitlistResponse)
-async def join_waitlist(signup: WaitlistSignup):
+async def join_waitlist(signup: WaitlistSignup, request: Request):
     """
     Join the waitlist.
 
     Saves email to database and sends Telegram notification.
+    Rate limited to 5 requests per IP per minute.
     """
+    # Rate limit check
+    client_ip = request.client.host if request.client else "unknown"
+    if not _check_rate_limit(client_ip):
+        raise HTTPException(
+            status_code=429,
+            detail="Too many requests. Please try again later."
+        )
+
+    # Verify Turnstile token if configured
+    if TURNSTILE_SECRET_KEY:
+        if not signup.turnstile_token:
+            raise HTTPException(
+                status_code=400,
+                detail="Please complete the security verification."
+            )
+        if not await verify_turnstile(signup.turnstile_token, client_ip):
+            raise HTTPException(
+                status_code=400,
+                detail="Security verification failed. Please try again."
+            )
+
     async with async_session_maker() as session:
         # Check if email already exists
         result = await session.execute(
@@ -63,11 +139,42 @@ async def join_waitlist(signup: WaitlistSignup):
         entry = WaitlistEntry(
             email=signup.email,
             interest=signup.interest,
+            marketing_consent=signup.marketing_consent,
         )
         session.add(entry)
         await session.commit()
 
         logger.info(f"New waitlist signup: {signup.email}")
+
+        # Send welcome email via Resend
+        if RESEND_AVAILABLE and settings.resend_api_key:
+            try:
+                resend.api_key = settings.resend_api_key
+                resend.Emails.send({
+                    "from": settings.resend_from_email,
+                    "to": signup.email,
+                    "subject": "Welcome to Trading Command Center!",
+                    "html": f"""
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                        <h1 style="color: #1a1a1a;">You're on the list! 🎉</h1>
+                        <p>Thanks for joining the Trading Command Center waitlist.</p>
+                        <p>We're building professional-grade crypto analysis tools with:</p>
+                        <ul>
+                            <li>AI-powered investment reports</li>
+                            <li>Real-time market analysis</li>
+                            <li>Smart trading alerts</li>
+                            <li>Portfolio tracking</li>
+                        </ul>
+                        <p>We'll notify you as soon as we're ready to onboard new users.</p>
+                        <p style="color: #666; margin-top: 30px;">
+                            — The Trading Command Center Team
+                        </p>
+                    </div>
+                    """
+                })
+                logger.info(f"Welcome email sent to {signup.email}")
+            except Exception as e:
+                logger.warning(f"Failed to send welcome email: {e}")
 
         # Send Telegram notification
         telegram = get_telegram_service()
@@ -81,7 +188,7 @@ async def join_waitlist(signup: WaitlistSignup):
 
         return WaitlistResponse(
             success=True,
-            message="You're on the list! We'll be in touch soon."
+            message="You're on the list! Check your email for confirmation."
         )
 
 

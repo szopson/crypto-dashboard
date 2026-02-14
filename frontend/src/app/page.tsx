@@ -31,7 +31,7 @@ const FEATURES = [
     ),
     title: "RADAR Analysis",
     description:
-      "Multi-timeframe market regime detection using BBWP, Gaussian Channel, and Williams VIX Fix.",
+      "Smart-money concepts powered by AI. Aggregated knowledge from top traders, refined with machine learning.",
   },
   {
     icon: (
@@ -45,7 +45,7 @@ const FEATURES = [
     ),
     title: "AI Investment Reports",
     description:
-      "Professional 8-page PDF reports with AI-powered analysis, SWOT, and investment ratings.",
+      "Professional PDF reports with AI-powered analysis, SWOT, and investment ratings.",
   },
   {
     icon: (
@@ -151,6 +151,206 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Screenshots/Product Preview Section */}
+      <section className="relative py-24 border-t border-white/[0.08]">
+        <div className="container mx-auto px-4">
+          <h3 className="text-2xl sm:text-3xl font-bold text-center mb-4 tracking-tight">
+            See It In Action
+          </h3>
+          <p className="text-zinc-400 text-center mb-12 max-w-2xl mx-auto">
+            Professional-grade tools designed for serious traders
+          </p>
+
+          {/* Main Features Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
+
+            {/* AI Investment Reports - Detailed */}
+            <div className="group relative bg-gradient-to-br from-white/[0.05] to-white/[0.02] border border-white/[0.08] rounded-2xl p-6 overflow-hidden hover:border-cyan-500/30 transition-all duration-300">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-14 h-14 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-7 h-7 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <line x1="16" y1="13" x2="8" y2="13" />
+                    <line x1="16" y1="17" x2="8" y2="17" />
+                  </svg>
+                </div>
+                <div>
+                  <h4 className="text-lg font-semibold text-white mb-1">AI Investment Reports</h4>
+                  <p className="text-sm text-zinc-400">Professional PDF analysis</p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <p className="text-xs text-zinc-500 uppercase tracking-wider font-medium">What's included:</p>
+                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                  <li className="flex items-center gap-2 text-zinc-300">
+                    <svg className="w-4 h-4 text-cyan-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                    Executive Summary
+                  </li>
+                  <li className="flex items-center gap-2 text-zinc-300">
+                    <svg className="w-4 h-4 text-cyan-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                    SWOT Analysis
+                  </li>
+                  <li className="flex items-center gap-2 text-zinc-300">
+                    <svg className="w-4 h-4 text-cyan-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                    Tokenomics Deep-Dive
+                  </li>
+                  <li className="flex items-center gap-2 text-zinc-300">
+                    <svg className="w-4 h-4 text-cyan-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                    On-Chain Metrics
+                  </li>
+                  <li className="flex items-center gap-2 text-zinc-300">
+                    <svg className="w-4 h-4 text-cyan-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                    Technical Analysis
+                  </li>
+                  <li className="flex items-center gap-2 text-zinc-300">
+                    <svg className="w-4 h-4 text-cyan-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                    Risk Assessment
+                  </li>
+                  <li className="flex items-center gap-2 text-zinc-300">
+                    <svg className="w-4 h-4 text-cyan-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                    Investment Rating
+                  </li>
+                  <li className="flex items-center gap-2 text-zinc-300">
+                    <svg className="w-4 h-4 text-cyan-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                    Price Targets
+                  </li>
+                </ul>
+              </div>
+
+              <div className="mt-6 pt-4 border-t border-white/[0.08]">
+                <p className="text-xs text-zinc-500">Powered by Claude AI with real-time data from CoinGecko, GitHub, and on-chain analytics</p>
+              </div>
+            </div>
+
+            {/* Wealth Dashboard - Asset Classes */}
+            <div className="group relative bg-gradient-to-br from-white/[0.05] to-white/[0.02] border border-white/[0.08] rounded-2xl p-6 overflow-hidden hover:border-amber-500/30 transition-all duration-300">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-7 h-7 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                    <path d="M2 17l10 5 10-5" />
+                    <path d="M2 12l10 5 10-5" />
+                  </svg>
+                </div>
+                <div>
+                  <h4 className="text-lg font-semibold text-white mb-1">Wealth Dashboard</h4>
+                  <p className="text-sm text-zinc-400">All your assets in one place</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <p className="text-xs text-zinc-500 uppercase tracking-wider font-medium">Supported Asset Classes:</p>
+
+                {/* Available Now */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3 p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-xl">
+                    <span className="text-2xl">₿</span>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-white">Cryptocurrencies</p>
+                      <p className="text-xs text-zinc-500">BTC, ETH, SOL & 1000+ tokens</p>
+                    </div>
+                    <span className="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded-full">Live</span>
+                  </div>
+
+                  <div className="flex items-center gap-3 p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-xl">
+                    <span className="text-2xl">📈</span>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-white">Stocks & ETFs</p>
+                      <p className="text-xs text-zinc-500">S&P 500, NASDAQ & global markets</p>
+                    </div>
+                    <span className="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded-full">Live</span>
+                  </div>
+                </div>
+
+                {/* Coming Soon */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3 p-3 bg-white/[0.02] border border-white/[0.08] rounded-xl opacity-75">
+                    <span className="text-2xl">🥇</span>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-zinc-300">Precious Metals</p>
+                      <p className="text-xs text-zinc-500">Gold, Silver, Platinum</p>
+                    </div>
+                    <span className="text-xs bg-zinc-800 text-zinc-400 px-2 py-1 rounded-full">Coming Soon</span>
+                  </div>
+
+                  <div className="flex items-center gap-3 p-3 bg-white/[0.02] border border-white/[0.08] rounded-xl opacity-75">
+                    <span className="text-2xl">🏠</span>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-zinc-300">Real Estate</p>
+                      <p className="text-xs text-zinc-500">Properties & REITs</p>
+                    </div>
+                    <span className="text-xs bg-zinc-800 text-zinc-400 px-2 py-1 rounded-full">Coming Soon</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* RADAR Dashboard */}
+            <div className="group relative bg-gradient-to-br from-white/[0.05] to-white/[0.02] border border-white/[0.08] rounded-2xl p-6 overflow-hidden hover:border-emerald-500/30 transition-all duration-300">
+              <div className="flex items-start gap-4 mb-4">
+                <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-7 h-7 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 12L19 12" />
+                    <path d="M12 2a10 10 0 0 1 0 20" strokeDasharray="4 4" />
+                  </svg>
+                </div>
+                <div>
+                  <h4 className="text-lg font-semibold text-white mb-1">RADAR Dashboard</h4>
+                  <p className="text-sm text-zinc-400">Multi-timeframe market analysis</p>
+                </div>
+              </div>
+              <p className="text-sm text-zinc-400 leading-relaxed">
+                Smart-money concepts powered by AI. Learn from aggregated strategies of top traders,
+                refined with machine learning to identify optimal entry and exit points.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <span className="text-xs bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded-full">1H</span>
+                <span className="text-xs bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded-full">4H</span>
+                <span className="text-xs bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded-full">1D</span>
+                <span className="text-xs bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded-full">1W</span>
+              </div>
+            </div>
+
+            {/* Smart Alerts */}
+            <div className="group relative bg-gradient-to-br from-white/[0.05] to-white/[0.02] border border-white/[0.08] rounded-2xl p-6 overflow-hidden hover:border-rose-500/30 transition-all duration-300">
+              <div className="flex items-start gap-4 mb-4">
+                <div className="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-7 h-7 text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                  </svg>
+                </div>
+                <div>
+                  <h4 className="text-lg font-semibold text-white mb-1">Smart Alerts</h4>
+                  <p className="text-sm text-zinc-400">Never miss an opportunity</p>
+                </div>
+              </div>
+              <p className="text-sm text-zinc-400 leading-relaxed">
+                Get instant Telegram and email notifications for market regime changes,
+                SNIPER setups, and custom price alerts. Stay informed 24/7.
+              </p>
+              <div className="mt-4 flex items-center gap-4">
+                <div className="flex items-center gap-2 text-sm text-zinc-400">
+                  <svg className="w-5 h-5 text-[#0088cc]" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/>
+                  </svg>
+                  Telegram
+                </div>
+                <div className="flex items-center gap-2 text-sm text-zinc-400">
+                  <svg className="w-5 h-5 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                  </svg>
+                  Email
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Features Section */}
       <section className="relative py-24 border-t border-white/[0.08]">
         <div className="container mx-auto px-4">
@@ -181,6 +381,163 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Pricing Teaser Section */}
+      <section className="relative py-24 border-t border-white/[0.08]">
+        <div className="container mx-auto px-4">
+          <h3 className="text-2xl sm:text-3xl font-bold text-center mb-4 tracking-tight">
+            Simple, Transparent Pricing
+          </h3>
+          <p className="text-zinc-400 text-center mb-12 max-w-2xl mx-auto">
+            Early supporters get lifetime benefits
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+            {/* Free Tier */}
+            <div className="relative bg-white/[0.03] border border-white/[0.08] rounded-2xl p-8">
+              <h4 className="text-lg font-semibold mb-2">Free</h4>
+              <div className="mb-6">
+                <span className="text-3xl font-bold">$0</span>
+                <span className="text-zinc-500">/month</span>
+              </div>
+              <ul className="space-y-3 text-sm text-zinc-400">
+                <li className="flex items-center gap-2">
+                  <svg className="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                  Basic RADAR dashboard
+                </li>
+                <li className="flex items-center gap-2">
+                  <svg className="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                  1 AI report / month
+                </li>
+                <li className="flex items-center gap-2">
+                  <svg className="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                  Email alerts
+                </li>
+              </ul>
+            </div>
+
+            {/* Pro Tier - Highlighted */}
+            <div className="relative bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 border-2 border-emerald-500/30 rounded-2xl p-8 transform md:-translate-y-4">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-emerald-500 to-cyan-500 text-black text-xs font-bold px-4 py-1 rounded-full">
+                MOST POPULAR
+              </div>
+              <h4 className="text-lg font-semibold mb-2">Pro</h4>
+              <div className="mb-6">
+                <span className="text-3xl font-bold">$29</span>
+                <span className="text-zinc-500">/month</span>
+              </div>
+              <ul className="space-y-3 text-sm text-zinc-300">
+                <li className="flex items-center gap-2">
+                  <svg className="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                  Full RADAR + SNIPER
+                </li>
+                <li className="flex items-center gap-2">
+                  <svg className="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                  <strong>Unlimited</strong> AI reports
+                </li>
+                <li className="flex items-center gap-2">
+                  <svg className="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                  Telegram alerts
+                </li>
+                <li className="flex items-center gap-2">
+                  <svg className="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                  Wealth Dashboard
+                </li>
+                <li className="flex items-center gap-2">
+                  <svg className="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                  AI Copilot chat
+                </li>
+              </ul>
+            </div>
+
+            {/* Waitlist Benefit */}
+            <div className="relative bg-white/[0.03] border border-white/[0.08] rounded-2xl p-8">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-500 text-black text-xs font-bold px-4 py-1 rounded-full">
+                EARLY BIRD
+              </div>
+              <h4 className="text-lg font-semibold mb-2">Waitlist</h4>
+              <div className="mb-6">
+                <span className="text-zinc-500 line-through text-lg">$29</span>
+                <span className="text-3xl font-bold ml-2">$19</span>
+                <span className="text-zinc-500">/month</span>
+              </div>
+              <ul className="space-y-3 text-sm text-zinc-400">
+                <li className="flex items-center gap-2">
+                  <svg className="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                  Everything in Pro
+                </li>
+                <li className="flex items-center gap-2">
+                  <svg className="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                  <strong>35% off forever</strong>
+                </li>
+                <li className="flex items-center gap-2">
+                  <svg className="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                  Early access
+                </li>
+                <li className="flex items-center gap-2">
+                  <svg className="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                  Free AI report bonus
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <p className="text-center text-sm text-zinc-500 mt-8">
+            Prices shown are planned launch prices. Final pricing may vary.
+          </p>
+        </div>
+      </section>
+
+      {/* Trust Signals Section */}
+      <section className="relative py-16 border-t border-white/[0.08]">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-wrap items-center justify-center gap-8 sm:gap-12 text-zinc-500">
+            {/* Security */}
+            <div className="flex items-center gap-3">
+              <svg className="w-6 h-6 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+              </svg>
+              <div className="text-sm">
+                <p className="text-zinc-300 font-medium">Bank-grade Security</p>
+                <p className="text-xs">256-bit encryption</p>
+              </div>
+            </div>
+
+            {/* Privacy */}
+            <div className="flex items-center gap-3">
+              <svg className="w-6 h-6 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+              </svg>
+              <div className="text-sm">
+                <p className="text-zinc-300 font-medium">Privacy First</p>
+                <p className="text-xs">We never sell your data</p>
+              </div>
+            </div>
+
+            {/* No Credit Card */}
+            <div className="flex items-center gap-3">
+              <svg className="w-6 h-6 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
+              </svg>
+              <div className="text-sm">
+                <p className="text-zinc-300 font-medium">No Credit Card</p>
+                <p className="text-xs">Free to join waitlist</p>
+              </div>
+            </div>
+
+            {/* Cancel Anytime */}
+            <div className="flex items-center gap-3">
+              <svg className="w-6 h-6 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div className="text-sm">
+                <p className="text-zinc-300 font-medium">Cancel Anytime</p>
+                <p className="text-xs">No contracts or commitments</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="relative py-24 border-t border-white/[0.08]">
         <div className="container mx-auto px-4 text-center">
@@ -204,7 +561,16 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="relative py-8 border-t border-white/[0.08]">
         <div className="container mx-auto px-4 text-center text-sm text-zinc-500">
-          <p>Trading Command Center</p>
+          <p className="mb-2">Trading Command Center</p>
+          <div className="flex items-center justify-center gap-4">
+            <Link href="/terms" className="text-zinc-600 hover:text-zinc-400 transition-colors">
+              Terms of Service
+            </Link>
+            <span className="text-zinc-700">|</span>
+            <Link href="/privacy" className="text-zinc-600 hover:text-zinc-400 transition-colors">
+              Privacy Policy
+            </Link>
+          </div>
         </div>
       </footer>
     </div>

@@ -13,6 +13,7 @@ from config import settings
 from database import init_db, close_db
 from api.routes import router
 from api.waitlist import router as waitlist_router
+from api.wealth import router as wealth_router
 from report.router import router as report_router
 from data.exchange import get_exchange_client
 from services.alerts import get_alert_monitor
@@ -107,6 +108,7 @@ app.add_middleware(
 app.include_router(router, prefix="/api")
 app.include_router(report_router, prefix="/api/report")
 app.include_router(waitlist_router, prefix="/api")
+app.include_router(wealth_router, prefix="/api/wealth")
 
 
 @app.get("/")

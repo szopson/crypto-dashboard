@@ -81,9 +81,35 @@ class Settings(BaseSettings):
     # Dune Query ID (combined holders + activity query)
     dune_combined_query_id: int = 0
 
+    # Whale Alert API (for whale transaction tracking) - PAID: $29.95/month
+    whale_alert_api_key: str = ""
+
+    # Santiment API (for social sentiment) - PAID: $420+/month
+    santiment_api_key: str = ""
+
     # Google OAuth (for future authentication)
     google_client_id: str = ""
     google_client_secret: str = ""
+
+    # Supabase (for Wealth Dashboard auth & database)
+    supabase_url: str = ""
+    supabase_anon_key: str = ""
+    supabase_service_role_key: str = ""
+    supabase_jwt_secret: str = ""
+
+    # Resend (Email)
+    resend_api_key: str = ""
+    resend_from_email: str = "noreply@yourdomain.com"
+
+    # Cloudflare Turnstile (Bot Protection)
+    turnstile_secret_key: str = ""
+
+    # Wealth Dashboard - Price APIs
+    finnhub_api_key: str = ""  # Backup for stock prices
+    goldapi_key: str = ""  # Gold/Silver prices (free 100/month)
+
+    # Wealth Dashboard - Settings
+    wealth_price_cache_ttl: int = 300  # 5 minutes default
 
     # Telegram
     telegram_bot_token: str = ""
