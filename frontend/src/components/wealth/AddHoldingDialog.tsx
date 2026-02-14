@@ -23,7 +23,7 @@ import type { AssetClass, HoldingCreate } from "@/lib/wealth-types";
 interface AddHoldingDialogProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (data: HoldingCreate) => Promise<void>;
+  onSubmit: (data: HoldingCreate) => Promise<unknown>;
   portfolioId: string;
 }
 
