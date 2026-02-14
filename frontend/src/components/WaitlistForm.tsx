@@ -21,13 +21,6 @@ declare global {
 }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import Link from "next/link";
 
 const INTERESTS = [
@@ -151,18 +144,21 @@ export function WaitlistForm() {
           required
           className="flex-1 h-12 bg-white/[0.03] border-white/[0.08] text-white placeholder:text-zinc-500 focus:border-emerald-500/50 focus:ring-emerald-500/20"
         />
-        <Select value={interest} onValueChange={setInterest}>
-          <SelectTrigger className="w-full sm:w-48 h-12 bg-white/[0.03] border-white/[0.08] text-white">
-            <SelectValue placeholder="I'm interested in..." />
-          </SelectTrigger>
-          <SelectContent className="bg-zinc-900 border-white/[0.08]">
+<div className="relative w-full sm:w-64">
+          <Input
+            type="text"
+            list="interests-list"
+            placeholder="I'm interested in..."
+            value={interest}
+            onChange={(e) => setInterest(e.target.value)}
+            className="h-12 bg-white/[0.03] border-white/[0.08] text-white placeholder:text-zinc-500 focus:border-emerald-500/50 focus:ring-emerald-500/20"
+          />
+          <datalist id="interests-list">
             {INTERESTS.map((item) => (
-              <SelectItem key={item.value} value={item.value} className="text-white focus:bg-white/10">
-                {item.label}
-              </SelectItem>
+              <option key={item.value} value={item.label} />
             ))}
-          </SelectContent>
-        </Select>
+          </datalist>
+        </div>
       </div>
 
       {/* GDPR Consent Checkbox */}
