@@ -25,9 +25,11 @@ def get_async_database_url(url: str) -> str:
 
 
 # Create async engine
+# statement_cache_size=0 required for Supabase pooler (pgbouncer)
 engine = create_async_engine(
     get_async_database_url(settings.database_url),
     echo=settings.debug,
+    connect_args={"statement_cache_size": 0},
 )
 
 # Session factory
