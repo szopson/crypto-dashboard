@@ -60,7 +60,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Listen for auth state changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } = supabase.auth.onAuthStateChange((_event: any, newSession) => {
       setSession(newSession);
       setUser(newSession?.user ?? null);
       setLoading(false);
