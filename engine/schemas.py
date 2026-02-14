@@ -1022,17 +1022,17 @@ class HoldingBase(BaseModel):
     asset_class: AssetClass
     ticker: str = Field(..., min_length=1, max_length=20)
     name: str = Field(..., min_length=1, max_length=200)
-    quantity: Decimal = Field(..., gt=0, decimal_places=8)
+    quantity: Decimal = Field(..., gt=0)
     country_code: str = Field(default="US", min_length=2, max_length=2)
 
 
 class HoldingCreate(HoldingBase):
     """Schema for creating a holding."""
     portfolio_id: str
-    cost_basis: Optional[Decimal] = Field(None, ge=0, decimal_places=2)
+    cost_basis: Optional[Decimal] = Field(None, ge=0)
     purchase_date: Optional[date] = None
-    manual_price: Optional[Decimal] = Field(None, ge=0, decimal_places=2)
-    annual_yield_pct: Optional[Decimal] = Field(None, ge=0, le=100, decimal_places=2)
+    manual_price: Optional[Decimal] = Field(None, ge=0)
+    annual_yield_pct: Optional[Decimal] = Field(None, ge=0, le=100)
     dividend_frequency: Optional[DividendFrequency] = None
     notes: Optional[str] = Field(None, max_length=1000)
     tags: Optional[list[str]] = None
@@ -1040,11 +1040,11 @@ class HoldingCreate(HoldingBase):
 
 class HoldingUpdate(BaseModel):
     """Schema for updating a holding."""
-    quantity: Optional[Decimal] = Field(None, gt=0, decimal_places=8)
-    cost_basis: Optional[Decimal] = Field(None, ge=0, decimal_places=2)
+    quantity: Optional[Decimal] = Field(None, gt=0)
+    cost_basis: Optional[Decimal] = Field(None, ge=0)
     purchase_date: Optional[date] = None
-    manual_price: Optional[Decimal] = Field(None, ge=0, decimal_places=2)
-    annual_yield_pct: Optional[Decimal] = Field(None, ge=0, le=100, decimal_places=2)
+    manual_price: Optional[Decimal] = Field(None, ge=0)
+    annual_yield_pct: Optional[Decimal] = Field(None, ge=0, le=100)
     dividend_frequency: Optional[DividendFrequency] = None
     country_code: Optional[str] = Field(None, min_length=2, max_length=2)
     notes: Optional[str] = Field(None, max_length=1000)
