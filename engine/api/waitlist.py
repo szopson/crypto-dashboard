@@ -147,6 +147,7 @@ async def join_waitlist(signup: WaitlistSignup, request: Request):
         logger.info(f"New waitlist signup: {signup.email}")
 
         # Send welcome email via Resend
+        logger.info(f"Resend check: available={RESEND_AVAILABLE}, api_key_set={bool(settings.resend_api_key)}")
         if RESEND_AVAILABLE and settings.resend_api_key:
             try:
                 resend.api_key = settings.resend_api_key
@@ -184,7 +185,7 @@ async def join_waitlist(signup: WaitlistSignup, request: Request):
                 })
                 logger.info(f"Welcome email sent to {signup.email}")
             except Exception as e:
-                logger.warning(f"Failed to send welcome email: {e}")
+                logger.error(f"Failed to send welcome email: {e}", exc_info=True)
 
         # Send Telegram notification
         telegram = get_telegram_service()
