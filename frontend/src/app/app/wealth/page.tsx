@@ -8,6 +8,7 @@ import { PortfolioOverview } from "@/components/wealth/PortfolioOverview";
 import { HoldingsTable } from "@/components/wealth/HoldingsTable";
 import { AllocationChart } from "@/components/wealth/AllocationChart";
 import { AddHoldingDialog } from "@/components/wealth/AddHoldingDialog";
+import { PortfolioChat } from "@/components/wealth/PortfolioChat";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -202,6 +203,9 @@ export default function WealthDashboard() {
               loading={loading}
               onDelete={deleteHolding}
             />
+
+            {/* AI Portfolio Chat */}
+            <PortfolioChat portfolioId={activePortfolio.id} />
           </>
         )}
 

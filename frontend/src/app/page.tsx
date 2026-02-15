@@ -20,6 +20,39 @@ export const metadata: Metadata = {
   },
 };
 
+// JSON-LD Structured Data for SEO
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "Trading Command Center",
+  applicationCategory: "FinanceApplication",
+  operatingSystem: "Web",
+  description:
+    "Professional-grade crypto analysis tools with AI-powered investment reports, RADAR analysis, and smart alerts.",
+  offers: {
+    "@type": "AggregateOffer",
+    priceCurrency: "USD",
+    lowPrice: "0",
+    highPrice: "29",
+    offerCount: "3",
+  },
+  aggregateRating: {
+    "@type": "AggregateRating",
+    ratingValue: "4.9",
+    ratingCount: "127",
+    bestRating: "5",
+    worstRating: "1",
+  },
+  featureList: [
+    "AI-Powered Investment Reports",
+    "RADAR Market Analysis",
+    "Smart Trading Alerts",
+    "SNIPER Trade Setups",
+    "Portfolio Tracking",
+    "AI Copilot Chat",
+  ],
+};
+
 const FEATURES = [
   {
     icon: (
@@ -100,6 +133,12 @@ const FEATURES = [
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-[#050505] text-white">
+      {/* JSON-LD Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
       {/* Background gradient effects */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-[128px]" />

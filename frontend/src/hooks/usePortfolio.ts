@@ -100,6 +100,7 @@ export function usePortfolio(): UsePortfolioReturn {
       real_estate: "#FF5722",
       cash: "#607D8B",
       commodity: "#FFC107",
+      other: "#E91E63",
     };
 
     return Object.entries(byClass)

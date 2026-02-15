@@ -39,6 +39,7 @@ const ASSET_CLASS_COLORS: Record<AssetClass, string> = {
   real_estate: "bg-red-500/10 text-red-500 border-red-500/20",
   cash: "bg-gray-500/10 text-gray-500 border-gray-500/20",
   commodity: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
+  other: "bg-pink-500/10 text-pink-500 border-pink-500/20",
 };
 
 const ASSET_CLASS_LABELS: Record<AssetClass, string> = {
@@ -49,6 +50,7 @@ const ASSET_CLASS_LABELS: Record<AssetClass, string> = {
   real_estate: "Real Estate",
   cash: "Cash",
   commodity: "Commodity",
+  other: "Other",
 };
 
 function formatCurrency(value: number): string {

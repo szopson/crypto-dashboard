@@ -16,6 +16,7 @@ const ASSET_CLASS_LABELS: Record<AssetClass, string> = {
   real_estate: "Real Estate",
   cash: "Cash",
   commodity: "Commodities",
+  other: "Other",
 };
 
 function formatCurrency(value: number): string {

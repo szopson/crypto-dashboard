@@ -18,6 +18,7 @@ from report.router import router as report_router
 from data.exchange import get_exchange_client
 from services.alerts import get_alert_monitor
 from services.scheduler import get_scheduler_service
+from middleware import RateLimitMiddleware, RateLimitConfig
 
 
 @asynccontextmanager
@@ -94,6 +95,17 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
+
+# Rate limiting middleware (must be before CORS)
+rate_limit_config = RateLimitConfig(
+    requests_per_minute=60,      # General: 60 req/min
+    requests_per_hour=1000,      # General: 1000 req/hour
+    requests_per_day=10000,      # General: 10k req/day
+    expensive_per_minute=10,     # AI/Reports: 10 req/min
+    expensive_per_hour=100,      # AI/Reports: 100 req/hour
+    expensive_per_day=500,       # AI/Reports: 500 req/day
+)
+app.add_middleware(RateLimitMiddleware, config=rate_limit_config)
 
 # CORS middleware
 app.add_middleware(

@@ -18,9 +18,39 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://tradingcommandcenter.com";
+
 export const metadata: Metadata = {
-  title: "Trading Command Center",
-  description: "Real-time crypto trading dashboard with RADAR analysis, bias detection, and trade journaling",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "Trading Command Center | Professional Crypto Analysis",
+    template: "%s | Trading Command Center",
+  },
+  description: "Professional-grade crypto analysis tools with AI-powered investment reports, RADAR analysis, and smart alerts. Your edge in crypto trading.",
+  keywords: [
+    "crypto trading",
+    "bitcoin analysis",
+    "AI investment reports",
+    "trading signals",
+    "smart money concepts",
+    "portfolio tracker",
+    "cryptocurrency",
+    "technical analysis",
+  ],
+  authors: [{ name: "Trading Command Center" }],
+  creator: "Trading Command Center",
+  publisher: "Trading Command Center",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -38,6 +68,37 @@ export const metadata: Metadata = {
     apple: [
       { url: "/icons/logo-transparent.png", type: "image/png" },
     ],
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: siteUrl,
+    siteName: "Trading Command Center",
+    title: "Trading Command Center | Professional Crypto Analysis",
+    description: "Professional-grade crypto analysis tools with AI-powered investment reports and smart alerts.",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Trading Command Center",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Trading Command Center",
+    description: "Professional-grade crypto analysis tools with AI-powered investment reports.",
+    images: ["/og-image.png"],
+    creator: "@tradingcmdctr",
+  },
+  verification: {
+    // Add your verification codes here when ready
+    // google: "your-google-verification-code",
+    // yandex: "your-yandex-verification-code",
+  },
+  alternates: {
+    canonical: siteUrl,
   },
 };
 

@@ -513,6 +513,11 @@ class ReportGeneratorService:
         total_supply = cg.get("total_supply") or circulating or 1
         tvl = dl.get("tvl") or dl.get("chain_tvl") or 0
 
+        # Annual revenue from DefiLlama (for FDV/Revenue ratio)
+        monthly_revenue = dl.get("monthly_revenue") or 0
+        daily_revenue = dl.get("daily_revenue") or 0
+        annual_revenue = (monthly_revenue * 12) if monthly_revenue else (daily_revenue * 365) if daily_revenue else 0
+
         # Dune on-chain data
         holder_count = dune.get("holder_count")
         top_10_percent = dune.get("top_10_percent")
@@ -661,8 +666,8 @@ class ReportGeneratorService:
 
             # Valuation sidebar
             "SUPPLY_PERCENT": str(supply_percent),
-            "FDV_REVENUE": "N/A",
-            "FDV_REV_BAR": "30",
+            "FDV_REVENUE": f"{fdv/annual_revenue:.0f}x" if annual_revenue and fdv else "N/A",
+            "FDV_REV_BAR": str(min(int((fdv / annual_revenue) / 10), 100)) if annual_revenue and fdv else "30",
             "MC_TVL": f"{market_cap/tvl:.1f}x" if tvl and market_cap else "N/A",
             "MC_TVL_BAR": str(min(int((market_cap / tvl) * 10), 100)) if tvl and market_cap else "0",
             "FDV_TVL": f"{fdv/tvl:.1f}x" if tvl and fdv else "N/A",
