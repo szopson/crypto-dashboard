@@ -153,11 +153,21 @@ async def join_waitlist(signup: WaitlistSignup, request: Request):
                 resend.Emails.send({
                     "from": settings.resend_from_email,
                     "to": signup.email,
-                    "subject": "Welcome to Trading Command Center!",
+                    "subject": "Welcome to Follio + Your Free AAVE Report!",
                     "html": f"""
-                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
                         <h1 style="color: #1a1a1a;">You're on the list! 🎉</h1>
-                        <p>Thanks for joining the Trading Command Center waitlist.</p>
+                        <p>Thanks for joining the Follio waitlist.</p>
+
+                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; padding: 24px; margin: 24px 0; color: white;">
+                            <h2 style="margin: 0 0 12px 0; color: white;">🎁 Your Free Report</h2>
+                            <p style="margin: 0 0 16px 0; opacity: 0.9;">As a thank you, here's a professional AI-generated investment report for AAVE.</p>
+                            <a href="https://follio.io/api/waitlist/free-report"
+                               style="display: inline-block; background: white; color: #667eea; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold;">
+                                Download Report (PDF)
+                            </a>
+                        </div>
+
                         <p>We're building professional-grade crypto analysis tools with:</p>
                         <ul>
                             <li>AI-powered investment reports</li>
@@ -167,7 +177,7 @@ async def join_waitlist(signup: WaitlistSignup, request: Request):
                         </ul>
                         <p>We'll notify you as soon as we're ready to onboard new users.</p>
                         <p style="color: #666; margin-top: 30px;">
-                            — The Trading Command Center Team
+                            — The Follio Team
                         </p>
                     </div>
                     """

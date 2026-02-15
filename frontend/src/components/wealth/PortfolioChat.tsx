@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/contexts/AuthContext";
+import { analytics } from "@/components/PostHogProvider";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -88,6 +89,9 @@ export function PortfolioChat({ portfolioId }: PortfolioChatProps) {
     setMessages((prev) => [...prev, { role: "user", content: userMessage }]);
     setLoading(true);
     setStreaming(true);
+
+    // Track AI chat message in PostHog
+    analytics.trackAIChatSent(userMessage.length);
 
     try {
       const response = await fetch("/api/wealth/chat/stream", {

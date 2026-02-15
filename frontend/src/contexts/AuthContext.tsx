@@ -9,6 +9,7 @@ import {
   ReactNode,
 } from "react";
 import { getSupabaseClient, User, Session, AuthChangeEvent } from "@/lib/supabase";
+import { analytics } from "@/components/PostHogProvider";
 
 interface AuthContextType {
   user: User | null;
@@ -60,10 +61,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Listen for auth state changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, newSession: Session | null) => {
+    } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, newSession: Session | null) => {
       setSession(newSession);
       setUser(newSession?.user ?? null);
       setLoading(false);
+
+      // PostHog user identification
+      if (event === "SIGNED_IN" && newSession?.user) {
+        analytics.identify(newSession.user.id, {
+          email: newSession.user.email,
+          created_at: newSession.user.created_at,
+        });
+        analytics.trackUserLogin(newSession.user.id);
+      } else if (event === "SIGNED_OUT") {
+        analytics.reset();
+      }
     });
 
     return () => {
@@ -158,6 +170,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null);
 
     try {
+      // Reset PostHog before signing out
+      analytics.reset();
+
       const { error: signOutError } = await supabase.auth.signOut();
 
       if (signOutError) {

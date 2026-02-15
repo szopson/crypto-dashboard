@@ -22,6 +22,7 @@ declare global {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
+import { analytics } from "@/components/PostHogProvider";
 
 const INTERESTS = [
   { value: "radar", label: "RADAR Analysis" },
@@ -100,6 +101,8 @@ export function WaitlistForm() {
 
       if (data.success) {
         setSuccess(true);
+        // Track waitlist signup in PostHog
+        analytics.trackWaitlistSignup(email, interest || undefined);
         setEmail("");
         setInterest("");
       } else {

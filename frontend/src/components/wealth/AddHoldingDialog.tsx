@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { AssetClass, HoldingCreate } from "@/lib/wealth-types";
+import { analytics } from "@/components/PostHogProvider";
 
 interface AddHoldingDialogProps {
   open: boolean;
@@ -104,6 +105,8 @@ export function AddHoldingDialog({
     setLoading(true);
     try {
       await onSubmit(data);
+      // Track holding added in PostHog
+      analytics.trackHoldingAdded(assetClass, ticker);
       handleClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to add holding");
