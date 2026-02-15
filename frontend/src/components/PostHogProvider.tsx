@@ -2,7 +2,7 @@
 
 import posthog from "posthog-js";
 import { PostHogProvider as PHProvider } from "posthog-js/react";
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
 /**
@@ -36,6 +36,8 @@ const POSTHOG_HOST = process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://eu.posthog
 if (typeof window !== "undefined" && POSTHOG_KEY) {
   posthog.init(POSTHOG_KEY, {
     api_host: POSTHOG_HOST,
+    // Only create person profiles for identified users
+    person_profiles: "identified_only",
     // Capture pageviews automatically
     capture_pageview: false, // We handle this manually for Next.js router
     capture_pageleave: true,
@@ -47,13 +49,6 @@ if (typeof window !== "undefined" && POSTHOG_KEY) {
     persistence: "localStorage+cookie",
     // Secure cookies
     secure_cookie: true,
-    // Bootstrap for faster feature flags
-    bootstrap: {
-      featureFlags: {},
-    },
-    // Privacy settings
-    mask_all_text: false,
-    mask_all_element_attributes: false,
     // Autocapture settings
     autocapture: {
       dom_event_allowlist: ["click", "submit"],
@@ -95,7 +90,9 @@ export function PostHogProvider({ children }: PostHogProviderProps) {
 
   return (
     <PHProvider client={posthog}>
-      <PostHogPageView />
+      <Suspense fallback={null}>
+        <PostHogPageView />
+      </Suspense>
       {children}
     </PHProvider>
   );
