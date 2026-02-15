@@ -6,6 +6,7 @@ import { SymbolProvider } from "@/contexts/SymbolContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 import { ToastProvider } from "@/components/ui/toast";
+import { PostHogProvider } from "@/components/PostHogProvider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -133,21 +134,23 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <AuthProvider>
-            <SymbolProvider>
-              <ToastProvider>
-                {children}
-                <ServiceWorkerRegistration />
-              </ToastProvider>
-            </SymbolProvider>
-          </AuthProvider>
-        </ThemeProvider>
+        <PostHogProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="dark"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <AuthProvider>
+              <SymbolProvider>
+                <ToastProvider>
+                  {children}
+                  <ServiceWorkerRegistration />
+                </ToastProvider>
+              </SymbolProvider>
+            </AuthProvider>
+          </ThemeProvider>
+        </PostHogProvider>
       </body>
     </html>
   );
