@@ -11,6 +11,8 @@ services:
       - ./engine/.env
     environment:
       - DATABASE_URL=${DATABASE_URL}
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - RESEND_FROM_EMAIL=${RESEND_FROM_EMAIL}
     networks:
       - traefik-public
     healthcheck:
