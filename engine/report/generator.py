@@ -12,7 +12,7 @@ import asyncio
 import time
 import httpx
 from datetime import datetime
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from loguru import logger
 
 from config import settings
@@ -38,8 +38,10 @@ from .data_sources.defillama import get_defillama_source
 from .data_sources.github_activity import get_github_source
 from .data_sources.bitcoin_cycle import get_bitcoin_cycle_analyzer
 from .data_sources.geckoterminal import get_geckoterminal_source
-from .data_sources.santiment import get_santiment_source
-from .data_sources.whale_alert import get_whale_alert_source
+# Disabled: paid APIs
+# from .data_sources.santiment import get_santiment_source
+# from .data_sources.whale_alert import get_whale_alert_source
+from .data_sources.ict_analysis import get_ict_analysis_source
 from .ai_synthesis import get_ai_synthesis_service
 from services.dune_service import get_dune_service, COINGECKO_TO_DUNE_CHAIN
 from .cache import get_report_cache
@@ -69,8 +71,10 @@ class ReportGeneratorService:
         self.dune = get_dune_service()
         self.bitcoin_cycle = get_bitcoin_cycle_analyzer()
         self.geckoterminal = get_geckoterminal_source()
-        self.santiment = get_santiment_source()
-        self.whale_alert = get_whale_alert_source()
+        # Disabled: paid APIs
+        # self.santiment = get_santiment_source()
+        # self.whale_alert = get_whale_alert_source()
+        self.ict_analysis = get_ict_analysis_source()
         self.ai_synthesis = get_ai_synthesis_service()
         self.tradingview = get_tradingview_service()
         self.perplexity_key = getattr(settings, 'perplexity_api_key', None)
@@ -340,8 +344,6 @@ class ReportGeneratorService:
             self.defillama.fetch(ticker),
             self.github.fetch(ticker),
             self.bitcoin_cycle.fetch(),  # Fetch BTC cycle data in parallel
-            self.santiment.fetch(ticker),  # Social sentiment
-            self.whale_alert.fetch(ticker),  # Whale tracking
             return_exceptions=True,
         )
 
@@ -350,8 +352,8 @@ class ReportGeneratorService:
             "defillama": basic_results[0] if not isinstance(basic_results[0], Exception) else {},
             "github": basic_results[1] if not isinstance(basic_results[1], Exception) else {},
             "bitcoin_cycle": basic_results[2] if not isinstance(basic_results[2], Exception) else {},
-            "santiment": basic_results[3] if not isinstance(basic_results[3], Exception) else {},
-            "whale_alert": basic_results[4] if not isinstance(basic_results[4], Exception) else {},
+            "santiment": {},  # Disabled: paid API
+            "whale_alert": {},  # Disabled: paid API
             "dune": {},
             "perplexity": {},
             "geckoterminal": {},
@@ -359,7 +361,7 @@ class ReportGeneratorService:
         }
 
         # Log any errors
-        sources = ["defillama", "github", "bitcoin_cycle", "santiment", "whale_alert"]
+        sources = ["defillama", "github", "bitcoin_cycle"]
         for i, result in enumerate(basic_results):
             if isinstance(result, Exception):
                 logger.warning(f"Data source {sources[i]} failed: {result}")
@@ -452,6 +454,15 @@ class ReportGeneratorService:
         else:
             data["competitors"] = {}
 
+        # Phase 6: ICT/SMC Analysis for Smart Money section
+        try:
+            ict_data = await self.ict_analysis.fetch(ticker)
+            data["ict_analysis"] = ict_data
+            logger.debug(f"ICT analysis completed for {ticker}: has_data={ict_data.get('has_ict_data')}")
+        except Exception as e:
+            logger.warning(f"ICT analysis failed for {ticker}: {e}")
+            data["ict_analysis"] = {"has_ict_data": False}
+
         return data
 
     def _get_competitor_tickers(self, ticker: str, category: str) -> list:
@@ -489,6 +500,7 @@ class ReportGeneratorService:
         santiment = data.get("santiment", {})
         whale_alert = data.get("whale_alert", {})
         unlocks = data.get("unlocks", {})
+        ict = data.get("ict_analysis", {})
 
         # Extract values with defaults
         name = cg.get("name", ticker)
@@ -792,6 +804,9 @@ class ReportGeneratorService:
             "WHALE_FLOW_CLASS": whale_alert.get("whale_flow_direction", "neutral"),
             "WHALE_EXCHANGE_INFLOW": self._format_large_number(whale_alert.get("whale_exchange_inflow")),
             "WHALE_EXCHANGE_OUTFLOW": self._format_large_number(whale_alert.get("whale_exchange_outflow")),
+
+            # NEW: ICT/SMC Analysis (Smart Money Concepts)
+            **self._generate_ict_placeholders(ict, current_price),
         }
 
     def _format_large_number(self, value: float, prefix: str = "$") -> str:
@@ -979,6 +994,186 @@ class ReportGeneratorService:
             f'<div class="level-item {css_class}">${level:,.4f}</div>'
             for level in levels[:3]
         )
+
+    def _generate_ict_placeholders(self, ict: Dict[str, Any], current_price: float) -> Dict[str, str]:
+        """Generate template placeholders for ICT/SMC analysis section."""
+        placeholders = {
+            "HAS_ICT_DATA": "true" if ict.get("has_ict_data") else "false",
+
+            # Market Structure
+            "ICT_HTF_BIAS": ict.get("market_structure", {}).get("htf_bias", "N/A"),
+            "ICT_LTF_BIAS": ict.get("market_structure", {}).get("ltf_bias", "N/A"),
+            "ICT_STRUCTURE_ALIGNMENT": "Aligned" if ict.get("market_structure", {}).get("alignment") else "Divergent",
+            "ICT_HTF_BIAS_CLASS": self._get_bias_class(ict.get("market_structure", {}).get("htf_bias")),
+            "ICT_LTF_BIAS_CLASS": self._get_bias_class(ict.get("market_structure", {}).get("ltf_bias")),
+
+            # HTF Structure Details
+            "ICT_HTF_STRUCTURE": ict.get("market_structure", {}).get("htf_structure", {}).get("structure", "N/A"),
+            "ICT_HTF_SWING_HIGH": self._format_price(ict.get("market_structure", {}).get("htf_structure", {}).get("last_swing_high")),
+            "ICT_HTF_SWING_LOW": self._format_price(ict.get("market_structure", {}).get("htf_structure", {}).get("last_swing_low")),
+            "ICT_SS_PRICE": self._format_price(ict.get("market_structure", {}).get("htf_structure", {}).get("ss_price")),
+            "ICT_SS_DISTANCE": f"{ict.get('market_structure', {}).get('htf_structure', {}).get('ss_distance_pct', 0):.1f}%" if ict.get("market_structure", {}).get("htf_structure", {}).get("ss_distance_pct") else "N/A",
+
+            # Liquidity Map
+            "ICT_LIQUIDITY_BIAS": ict.get("liquidity_map", {}).get("liquidity_bias", "NEUTRAL"),
+            "ICT_LIQUIDITY_BIAS_CLASS": self._get_bias_class(ict.get("liquidity_map", {}).get("liquidity_bias")),
+            "ICT_BSL_COUNT": str(len(ict.get("liquidity_map", {}).get("bsl_levels", []))),
+            "ICT_SSL_COUNT": str(len(ict.get("liquidity_map", {}).get("ssl_levels", []))),
+            "ICT_NEAREST_BSL": self._format_price(ict.get("liquidity_map", {}).get("nearest_bsl", {}).get("price") if ict.get("liquidity_map", {}).get("nearest_bsl") else None),
+            "ICT_NEAREST_SSL": self._format_price(ict.get("liquidity_map", {}).get("nearest_ssl", {}).get("price") if ict.get("liquidity_map", {}).get("nearest_ssl") else None),
+            "ICT_NEAREST_BSL_DIST": f"{ict.get('liquidity_map', {}).get('nearest_bsl', {}).get('distance_pct', 0):.1f}%" if ict.get("liquidity_map", {}).get("nearest_bsl") else "N/A",
+            "ICT_NEAREST_SSL_DIST": f"{ict.get('liquidity_map', {}).get('nearest_ssl', {}).get('distance_pct', 0):.1f}%" if ict.get("liquidity_map", {}).get("nearest_ssl") else "N/A",
+
+            # FVG Zones
+            "ICT_FVG_COUNT": str(ict.get("fvg_zones", {}).get("fvg_count", 0)),
+            "ICT_HTF_FVG_COUNT": str(len(ict.get("fvg_zones", {}).get("htf_fvgs", []))),
+            "ICT_LTF_FVG_COUNT": str(len(ict.get("fvg_zones", {}).get("ltf_fvgs", []))),
+            "ICT_NEAREST_BULL_FVG": self._format_fvg_zone(ict.get("fvg_zones", {}).get("nearest_bullish_fvg")),
+            "ICT_NEAREST_BEAR_FVG": self._format_fvg_zone(ict.get("fvg_zones", {}).get("nearest_bearish_fvg")),
+
+            # Open Interest Analysis
+            "HAS_OI_DATA": "true" if ict.get("oi_analysis", {}).get("has_oi_data") else "false",
+            "ICT_OI_CURRENT": self._format_large_number(ict.get("oi_analysis", {}).get("current_oi"), prefix=""),
+            "ICT_OI_CHANGE_24H": f"{ict.get('oi_analysis', {}).get('oi_change_24h', 0):+.1f}%" if ict.get("oi_analysis", {}).get("oi_change_24h") is not None else "N/A",
+            "ICT_OI_CHANGE_7D": f"{ict.get('oi_analysis', {}).get('oi_change_7d', 0):+.1f}%" if ict.get("oi_analysis", {}).get("oi_change_7d") is not None else "N/A",
+            "ICT_FUNDING_RATE": f"{ict.get('oi_analysis', {}).get('funding_rate', 0):.4f}%" if ict.get("oi_analysis", {}).get("funding_rate") is not None else "N/A",
+            "ICT_OI_SIGNAL": ict.get("oi_analysis", {}).get("oi_signal", "NEUTRAL"),
+            "ICT_OI_SIGNAL_CLASS": self._get_oi_signal_class(ict.get("oi_analysis", {}).get("oi_signal", "NEUTRAL")),
+            "ICT_OI_CHANGE_CLASS": "positive" if (ict.get("oi_analysis", {}).get("oi_change_24h") or 0) > 0 else "negative",
+
+            # Signal Summary
+            "ICT_SIGNAL_BIAS": ict.get("signal_summary", {}).get("bias", "NEUTRAL"),
+            "ICT_SIGNAL_BIAS_CLASS": self._get_bias_class(ict.get("signal_summary", {}).get("bias")),
+            "ICT_SIGNAL_CONFIDENCE": f"{ict.get('signal_summary', {}).get('confidence', 0)}%",
+            "ICT_SETUP_TYPE": ict.get("signal_summary", {}).get("setup_type", "N/A") or "N/A",
+            "ICT_ENTRY_ZONE": self._format_fvg_zone(ict.get("signal_summary", {}).get("entry_zone")),
+            "ICT_STOP_LOSS": self._format_price(ict.get("signal_summary", {}).get("stop_loss")),
+            "ICT_KEY_LEVEL": self._format_price(ict.get("signal_summary", {}).get("key_level")),
+            "ICT_NARRATIVE": ict.get("signal_summary", {}).get("narrative", "No ICT analysis available."),
+
+            # BOS/CHoCH Levels HTML
+            "ICT_BOS_LEVELS_HTML": self._generate_bos_choch_html(ict.get("market_structure", {}).get("bos_levels", [])),
+            "ICT_CHOCH_LEVELS_HTML": self._generate_bos_choch_html(ict.get("market_structure", {}).get("choch_levels", [])),
+
+            # Liquidity Levels HTML
+            "ICT_BSL_LEVELS_HTML": self._generate_liquidity_levels_html(ict.get("liquidity_map", {}).get("bsl_levels", [])[:3], "bsl"),
+            "ICT_SSL_LEVELS_HTML": self._generate_liquidity_levels_html(ict.get("liquidity_map", {}).get("ssl_levels", [])[:3], "ssl"),
+
+            # FVG Zones HTML
+            "ICT_FVG_ZONES_HTML": self._generate_fvg_zones_html(ict.get("fvg_zones", {})),
+
+            # Signal Targets HTML
+            "ICT_TARGETS_HTML": self._generate_targets_html(ict.get("signal_summary", {}).get("targets", [])),
+        }
+
+        return placeholders
+
+    def _get_bias_class(self, bias: str) -> str:
+        """Get CSS class for bias."""
+        if bias == "BULLISH":
+            return "bullish"
+        elif bias == "BEARISH":
+            return "bearish"
+        return "neutral"
+
+    def _get_oi_signal_class(self, signal: str) -> str:
+        """Get CSS class for OI signal."""
+        signal_map = {
+            "OVERBOUGHT": "bearish",
+            "OVERSOLD": "bullish",
+            "DELEVERAGING": "neutral",
+            "BUILDING": "neutral",
+            "NEUTRAL": "neutral",
+        }
+        return signal_map.get(signal, "neutral")
+
+    def _format_price(self, price: float) -> str:
+        """Format price for display."""
+        if not price:
+            return "N/A"
+        if price >= 1000:
+            return f"${price:,.2f}"
+        elif price >= 1:
+            return f"${price:.4f}"
+        else:
+            return f"${price:.6f}"
+
+    def _format_fvg_zone(self, fvg: Dict[str, Any]) -> str:
+        """Format FVG zone for display."""
+        if not fvg:
+            return "N/A"
+        low = fvg.get("low", 0)
+        high = fvg.get("high", 0)
+        if low >= 1000:
+            return f"${low:,.2f} - ${high:,.2f}"
+        elif low >= 1:
+            return f"${low:.4f} - ${high:.4f}"
+        else:
+            return f"${low:.6f} - ${high:.6f}"
+
+    def _generate_bos_choch_html(self, levels: List[Dict[str, Any]]) -> str:
+        """Generate HTML for BOS/CHoCH levels."""
+        if not levels:
+            return '<div class="level-item">No recent breaks</div>'
+
+        html_parts = []
+        for level in levels[:3]:
+            direction_class = "positive" if level.get("direction") == "BULLISH" else "negative"
+            html_parts.append(
+                f'<div class="level-item {direction_class}">'
+                f'{level.get("type", "")} @ {self._format_price(level.get("price"))}'
+                f'</div>'
+            )
+        return '\n'.join(html_parts)
+
+    def _generate_liquidity_levels_html(self, levels: List[Dict[str, Any]], level_type: str) -> str:
+        """Generate HTML for liquidity levels."""
+        if not levels:
+            return '<div class="level-item">No levels detected</div>'
+
+        css_class = "resistance" if level_type == "bsl" else "support"
+        html_parts = []
+        for level in levels[:3]:
+            strength = level.get("strength", "MEDIUM")
+            strength_indicator = "●●●" if strength == "HIGH" else ("●●" if strength == "MEDIUM" else "●")
+            html_parts.append(
+                f'<div class="level-item {css_class}">'
+                f'{self._format_price(level.get("price"))} '
+                f'<span style="opacity:0.5">({level.get("distance_pct", 0):.1f}%) {strength_indicator}</span>'
+                f'</div>'
+            )
+        return '\n'.join(html_parts)
+
+    def _generate_fvg_zones_html(self, fvg_data: Dict[str, Any]) -> str:
+        """Generate HTML for FVG zones."""
+        all_fvgs = fvg_data.get("htf_fvgs", [])[:2] + fvg_data.get("ltf_fvgs", [])[:2]
+
+        if not all_fvgs:
+            return '<div class="level-item">No active FVGs</div>'
+
+        html_parts = []
+        for fvg in all_fvgs:
+            direction = fvg.get("direction", "")
+            css_class = "support" if direction == "BULLISH" else "resistance"
+            mitigated = " (mitigated)" if fvg.get("mitigated") else ""
+            html_parts.append(
+                f'<div class="level-item {css_class}">'
+                f'{direction[:4]} FVG: {self._format_fvg_zone(fvg)}{mitigated}'
+                f'</div>'
+            )
+        return '\n'.join(html_parts)
+
+    def _generate_targets_html(self, targets: List[float]) -> str:
+        """Generate HTML for signal targets."""
+        if not targets:
+            return '<div class="level-item">No targets available</div>'
+
+        html_parts = []
+        for i, target in enumerate(targets[:3], 1):
+            html_parts.append(
+                f'<div class="level-item support">TP{i}: {self._format_price(target)}</div>'
+            )
+        return '\n'.join(html_parts)
 
     def _generate_competitor_table(
         self,

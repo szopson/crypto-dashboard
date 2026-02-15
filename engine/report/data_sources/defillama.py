@@ -125,9 +125,9 @@ class DefiLlamaDataSource:
             slug = self.TICKER_MAP.get(ticker.upper(), ticker_lower)
 
             for chain in chains:
-                chain_name = chain.get("name", "").lower()
-                gecko_id = chain.get("gecko_id", "").lower()
-                token_symbol = chain.get("tokenSymbol", "").lower()
+                chain_name = (chain.get("name") or "").lower()
+                gecko_id = (chain.get("gecko_id") or "").lower()
+                token_symbol = (chain.get("tokenSymbol") or "").lower()
 
                 if (ticker_lower == chain_name or
                     ticker_lower == gecko_id or
@@ -249,7 +249,7 @@ class DefiLlamaDataSource:
 
                 result = {}
                 for chain in chains:
-                    chain_name = chain.get("name", "").lower()
+                    chain_name = (chain.get("name") or "").lower()
                     tvl = chain.get("tvl", 0)
                     if chain_name and tvl:
                         result[chain_name] = tvl

@@ -10,7 +10,8 @@ export type AssetClass =
   | "bond"
   | "real_estate"
   | "cash"
-  | "commodity";
+  | "commodity"
+  | "other";  // Custom assets: jewelry, watches, art, collectibles, etc.
 
 export type DividendFrequency =
   | "monthly"
@@ -209,4 +210,5 @@ export const ASSET_CLASS_CONFIG: Record<
   real_estate: { label: "Real Estate", color: "#FF5722", icon: "home" },
   cash: { label: "Cash", color: "#607D8B", icon: "wallet" },
   commodity: { label: "Commodities", color: "#FFC107", icon: "gem" },
+  other: { label: "Other", color: "#E91E63", icon: "package" },  // Custom assets
 };

@@ -958,6 +958,7 @@ class AssetClass(str, Enum):
     REAL_ESTATE = "real_estate"
     CASH = "cash"
     COMMODITY = "commodity"
+    OTHER = "other"  # For custom assets: jewelry, watches, art, collectibles, etc.
 
 
 class DividendFrequency(str, Enum):

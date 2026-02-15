@@ -35,6 +35,7 @@ const ASSET_CLASSES: { value: AssetClass; label: string }[] = [
   { value: "real_estate", label: "Real Estate" },
   { value: "cash", label: "Cash" },
   { value: "commodity", label: "Commodity" },
+  { value: "other", label: "Other (Jewelry, Art, Watches, etc.)" },
 ];
 
 export function AddHoldingDialog({
@@ -111,7 +112,7 @@ export function AddHoldingDialog({
     }
   };
 
-  const needsManualPrice = ["real_estate", "bond", "cash"].includes(assetClass);
+  const needsManualPrice = ["real_estate", "bond", "cash", "other"].includes(assetClass);
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -152,6 +153,8 @@ export function AddHoldingDialog({
                     ? "BTC"
                     : assetClass === "real_estate"
                     ? "APT-1"
+                    : assetClass === "other"
+                    ? "ROLEX-1"
                     : "AAPL"
                 }
                 value={ticker}
@@ -167,6 +170,8 @@ export function AddHoldingDialog({
                     ? "Bitcoin"
                     : assetClass === "real_estate"
                     ? "Warsaw Apartment"
+                    : assetClass === "other"
+                    ? "Rolex Submariner"
                     : "Apple Inc."
                 }
                 value={name}

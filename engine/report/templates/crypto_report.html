@@ -397,6 +397,55 @@
       page-break-after: avoid;
       break-after: avoid;
   }
+
+  /* Smart Money / ICT Analysis Section */
+  .smc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .smc-section { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 24px; }
+  .smc-section h3 { font-size: 16px; color: var(--accent-cyan); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .smc-section h3::before { content: ""; width: 4px; height: 16px; background: var(--accent-cyan); border-radius: 2px; }
+  .smc-metrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .smc-metric { background: var(--bg-secondary); border-radius: 6px; padding: 12px 16px; }
+  .smc-metric .label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .smc-metric .value { font-size: 18px; font-weight: 600; color: var(--text-white); margin-top: 4px; }
+  .smc-metric .sublabel { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+  .smc-bias-box { display: flex; align-items: center; justify-content: center; gap: 16px; background: var(--bg-secondary); border-radius: 8px; padding: 20px; margin-bottom: 16px; }
+  .smc-bias-indicator { text-align: center; }
+  .smc-bias-indicator .bias-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; }
+  .smc-bias-indicator .bias-value { font-size: 24px; font-weight: 700; }
+  .smc-bias-indicator .bias-value.bullish { color: var(--accent-green); }
+  .smc-bias-indicator .bias-value.bearish { color: var(--accent-red); }
+  .smc-bias-indicator .bias-value.neutral { color: var(--accent-yellow); }
+  .smc-alignment { padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; }
+  .smc-alignment.aligned { background: rgba(63,185,80,0.15); color: var(--accent-green); }
+  .smc-alignment.divergent { background: rgba(210,153,34,0.15); color: var(--accent-yellow); }
+  .smc-level-list { margin-top: 12px; }
+  .smc-level-item { display: flex; justify-content: space-between; padding: 8px 12px; background: var(--bg-secondary); border-radius: 4px; margin-bottom: 6px; font-size: 13px; }
+  .smc-level-item .level-type { color: var(--text-muted); }
+  .smc-level-item .level-price { font-weight: 600; color: var(--text-white); font-family: monospace; }
+  .smc-level-item.bsl .level-price { color: var(--accent-red); }
+  .smc-level-item.ssl .level-price { color: var(--accent-green); }
+  .smc-signal-box { background: var(--bg-highlight); border: 1px solid var(--border-accent); border-radius: 8px; padding: 20px; margin-top: 20px; }
+  .smc-signal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .smc-signal-bias { font-size: 20px; font-weight: 700; }
+  .smc-signal-bias.bullish { color: var(--accent-green); }
+  .smc-signal-bias.bearish { color: var(--accent-red); }
+  .smc-signal-bias.neutral { color: var(--accent-yellow); }
+  .smc-signal-confidence { font-size: 14px; color: var(--text-muted); }
+  .smc-signal-confidence strong { color: var(--text-white); }
+  .smc-narrative { font-size: 14px; color: var(--text-secondary); line-height: 1.7; }
+  .smc-levels-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 16px; }
+  .smc-level-card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 12px; text-align: center; }
+  .smc-level-card .level-header { font-size: 11px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; }
+  .smc-level-card .level-value { font-size: 14px; font-weight: 600; color: var(--text-white); font-family: monospace; }
+  .smc-level-card.entry { border-left: 3px solid var(--accent-blue); }
+  .smc-level-card.stop { border-left: 3px solid var(--accent-red); }
+  .smc-level-card.target { border-left: 3px solid var(--accent-green); }
+  .oi-indicator { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 6px; margin-top: 12px; font-size: 13px; }
+  .oi-indicator.overbought { background: rgba(248,81,73,0.1); border: 1px solid rgba(248,81,73,0.3); color: var(--accent-red); }
+  .oi-indicator.oversold { background: rgba(63,185,80,0.1); border: 1px solid rgba(63,185,80,0.3); color: var(--accent-green); }
+  .oi-indicator.neutral { background: rgba(210,153,34,0.1); border: 1px solid rgba(210,153,34,0.3); color: var(--accent-yellow); }
+  .oi-indicator.building { background: rgba(88,166,255,0.1); border: 1px solid rgba(88,166,255,0.3); color: var(--accent-blue); }
+  .oi-indicator.deleveraging { background: rgba(167,139,250,0.1); border: 1px solid rgba(167,139,250,0.3); color: var(--accent-purple); }
 </style>
 </head>
 <body>
@@ -535,7 +584,101 @@
 </div>
 </div>
 <div class="page-footer"><span>{{PROJECT_NAME}} | {{TICKER}}</span><span>Page 11</span></div></div>
-<div class="page"><div class="page-watermark">TRADING COMMAND CENTER</div><h2>11. SWOT</h2><div class="swot-grid"><div class="swot-card strengths"><h3>Strengths</h3><ul>{{SWOT_STRENGTHS}}</ul></div><div class="swot-card opportunities"><h3>Opportunities</h3><ul>{{SWOT_OPPORTUNITIES}}</ul></div><div class="swot-card weaknesses"><h3>Weaknesses</h3><ul>{{SWOT_WEAKNESSES}}</ul></div><div class="swot-card threats"><h3>Threats</h3><ul>{{SWOT_THREATS}}</ul></div></div><div class="page-footer"><span>{{PROJECT_NAME}} | {{TICKER}}</span><span>Page 10</span></div></div>
+<div class="page"><div class="page-watermark">TRADING COMMAND CENTER</div><h2>11. Smart Money Analysis (ICT/SMC)</h2>
+<div class="smc-grid">
+<div class="smc-section">
+<h3>Market Structure</h3>
+<div class="smc-bias-box">
+<div class="smc-bias-indicator">
+<div class="bias-label">HTF Bias (4H)</div>
+<div class="bias-value {{ICT_HTF_BIAS_CLASS}}">{{ICT_HTF_BIAS}}</div>
+</div>
+<div class="smc-bias-indicator">
+<div class="bias-label">LTF Bias (1H)</div>
+<div class="bias-value {{ICT_LTF_BIAS_CLASS}}">{{ICT_LTF_BIAS}}</div>
+</div>
+<div class="smc-alignment {{ICT_STRUCTURE_ALIGNMENT}}">{{ICT_STRUCTURE_ALIGNMENT}}</div>
+</div>
+<div class="smc-metrics">
+<div class="smc-metric"><div class="label">HTF Structure</div><div class="value">{{ICT_HTF_STRUCTURE}}</div></div>
+<div class="smc-metric"><div class="label">SS Distance</div><div class="value">{{ICT_SS_DISTANCE}}</div></div>
+<div class="smc-metric"><div class="label">Last Swing High</div><div class="value" style="font-family:monospace;">{{ICT_HTF_SWING_HIGH}}</div></div>
+<div class="smc-metric"><div class="label">Last Swing Low</div><div class="value" style="font-family:monospace;">{{ICT_HTF_SWING_LOW}}</div></div>
+</div>
+<div class="smc-level-list">
+<div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">Recent BOS/CHoCH Levels</div>
+{{ICT_BOS_LEVELS_HTML}}
+</div>
+</div>
+<div class="smc-section">
+<h3>Liquidity Map</h3>
+<div class="smc-bias-box" style="justify-content:flex-start;gap:24px;">
+<div class="smc-bias-indicator">
+<div class="bias-label">Liquidity Bias</div>
+<div class="bias-value {{ICT_LIQUIDITY_BIAS_CLASS}}">{{ICT_LIQUIDITY_BIAS}}</div>
+</div>
+<div style="text-align:left;">
+<div style="font-size:12px;color:var(--text-muted);">BSL Levels: {{ICT_BSL_COUNT}} | SSL Levels: {{ICT_SSL_COUNT}}</div>
+</div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+<div>
+<div style="font-size:12px;color:var(--accent-red);margin-bottom:8px;font-weight:600;">Buy Side Liquidity (Above)</div>
+{{ICT_BSL_LEVELS_HTML}}
+</div>
+<div>
+<div style="font-size:12px;color:var(--accent-green);margin-bottom:8px;font-weight:600;">Sell Side Liquidity (Below)</div>
+{{ICT_SSL_LEVELS_HTML}}
+</div>
+</div>
+<div style="margin-top:16px;">
+<div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">Fair Value Gaps ({{ICT_FVG_COUNT}} active)</div>
+{{ICT_FVG_ZONES_HTML}}
+</div>
+</div>
+<div class="smc-section">
+<h3>Open Interest Analysis</h3>
+<div class="smc-metrics">
+<div class="smc-metric"><div class="label">Current OI</div><div class="value">{{ICT_OI_CURRENT}}</div></div>
+<div class="smc-metric"><div class="label">OI Change (24h)</div><div class="value {{ICT_OI_CHANGE_CLASS}}">{{ICT_OI_CHANGE_24H}}</div></div>
+<div class="smc-metric"><div class="label">OI Change (7d)</div><div class="value">{{ICT_OI_CHANGE_7D}}</div></div>
+<div class="smc-metric"><div class="label">Funding Rate</div><div class="value">{{ICT_FUNDING_RATE}}</div></div>
+</div>
+<div class="oi-indicator {{ICT_OI_SIGNAL_CLASS}}">
+<span style="font-weight:600;">OI Signal:</span> {{ICT_OI_SIGNAL}}
+</div>
+</div>
+<div class="smc-section">
+<h3>Signal Summary</h3>
+<div class="smc-signal-box">
+<div class="smc-signal-header">
+<div class="smc-signal-bias {{ICT_SIGNAL_BIAS_CLASS}}">{{ICT_SIGNAL_BIAS}}</div>
+<div class="smc-signal-confidence">Confidence: <strong>{{ICT_SIGNAL_CONFIDENCE}}</strong></div>
+</div>
+<div class="smc-narrative">{{ICT_NARRATIVE}}</div>
+<div class="smc-levels-grid">
+<div class="smc-level-card entry">
+<div class="level-header">Entry Zone</div>
+<div class="level-value">{{ICT_ENTRY_ZONE}}</div>
+</div>
+<div class="smc-level-card stop">
+<div class="level-header">Stop Loss</div>
+<div class="level-value">{{ICT_STOP_LOSS}}</div>
+</div>
+<div class="smc-level-card target">
+<div class="level-header">Key Level</div>
+<div class="level-value">{{ICT_KEY_LEVEL}}</div>
+</div>
+</div>
+<div style="margin-top:12px;">
+<div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">Targets</div>
+{{ICT_TARGETS_HTML}}
+</div>
+</div>
+</div>
+</div>
+<div class="page-footer"><span>{{PROJECT_NAME}} | {{TICKER}}</span><span>Page 12</span></div></div>
+<div class="page"><div class="page-watermark">TRADING COMMAND CENTER</div><h2>12. SWOT</h2><div class="swot-grid"><div class="swot-card strengths"><h3>Strengths</h3><ul>{{SWOT_STRENGTHS}}</ul></div><div class="swot-card opportunities"><h3>Opportunities</h3><ul>{{SWOT_OPPORTUNITIES}}</ul></div><div class="swot-card weaknesses"><h3>Weaknesses</h3><ul>{{SWOT_WEAKNESSES}}</ul></div><div class="swot-card threats"><h3>Threats</h3><ul>{{SWOT_THREATS}}</ul></div></div><div class="page-footer"><span>{{PROJECT_NAME}} | {{TICKER}}</span><span>Page 10</span></div></div>
 <div class="page"><div class="page-watermark">TRADING COMMAND CENTER</div><h2>10. Risk Assessment</h2><div class="risk-layout"><div><div class="risk-card"><h4>⚠️ Key Risks</h4><ul>{{RISK_ITEMS}}</ul></div><div class="risk-analysis">{{RISK_ANALYSIS}}</div></div><div class="risk-meter"><div class="risk-meter-item"><div class="risk-meter-label">Overall Risk</div><div class="risk-meter-value {{OVERALL_RISK}}">{{OVERALL_RISK}}</div></div><div class="risk-meter-item"><div class="risk-meter-label">Regulatory Risk</div><div class="risk-meter-value {{REGULATORY_RISK}}">{{REGULATORY_RISK}}</div></div><div class="risk-meter-item"><div class="risk-meter-label">Technical Risk</div><div class="risk-meter-value {{TECHNICAL_RISK}}">{{TECHNICAL_RISK}}</div></div><div class="risk-meter-item"><div class="risk-meter-label">Market Risk</div><div class="risk-meter-value {{MARKET_RISK}}">{{MARKET_RISK}}</div></div></div></div><div class="page-footer"><span>{{PROJECT_NAME}} | {{TICKER}}</span><span>Page 11</span></div></div>
 <div class="page"><div class="page-watermark">TRADING COMMAND CENTER</div><h2>11. Catalysts & Event Risks</h2><div class="catalyst-timeline"><div class="catalyst-line"></div>{{CATALYST_ITEMS}}</div><div class="catalyst-commentary">{{CATALYST_COMMENTARY}}</div><div class="page-footer"><span>{{PROJECT_NAME}} | {{TICKER}}</span><span>Page 12</span></div></div>
 <div class="page"><div class="page-watermark">TRADING COMMAND CENTER</div><h2>12. Investment Signals</h2>

@@ -35,7 +35,7 @@ from schemas import (
     # Enums
     AssetClass,
 )
-from services.wealth import get_supabase_client, get_price_service
+from services.wealth import get_supabase_client, get_price_service, get_portfolio_chat_service
 
 router = APIRouter(tags=["Wealth Dashboard"])
 
@@ -444,7 +444,7 @@ async def get_price(
 
         if not price_data:
             # For manual assets, check if there's a manual price in holdings
-            if asset_class in (AssetClass.REAL_ESTATE, AssetClass.BOND):
+            if asset_class in (AssetClass.REAL_ESTATE, AssetClass.BOND, AssetClass.OTHER):
                 raise HTTPException(
                     status_code=404,
                     detail=f"No price available for {asset_class.value}:{ticker}. "
@@ -611,3 +611,312 @@ async def generate_ai_insights(
         opportunities=[],
         generated_at=datetime.utcnow(),
     )
+
+
+# =============================================================================
+# PORTFOLIO CHAT ENDPOINTS
+# =============================================================================
+
+
+from pydantic import BaseModel
+from fastapi.responses import StreamingResponse
+import json as json_lib
+
+
+class ChatMessage(BaseModel):
+    """Single chat message."""
+    role: str  # "user" or "assistant"
+    content: str
+
+
+class ChatRequest(BaseModel):
+    """Request for portfolio chat."""
+    message: str
+    portfolio_id: Optional[str] = None
+    conversation_history: Optional[list[ChatMessage]] = None
+    include_market_context: bool = True
+
+
+class ChatResponse(BaseModel):
+    """Response from portfolio chat."""
+    response: str
+    portfolio_id: Optional[str] = None
+
+
+class QuickAnalysisResponse(BaseModel):
+    """Quick portfolio analysis response."""
+    available: bool
+    overall_assessment: Optional[str] = None
+    risk_level: Optional[str] = None
+    risk_factors: Optional[list[str]] = None
+    strengths: Optional[list[str]] = None
+    concerns: Optional[list[str]] = None
+    suggestions: Optional[list[str]] = None
+    diversification_score: Optional[int] = None
+    message: Optional[str] = None
+
+
+async def _get_portfolio_data_for_chat(
+    user_id: str,
+    portfolio_id: Optional[str] = None,
+) -> dict:
+    """Get portfolio data formatted for chat service."""
+    client = get_supabase_client()
+    price_service = get_price_service()
+
+    # Get portfolios
+    if portfolio_id:
+        portfolio = await client.get_portfolio(portfolio_id=portfolio_id, user_id=user_id)
+        if not portfolio:
+            return {"holdings": [], "summary": {}}
+        portfolios = [portfolio]
+    else:
+        portfolios = await client.get_portfolios(user_id=user_id)
+
+    # Get all holdings
+    all_holdings = []
+    for p in portfolios:
+        holdings = await client.get_holdings(
+            user_id=user_id,
+            portfolio_id=p["id"],
+        )
+        all_holdings.extend(holdings)
+
+    if not all_holdings:
+        return {"holdings": [], "summary": {}}
+
+    # Fetch prices
+    assets_to_fetch = [
+        {"asset_class": h["asset_class"], "ticker": h["ticker"]}
+        for h in all_holdings
+    ]
+    prices_dict, _ = await price_service.get_batch_prices(
+        assets=assets_to_fetch,
+        supabase_client=client,
+    )
+
+    # Enrich holdings with prices
+    enriched_holdings = []
+    total_value = 0.0
+    total_cost_basis = 0.0
+    total_prev_value = 0.0
+
+    for h in all_holdings:
+        key = f"{h['asset_class']}:{h['ticker']}"
+        price_data = prices_dict.get(key)
+
+        if price_data:
+            current_price = price_data.get("price_usd", 0)
+            change_24h_pct = price_data.get("change_24h_pct", 0) or 0
+        else:
+            current_price = float(h.get("manual_price") or 0)
+            change_24h_pct = 0
+
+        quantity = float(h.get("quantity", 0))
+        current_value = current_price * quantity
+        cost_basis = float(h.get("cost_basis") or 0)
+        total_cost = cost_basis * quantity
+
+        gain_loss = current_value - total_cost if total_cost > 0 else 0
+        gain_loss_pct = (gain_loss / total_cost * 100) if total_cost > 0 else 0
+
+        total_value += current_value
+        if total_cost > 0:
+            total_cost_basis += total_cost
+        if change_24h_pct != 0:
+            prev_price = current_price / (1 + change_24h_pct / 100)
+            total_prev_value += prev_price * quantity
+        else:
+            total_prev_value += current_value
+
+        enriched_holdings.append({
+            "asset_class": h["asset_class"],
+            "ticker": h["ticker"],
+            "name": h.get("name", h["ticker"]),
+            "quantity": quantity,
+            "current_price": current_price,
+            "current_value": current_value,
+            "cost_basis": cost_basis,
+            "total_cost": total_cost,
+            "gain_loss": gain_loss,
+            "gain_loss_pct": gain_loss_pct,
+            "change_24h_pct": change_24h_pct,
+            "annual_yield_pct": h.get("annual_yield_pct"),
+            "notes": h.get("notes"),
+            "tags": h.get("tags"),
+        })
+
+    # Calculate summary
+    total_gain_loss = total_value - total_cost_basis
+    total_gain_loss_pct = (total_gain_loss / total_cost_basis * 100) if total_cost_basis > 0 else 0
+    change_24h_usd = total_value - total_prev_value
+    change_24h_pct = (change_24h_usd / total_prev_value * 100) if total_prev_value > 0 else 0
+
+    return {
+        "holdings": enriched_holdings,
+        "summary": {
+            "total_value_usd": total_value,
+            "total_cost_basis_usd": total_cost_basis,
+            "total_gain_loss_usd": total_gain_loss,
+            "total_gain_loss_pct": total_gain_loss_pct,
+            "change_24h_usd": change_24h_usd,
+            "change_24h_pct": change_24h_pct,
+            "holdings_count": len(enriched_holdings),
+        }
+    }
+
+
+@router.post("/chat", response_model=ChatResponse)
+async def portfolio_chat(
+    request: ChatRequest,
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    """
+    Chat with AI about your portfolio.
+
+    Ask questions about:
+    - Portfolio construction and allocation
+    - Risk assessment
+    - Future outlook and suggestions
+    - Specific holdings analysis
+
+    Uses free Groq API (Llama 3.3 70B) for analysis.
+    """
+    try:
+        chat_service = get_portfolio_chat_service()
+
+        if not chat_service.is_available():
+            return ChatResponse(
+                response="Portfolio chat is not available. Please configure GROQ_API_KEY in environment variables.",
+                portfolio_id=request.portfolio_id,
+            )
+
+        # Get portfolio data
+        portfolio_data = await _get_portfolio_data_for_chat(
+            user_id=user.id,
+            portfolio_id=request.portfolio_id,
+        )
+
+        if not portfolio_data.get("holdings"):
+            return ChatResponse(
+                response="Your portfolio is empty. Add some holdings first to get AI-powered analysis.",
+                portfolio_id=request.portfolio_id,
+            )
+
+        # Convert conversation history
+        history = None
+        if request.conversation_history:
+            history = [{"role": m.role, "content": m.content} for m in request.conversation_history]
+
+        # Get response
+        response = await chat_service.chat(
+            message=request.message,
+            portfolio_data=portfolio_data,
+            conversation_history=history,
+            include_market_context=request.include_market_context,
+        )
+
+        return ChatResponse(
+            response=response,
+            portfolio_id=request.portfolio_id,
+        )
+
+    except Exception as e:
+        logger.error(f"Portfolio chat error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/chat/stream")
+async def portfolio_chat_stream(
+    request: ChatRequest,
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    """
+    Stream chat response for real-time display.
+
+    Same as /chat but streams the response for better UX.
+    """
+    try:
+        chat_service = get_portfolio_chat_service()
+
+        if not chat_service.is_available():
+            async def error_stream():
+                yield "data: " + json_lib.dumps({"error": "Portfolio chat not configured"}) + "\n\n"
+            return StreamingResponse(error_stream(), media_type="text/event-stream")
+
+        # Get portfolio data
+        portfolio_data = await _get_portfolio_data_for_chat(
+            user_id=user.id,
+            portfolio_id=request.portfolio_id,
+        )
+
+        if not portfolio_data.get("holdings"):
+            async def empty_stream():
+                yield "data: " + json_lib.dumps({"content": "Your portfolio is empty. Add some holdings first."}) + "\n\n"
+            return StreamingResponse(empty_stream(), media_type="text/event-stream")
+
+        # Convert conversation history
+        history = None
+        if request.conversation_history:
+            history = [{"role": m.role, "content": m.content} for m in request.conversation_history]
+
+        async def generate():
+            async for chunk in chat_service.chat_stream(
+                message=request.message,
+                portfolio_data=portfolio_data,
+                conversation_history=history,
+                include_market_context=request.include_market_context,
+            ):
+                yield "data: " + json_lib.dumps({"content": chunk}) + "\n\n"
+            yield "data: [DONE]\n\n"
+
+        return StreamingResponse(generate(), media_type="text/event-stream")
+
+    except Exception as e:
+        logger.error(f"Portfolio chat stream error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/chat/quick-analysis", response_model=QuickAnalysisResponse)
+async def get_quick_analysis(
+    portfolio_id: Optional[str] = Query(None, description="Portfolio ID (all if not specified)"),
+    user: AuthenticatedUser = Depends(get_current_user),
+):
+    """
+    Get a quick AI-powered portfolio analysis.
+
+    Returns structured analysis with:
+    - Overall assessment
+    - Risk level
+    - Strengths and concerns
+    - Actionable suggestions
+    """
+    try:
+        chat_service = get_portfolio_chat_service()
+
+        if not chat_service.is_available():
+            return QuickAnalysisResponse(
+                available=False,
+                message="Portfolio analysis not configured. Please set GROQ_API_KEY.",
+            )
+
+        # Get portfolio data
+        portfolio_data = await _get_portfolio_data_for_chat(
+            user_id=user.id,
+            portfolio_id=portfolio_id,
+        )
+
+        if not portfolio_data.get("holdings"):
+            return QuickAnalysisResponse(
+                available=False,
+                message="Portfolio is empty. Add holdings to get analysis.",
+            )
+
+        # Get quick analysis
+        analysis = await chat_service.get_quick_analysis(portfolio_data)
+
+        return QuickAnalysisResponse(**analysis)
+
+    except Exception as e:
+        logger.error(f"Quick analysis error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

@@ -307,12 +307,12 @@ class ManualPriceProvider(PriceProvider):
     """
     Provider for assets that require manual price input.
 
-    Used for: real_estate, bond
+    Used for: real_estate, bond, other (custom assets like jewelry, watches, art)
     Returns None - prices must be set manually by user.
     """
 
     def supports(self, asset_class: str) -> bool:
-        return asset_class in ("real_estate", "bond")
+        return asset_class in ("real_estate", "bond", "other")
 
     async def get_price(self, ticker: str) -> Optional[dict]:
         """Manual assets don't have automatic prices."""
@@ -356,6 +356,7 @@ class PriceService:
         "bond": 3600,         # 1 hour (manual)
         "real_estate": 86400, # 24 hours (manual)
         "cash": 86400,        # 24 hours (fixed)
+        "other": 86400,       # 24 hours (manual - custom assets)
     }
 
     def __init__(self):

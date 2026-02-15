@@ -73,6 +73,9 @@ class Settings(BaseSettings):
     # Perplexity (for web research)
     perplexity_api_key: str = ""
 
+    # Groq (free LLM for portfolio chat - Llama 3.3 70B)
+    groq_api_key: str = ""
+
     # GitHub API (optional token for higher rate limits)
     github_token: str = ""
 
