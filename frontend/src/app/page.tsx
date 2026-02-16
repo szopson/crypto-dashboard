@@ -44,12 +44,10 @@ const jsonLd = {
     worstRating: "1",
   },
   featureList: [
+    "AI Trading Signals",
     "AI-Powered Investment Reports",
-    "RADAR Market Analysis",
     "Smart Trading Alerts",
-    "SNIPER Trade Setups",
-    "Portfolio Tracking",
-    "AI Copilot Chat",
+    "Portfolio Tracker with AI Advisor",
   ],
 };
 
@@ -62,9 +60,11 @@ const FEATURES = [
         <path d="M12 2a10 10 0 0 1 0 20" strokeDasharray="4 4" />
       </svg>
     ),
-    title: "RADAR Analysis",
+    title: "AI Trading Signals",
     description:
-      "Smart-money concepts powered by AI. Aggregated knowledge from top traders, refined with machine learning.",
+      "Smart-money concepts powered by AI. Aggregated knowledge from top traders with precise entry zones, stop losses, and take profits.",
+    color: "emerald",
+    size: "large", // 2 columns on desktop
   },
   {
     icon: (
@@ -79,6 +79,8 @@ const FEATURES = [
     title: "AI Investment Reports",
     description:
       "Professional PDF reports with AI-powered analysis, SWOT, and investment ratings.",
+    color: "cyan",
+    size: "normal",
   },
   {
     icon: (
@@ -90,45 +92,52 @@ const FEATURES = [
     title: "Smart Alerts",
     description:
       "Automated Telegram notifications for regime changes, price levels, and trade setups.",
+    color: "amber",
+    size: "normal",
   },
   {
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="3" />
-        <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+        <path d="M12 2L2 7l10 5 10-5-10-5z" />
+        <path d="M2 17l10 5 10-5" />
+        <path d="M2 12l10 5 10-5" />
       </svg>
     ),
-    title: "SNIPER Setups",
+    title: "Portfolio Tracker",
     description:
-      "High-confluence trade setups with precise entry zones, stop losses, and take profits.",
-  },
-  {
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-        <line x1="12" y1="6" x2="12" y2="12" />
-        <line x1="12" y1="16" x2="12" y2="16" />
-      </svg>
-    ),
-    title: "Trade Journal",
-    description:
-      "Track your trades with automatic context capture, P&L analytics, and performance insights.",
-  },
-  {
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-        <path d="M8 10h.01" />
-        <path d="M12 10h.01" />
-        <path d="M16 10h.01" />
-      </svg>
-    ),
-    title: "AI Copilot",
-    description:
-      "Chat with Claude about your trades. Get instant analysis and market insights.",
+      "Track all your assets in one place. Built-in AI Advisor analyzes sectors, geography, and gives personalized recommendations.",
+    color: "violet",
+    size: "large", // 2 columns on desktop
   },
 ];
+
+// Color mappings for Bento cards
+const colorStyles: Record<string, { bg: string; border: string; text: string; glow: string }> = {
+  emerald: {
+    bg: "bg-emerald-500/10",
+    border: "border-emerald-500/20 hover:border-emerald-500/40",
+    text: "text-emerald-400",
+    glow: "bg-emerald-500/20",
+  },
+  cyan: {
+    bg: "bg-cyan-500/10",
+    border: "border-cyan-500/20 hover:border-cyan-500/40",
+    text: "text-cyan-400",
+    glow: "bg-cyan-500/20",
+  },
+  amber: {
+    bg: "bg-amber-500/10",
+    border: "border-amber-500/20 hover:border-amber-500/40",
+    text: "text-amber-400",
+    glow: "bg-amber-500/20",
+  },
+  violet: {
+    bg: "bg-violet-500/10",
+    border: "border-violet-500/20 hover:border-violet-500/40",
+    text: "text-violet-400",
+    glow: "bg-violet-500/20",
+  },
+};
 
 export default function LandingPage() {
   return (
@@ -263,7 +272,7 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* Wealth Dashboard - Asset Classes */}
+            {/* Portfolio Tracker - Asset Classes + AI Advisor */}
             <div className="group relative bg-gradient-to-br from-white/[0.05] to-white/[0.02] border border-white/[0.08] rounded-2xl p-6 overflow-hidden hover:border-amber-500/30 transition-all duration-300">
               <div className="flex items-start gap-4 mb-6">
                 <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center flex-shrink-0">
@@ -274,59 +283,56 @@ export default function LandingPage() {
                   </svg>
                 </div>
                 <div>
-                  <h4 className="text-lg font-semibold text-white mb-1">Wealth Dashboard</h4>
-                  <p className="text-sm text-zinc-400">All your assets in one place</p>
+                  <h4 className="text-lg font-semibold text-white mb-1">Portfolio Tracker</h4>
+                  <p className="text-sm text-zinc-400">All assets + AI Advisor</p>
                 </div>
               </div>
 
               <div className="space-y-4">
-                <p className="text-xs text-zinc-500 uppercase tracking-wider font-medium">Supported Asset Classes:</p>
+                <p className="text-xs text-zinc-500 uppercase tracking-wider font-medium">Track Any Asset:</p>
 
-                {/* Available Now */}
-                <div className="space-y-2">
-                  <div className="flex items-center gap-3 p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-xl">
-                    <span className="text-2xl">₿</span>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-white">Cryptocurrencies</p>
-                      <p className="text-xs text-zinc-500">BTC, ETH, SOL & 1000+ tokens</p>
-                    </div>
-                    <span className="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded-full">Live</span>
+                {/* Asset Types Grid */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="flex items-center gap-2 p-2 bg-emerald-500/5 border border-emerald-500/20 rounded-lg">
+                    <span className="text-lg">₿</span>
+                    <span className="text-xs text-white">Crypto</span>
                   </div>
-
-                  <div className="flex items-center gap-3 p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-xl">
-                    <span className="text-2xl">📈</span>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-white">Stocks & ETFs</p>
-                      <p className="text-xs text-zinc-500">S&P 500, NASDAQ & global markets</p>
-                    </div>
-                    <span className="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded-full">Live</span>
+                  <div className="flex items-center gap-2 p-2 bg-emerald-500/5 border border-emerald-500/20 rounded-lg">
+                    <span className="text-lg">📈</span>
+                    <span className="text-xs text-white">Stocks & ETFs</span>
+                  </div>
+                  <div className="flex items-center gap-2 p-2 bg-emerald-500/5 border border-emerald-500/20 rounded-lg">
+                    <span className="text-lg">🥇</span>
+                    <span className="text-xs text-white">Precious Metals</span>
+                  </div>
+                  <div className="flex items-center gap-2 p-2 bg-emerald-500/5 border border-emerald-500/20 rounded-lg">
+                    <span className="text-lg">🏠</span>
+                    <span className="text-xs text-white">Real Estate</span>
                   </div>
                 </div>
 
-                {/* Coming Soon */}
-                <div className="space-y-2">
-                  <div className="flex items-center gap-3 p-3 bg-white/[0.02] border border-white/[0.08] rounded-xl opacity-75">
-                    <span className="text-2xl">🥇</span>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-zinc-300">Precious Metals</p>
-                      <p className="text-xs text-zinc-500">Gold, Silver, Platinum</p>
+                {/* AI Advisor Features */}
+                <div className="pt-2 border-t border-white/[0.08]">
+                  <p className="text-xs text-zinc-500 uppercase tracking-wider font-medium mb-2">AI Advisor:</p>
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2 text-sm text-zinc-300">
+                      <svg className="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                      Sector & Industry breakdown
                     </div>
-                    <span className="text-xs bg-zinc-800 text-zinc-400 px-2 py-1 rounded-full">Coming Soon</span>
-                  </div>
-
-                  <div className="flex items-center gap-3 p-3 bg-white/[0.02] border border-white/[0.08] rounded-xl opacity-75">
-                    <span className="text-2xl">🏠</span>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-zinc-300">Real Estate</p>
-                      <p className="text-xs text-zinc-500">Properties & REITs</p>
+                    <div className="flex items-center gap-2 text-sm text-zinc-300">
+                      <svg className="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                      Geographic allocation
                     </div>
-                    <span className="text-xs bg-zinc-800 text-zinc-400 px-2 py-1 rounded-full">Coming Soon</span>
+                    <div className="flex items-center gap-2 text-sm text-zinc-300">
+                      <svg className="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                      Personalized recommendations
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* RADAR Dashboard */}
+            {/* AI Trading Signals */}
             <div className="group relative bg-gradient-to-br from-white/[0.05] to-white/[0.02] border border-white/[0.08] rounded-2xl p-6 overflow-hidden hover:border-emerald-500/30 transition-all duration-300">
               <div className="flex items-start gap-4 mb-4">
                 <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center flex-shrink-0">
@@ -337,19 +343,18 @@ export default function LandingPage() {
                   </svg>
                 </div>
                 <div>
-                  <h4 className="text-lg font-semibold text-white mb-1">RADAR Dashboard</h4>
-                  <p className="text-sm text-zinc-400">Multi-timeframe market analysis</p>
+                  <h4 className="text-lg font-semibold text-white mb-1">AI Trading Signals</h4>
+                  <p className="text-sm text-zinc-400">Smart-money concepts from top traders</p>
                 </div>
               </div>
               <p className="text-sm text-zinc-400 leading-relaxed">
-                Smart-money concepts powered by AI. Learn from aggregated strategies of top traders,
-                refined with machine learning to identify optimal entry and exit points.
+                AI-powered signals with precise entry zones, stop losses, and take profits.
+                Aggregated knowledge from top traders, refined with machine learning.
               </p>
               <div className="mt-4 flex flex-wrap gap-2">
-                <span className="text-xs bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded-full">1H</span>
-                <span className="text-xs bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded-full">4H</span>
-                <span className="text-xs bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded-full">1D</span>
-                <span className="text-xs bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded-full">1W</span>
+                <span className="text-xs bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded-full">Entry Zones</span>
+                <span className="text-xs bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded-full">Stop Loss</span>
+                <span className="text-xs bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded-full">Take Profit</span>
               </div>
             </div>
 
@@ -390,32 +395,58 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="relative py-24 border-t border-white/[0.08]">
-        <div className="container mx-auto px-4">
-          <h3 className="text-2xl sm:text-3xl font-bold text-center mb-16 tracking-tight">
-            Everything You Need
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {FEATURES.map((feature) => (
-              <div
-                key={feature.title}
-                className="group relative bg-white/[0.03] border border-white/[0.08] rounded-2xl p-8 backdrop-blur-sm transition-all duration-300 hover:border-white/20 hover:-translate-y-1 hover:shadow-[0_10px_40px_-15px_rgba(0,255,157,0.15)] overflow-hidden"
-              >
-                {/* Subtle gradient overlay */}
-                <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none" />
+      {/* Features Section - Bento Grid */}
+      <section className="relative py-16 md:py-24 border-t border-white/[0.08]">
+        <div className="container mx-auto px-4 md:px-8 lg:px-16">
+          {/* Header */}
+          <div className="text-center mb-12 md:mb-16">
+            <h3 className="text-3xl md:text-5xl font-bold mb-4 tracking-tight">
+              Everything You Need
+            </h3>
+            <p className="text-zinc-400 text-lg max-w-2xl mx-auto">
+              A complete ecosystem for the modern trader, combining institutional-grade data with advanced AI analysis.
+            </p>
+          </div>
 
-                <div className="relative">
-                  <div className="w-10 h-10 mb-6 text-emerald-400">
-                    {feature.icon}
+          {/* Bento Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 max-w-6xl mx-auto">
+            {FEATURES.map((feature) => {
+              const colors = colorStyles[feature.color];
+              return (
+                <div
+                  key={feature.title}
+                  className={`group relative p-6 md:p-8 rounded-3xl border bg-[#111] hover:bg-[#161616] transition-all duration-300 flex flex-col justify-between ${colors.border} ${feature.size === "large" ? "md:col-span-2" : ""}`}
+                >
+                  {/* Glow Effect on Hover */}
+                  <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl blur-2xl -z-10 ${colors.glow}`} />
+
+                  <div className="relative z-10">
+                    {/* Icon */}
+                    <div className={`w-12 h-12 rounded-2xl ${colors.bg} flex items-center justify-center mb-6 border ${colors.border.split(" ")[0]}`}>
+                      <div className={`w-6 h-6 ${colors.text}`}>
+                        {feature.icon}
+                      </div>
+                    </div>
+
+                    {/* Content */}
+                    <h4 className="text-xl font-bold mb-3 group-hover:text-white transition-colors">
+                      {feature.title}
+                    </h4>
+                    <p className="text-zinc-400 leading-relaxed text-sm md:text-base">
+                      {feature.description}
+                    </p>
                   </div>
-                  <h4 className="text-lg font-semibold mb-3 tracking-tight">{feature.title}</h4>
-                  <p className="text-sm text-zinc-400 leading-relaxed">
-                    {feature.description}
-                  </p>
+
+                  {/* Learn More Arrow */}
+                  <div className="relative z-10 mt-6 md:mt-8 flex items-center text-xs font-bold uppercase tracking-widest text-zinc-500 group-hover:text-white transition-colors cursor-pointer">
+                    Learn More
+                    <svg className="w-4 h-4 ml-2 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
@@ -441,7 +472,7 @@ export default function LandingPage() {
               <ul className="space-y-3 text-sm text-zinc-400">
                 <li className="flex items-center gap-2">
                   <svg className="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                  Basic RADAR dashboard
+                  Basic trading signals
                 </li>
                 <li className="flex items-center gap-2">
                   <svg className="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
@@ -467,7 +498,7 @@ export default function LandingPage() {
               <ul className="space-y-3 text-sm text-zinc-300">
                 <li className="flex items-center gap-2">
                   <svg className="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                  Full RADAR + SNIPER
+                  AI Trading Signals
                 </li>
                 <li className="flex items-center gap-2">
                   <svg className="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
@@ -479,11 +510,7 @@ export default function LandingPage() {
                 </li>
                 <li className="flex items-center gap-2">
                   <svg className="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                  Wealth Dashboard
-                </li>
-                <li className="flex items-center gap-2">
-                  <svg className="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                  AI Copilot chat
+                  Portfolio Tracker + AI Advisor
                 </li>
               </ul>
             </div>

@@ -25,10 +25,10 @@ import Link from "next/link";
 import { analytics } from "@/components/PostHogProvider";
 
 const INTERESTS = [
-  { value: "radar", label: "RADAR Analysis" },
+  { value: "portfolio", label: "Portfolio Tracker" },
+  { value: "signals", label: "AI Trading Signals" },
   { value: "reports", label: "AI Investment Reports" },
   { value: "alerts", label: "Smart Alerts" },
-  { value: "journal", label: "Trade Journal" },
   { value: "all", label: "All Features" },
 ];
 
