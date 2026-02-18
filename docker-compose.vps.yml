@@ -61,7 +61,7 @@
       context: ./crypto-dashboard/frontend
       dockerfile: Dockerfile
       args:
-        - NEXT_PUBLIC_POSTHOG_KEY=${TCC_POSTHOG_KEY:-phc_f8qpnsHw1Nzx8jcLzUb5nXOBw7ggEzEzcHb3XgNtIRc}
+        - NEXT_PUBLIC_POSTHOG_KEY=${TCC_POSTHOG_KEY}
         - NEXT_PUBLIC_POSTHOG_HOST=${TCC_POSTHOG_HOST:-https://eu.i.posthog.com}
         - NEXT_PUBLIC_SITE_URL=${TCC_SITE_URL:-https://follio.io}
         - NEXT_PUBLIC_API_URL=https://${TCC_SUBDOMAIN}.${DOMAIN_NAME}/api
