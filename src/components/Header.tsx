@@ -21,6 +21,12 @@ export default function Header() {
           >
             Cycle
           </Link>
+          <Link
+            href="/calculator"
+            className="text-sm text-zinc-400 hover:text-zinc-100 transition-colors"
+          >
+            Calculator
+          </Link>
         </nav>
       </div>
     </header>
