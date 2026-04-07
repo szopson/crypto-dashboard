@@ -7,6 +7,7 @@ import {
   CREATE_RADAR_SCORES_INDEX,
   CREATE_TRADE_JOURNAL,
   CREATE_SESSIONS,
+  CREATE_BRIEFINGS,
 } from './schema';
 
 const DB_PATH = process.env.SQLITE_DB_PATH
@@ -36,6 +37,7 @@ function runMigrations(db: Database.Database): void {
     CREATE_RADAR_SCORES_INDEX,
     CREATE_TRADE_JOURNAL,
     CREATE_SESSIONS,
+    CREATE_BRIEFINGS,
   ]) {
     db.exec(stmt);
   }

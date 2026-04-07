@@ -67,3 +67,12 @@ export const CREATE_SESSIONS = `
     created_at  INTEGER NOT NULL DEFAULT (unixepoch())
   )
 `;
+
+export const CREATE_BRIEFINGS = `
+  CREATE TABLE IF NOT EXISTS briefings (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    date        TEXT    NOT NULL UNIQUE,
+    content     TEXT    NOT NULL,
+    created_at  INTEGER NOT NULL DEFAULT (unixepoch())
+  )
+`;

@@ -51,6 +51,18 @@ export default function Header() {
           >
             Chart
           </Link>
+          <Link
+            href="/assistant"
+            className="text-sm text-zinc-400 hover:text-zinc-100 transition-colors"
+          >
+            Assistant
+          </Link>
+          <Link
+            href="/briefing"
+            className="text-sm text-zinc-400 hover:text-zinc-100 transition-colors"
+          >
+            Briefing
+          </Link>
         </nav>
       </div>
     </header>
