@@ -45,6 +45,12 @@ export default function Header() {
           >
             RADAR
           </Link>
+          <Link
+            href="/chart"
+            className="text-sm text-zinc-400 hover:text-zinc-100 transition-colors"
+          >
+            Chart
+          </Link>
         </nav>
       </div>
     </header>
