@@ -3,6 +3,7 @@ import { getTopCoins, getGlobalStats, formatCurrency, formatPercent } from '@/li
 import { CoinData } from '@/types';
 import Sparkline from '@/components/Sparkline';
 import Header from '@/components/Header';
+import AIAnalysisButton from '@/components/AIAnalysisButton';
 
 export default async function Home() {
   let coins: CoinData[] = [];
@@ -80,7 +81,20 @@ export default async function Home() {
 
       {/* Main Content */}
       <main className="max-w-screen-xl mx-auto px-6 py-8">
-        <h2 className="text-lg font-semibold text-zinc-100 mb-4">Top 50 Cryptocurrencies</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-zinc-100">Top 50 Cryptocurrencies</h2>
+          {!coinsError && (
+            <AIAnalysisButton
+              coins={coins}
+              globalStats={{
+                totalMarketCap,
+                totalVolume,
+                btcDominance,
+                ethDominance,
+              }}
+            />
+          )}
+        </div>
 
         {coinsError ? (
           <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-8 text-center">
