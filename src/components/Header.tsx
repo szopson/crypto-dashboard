@@ -33,6 +33,18 @@ export default function Header() {
           >
             LP Playbook
           </Link>
+          <Link
+            href="/dashboard"
+            className="text-sm text-zinc-400 hover:text-zinc-100 transition-colors"
+          >
+            Command Center
+          </Link>
+          <Link
+            href="/radar"
+            className="text-sm text-zinc-400 hover:text-zinc-100 transition-colors"
+          >
+            RADAR
+          </Link>
         </nav>
       </div>
     </header>
