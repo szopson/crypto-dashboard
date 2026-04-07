@@ -63,6 +63,18 @@ export default function Header() {
           >
             Briefing
           </Link>
+          <Link
+            href="/setups"
+            className="text-sm text-zinc-400 hover:text-zinc-100 transition-colors"
+          >
+            Setups
+          </Link>
+          <Link
+            href="/journal"
+            className="text-sm text-zinc-400 hover:text-zinc-100 transition-colors"
+          >
+            Journal
+          </Link>
         </nav>
       </div>
     </header>

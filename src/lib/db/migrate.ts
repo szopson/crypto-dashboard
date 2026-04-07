@@ -8,6 +8,10 @@ import {
   CREATE_TRADE_JOURNAL,
   CREATE_SESSIONS,
   CREATE_BRIEFINGS,
+  CREATE_SETUPS,
+  CREATE_SENTIMENT,
+  CREATE_EVENTS,
+  CREATE_TRADE_JOURNAL_V2,
 } from './schema';
 
 const DB_PATH = process.env.SQLITE_DB_PATH
@@ -38,6 +42,10 @@ function runMigrations(db: Database.Database): void {
     CREATE_TRADE_JOURNAL,
     CREATE_SESSIONS,
     CREATE_BRIEFINGS,
+    CREATE_SETUPS,
+    CREATE_SENTIMENT,
+    CREATE_EVENTS,
+    CREATE_TRADE_JOURNAL_V2,
   ]) {
     db.exec(stmt);
   }

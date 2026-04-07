@@ -68,6 +68,68 @@ export const CREATE_SESSIONS = `
   )
 `;
 
+export const CREATE_SETUPS = `
+  CREATE TABLE IF NOT EXISTS setups (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    symbol          TEXT    NOT NULL,
+    direction       TEXT    NOT NULL CHECK(direction IN ('long', 'short')),
+    entry_zone_low  REAL    NOT NULL,
+    entry_zone_high REAL    NOT NULL,
+    target          REAL,
+    invalidation    REAL,
+    confluence_score INTEGER NOT NULL DEFAULT 0,
+    reasoning       TEXT,
+    status          TEXT    NOT NULL DEFAULT 'active' CHECK(status IN ('active', 'triggered', 'invalidated')),
+    created_at      INTEGER NOT NULL DEFAULT (unixepoch())
+  )
+`;
+
+export const CREATE_SENTIMENT = `
+  CREATE TABLE IF NOT EXISTS sentiment (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    date         TEXT    NOT NULL UNIQUE,
+    fng_value    INTEGER NOT NULL,
+    fng_label    TEXT    NOT NULL,
+    bias_modifier INTEGER NOT NULL DEFAULT 0,
+    raw_data     TEXT,
+    created_at   INTEGER NOT NULL DEFAULT (unixepoch())
+  )
+`;
+
+export const CREATE_EVENTS = `
+  CREATE TABLE IF NOT EXISTS events (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    symbol      TEXT    NOT NULL,
+    timeframe   TEXT,
+    event_type  TEXT    NOT NULL,
+    description TEXT    NOT NULL,
+    price       REAL,
+    created_at  INTEGER NOT NULL DEFAULT (unixepoch())
+  )
+`;
+
+export const CREATE_TRADE_JOURNAL_V2 = `
+  CREATE TABLE IF NOT EXISTS trades (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    symbol       TEXT    NOT NULL,
+    direction    TEXT    NOT NULL CHECK(direction IN ('long', 'short')),
+    entry_price  REAL    NOT NULL,
+    exit_price   REAL,
+    size         REAL    NOT NULL DEFAULT 1,
+    stop_loss    REAL,
+    take_profit  REAL,
+    pnl          REAL,
+    risk         REAL,
+    r_multiple   REAL,
+    setup_type   TEXT,
+    notes        TEXT,
+    status       TEXT    NOT NULL DEFAULT 'open' CHECK(status IN ('open', 'closed', 'pending')),
+    source       TEXT    NOT NULL DEFAULT 'manual',
+    created_at   INTEGER NOT NULL DEFAULT (unixepoch()),
+    closed_at    INTEGER
+  )
+`;
+
 export const CREATE_BRIEFINGS = `
   CREATE TABLE IF NOT EXISTS briefings (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
