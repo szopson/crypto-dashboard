@@ -27,6 +27,12 @@ export default function Header() {
           >
             Calculator
           </Link>
+          <Link
+            href="/lp-playbook"
+            className="text-sm text-zinc-400 hover:text-zinc-100 transition-colors"
+          >
+            LP Playbook
+          </Link>
         </nav>
       </div>
     </header>
