@@ -2,6 +2,7 @@ import Image from 'next/image';
 import { getTopCoins, getGlobalStats, formatCurrency, formatPercent } from '@/lib/api';
 import { CoinData } from '@/types';
 import Sparkline from '@/components/Sparkline';
+import Header from '@/components/Header';
 
 export default async function Home() {
   let coins: CoinData[] = [];
@@ -47,13 +48,7 @@ export default async function Home() {
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans">
-      {/* Header */}
-      <header className="border-b border-zinc-800 px-6 py-4">
-        <div className="max-w-screen-xl mx-auto flex items-center gap-3">
-          <h1 className="text-2xl font-bold tracking-tight text-white">Follio</h1>
-          <span className="text-zinc-500 text-sm">Crypto Dashboard</span>
-        </div>
-      </header>
+      <Header />
 
       {/* Global Stats Bar */}
       <div className="border-b border-zinc-800 bg-zinc-900">
