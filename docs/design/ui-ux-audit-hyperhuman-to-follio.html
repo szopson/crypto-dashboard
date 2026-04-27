@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audyt UI/UX: hyperhuman.pl → follio.io</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0a;
+    --bg2: #111111;
+    --bg3: #1a1a1a;
+    --bg4: #222222;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.15);
+    --text: #f0f0f0;
+    --text2: #888;
+    --text3: #555;
+    --green: #7ee787;
+    --green-dim: rgba(126,231,135,0.12);
+    --blue: #58a6ff;
+    --blue-dim: rgba(88,166,255,0.12);
+    --orange: #f0883e;
+    --orange-dim: rgba(240,136,62,0.12);
+    --red: #ff6b6b;
+    --red-dim: rgba(255,107,107,0.12);
+    --yellow: #e3b341;
+    --yellow-dim: rgba(227,179,65,0.1);
+    --accent: #7ee787;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', -apple-system, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    padding: 0;
+  }
+
+  .page {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 60px 32px 100px;
+  }
+
+  /* HEADER */
+  .header {
+    margin-bottom: 60px;
+    padding-bottom: 40px;
+    border-bottom: 1px solid var(--border);
+  }
+  .header-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: var(--green);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  .header h1 {
+    font-size: 36px;
+    font-weight: 600;
+    line-height: 1.15;
+    margin-bottom: 12px;
+  }
+  .header h1 span { color: var(--green); }
+  .header-sub {
+    font-size: 15px;
+    color: var(--text2);
+    max-width: 560px;
+  }
+
+  /* SUMMARY STATS */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 60px;
+  }
+  .stat {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 16px;
+    text-align: center;
+  }
+  .stat-num {
+    font-size: 32px;
+    font-weight: 600;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  .stat-lbl {
+    font-size: 11px;
+    color: var(--text2);
+    line-height: 1.4;
+  }
+
+  /* SECTION */
+  .section { margin-bottom: 56px; }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .section-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .section-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text2);
+  }
+
+  /* CARDS */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 12px;
+    transition: border-color 0.2s;
+  }
+  .card:hover { border-color: var(--border2); }
+
+  .card-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 6px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .badge-steal { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(88,166,255,0.25); }
+  .badge-fix-urgent { background: var(--red-dim); color: var(--red); border: 1px solid rgba(255,107,107,0.25); }
+  .badge-fix { background: var(--orange-dim); color: var(--orange); border: 1px solid rgba(240,136,62,0.25); }
+  .badge-win { background: var(--green-dim); color: var(--green); border: 1px solid rgba(126,231,135,0.25); }
+
+  .card-title {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text);
+    flex: 1;
+    line-height: 1.4;
+  }
+  .card-body {
+    font-size: 13.5px;
+    color: var(--text2);
+    line-height: 1.65;
+  }
+  .card-body strong { color: var(--text); font-weight: 500; }
+
+  .rec {
+    background: var(--bg3);
+    border-left: 3px solid var(--blue);
+    border-radius: 0 8px 8px 0;
+    padding: 12px 16px;
+    margin-top: 14px;
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.6;
+  }
+  .rec-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--blue);
+    margin-bottom: 5px;
+  }
+
+  /* SCORES */
+  .scores-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 56px;
+  }
+  .score-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+  }
+  .score-card-title {
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .score-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+  .score-row { margin-bottom: 12px; }
+  .score-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text2);
+    margin-bottom: 5px;
+  }
+  .score-meta span:last-child { color: var(--text); font-weight: 500; }
+  .score-track {
+    height: 4px;
+    background: var(--bg4);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .score-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 1s ease;
+  }
+
+  /* ROADMAP */
+  .roadmap { margin-bottom: 56px; }
+  .roadmap-item {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 0;
+  }
+  .roadmap-line {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+    width: 32px;
+  }
+  .roadmap-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 5px;
+  }
+  .roadmap-connector {
+    width: 1px;
+    flex: 1;
+    background: var(--border);
+    min-height: 32px;
+    margin: 4px 0;
+  }
+  .roadmap-content {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 20px;
+    flex: 1;
+    margin-bottom: 12px;
+  }
+  .roadmap-week {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .roadmap-tasks {
+    font-size: 13.5px;
+    color: var(--text2);
+    line-height: 1.6;
+  }
+  .roadmap-tasks li {
+    list-style: none;
+    padding-left: 16px;
+    position: relative;
+    margin-bottom: 3px;
+  }
+  .roadmap-tasks li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--text3);
+  }
+
+  /* DIVIDER */
+  hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 52px 0;
+  }
+
+  /* FOOTER */
+  .footer {
+    text-align: center;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text3);
+    padding-top: 40px;
+    border-top: 1px solid var(--border);
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <div class="header-tag">// audyt UI/UX — kwiecień 2026</div>
+    <h1>hyperhuman.pl → <span>follio.io</span></h1>
+    <p class="header-sub">7 smaczków do zapożyczenia, 5 problemów do naprawienia, plan wdrożenia na 3 tygodnie.</p>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat">
+      <div class="stat-num" style="color:var(--blue)">7</div>
+      <div class="stat-lbl">smaczki do zapożyczenia</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num" style="color:var(--red)">5</div>
+      <div class="stat-lbl">problemy w follio.io</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num" style="color:var(--green)">3</div>
+      <div class="stat-lbl">tygodnie do wdrożenia</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num" style="color:var(--yellow)">2×</div>
+      <div class="stat-lbl">szacowana poprawa CVR</div>
+    </div>
+  </div>
+
+  <!-- SEKCJA 1: CO KRAŚĆ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon" style="background:var(--blue-dim);">◆</div>
+      <div class="section-title">Co hyperhuman.pl robi świetnie — skradnij to</div>
+    </div>
+
+    <div class="card">
+      <div class="card-top">
+        <span class="badge badge-steal">steal #1</span>
+        <div class="card-title">Countdown timer z urgency badge</div>
+      </div>
+      <div class="card-body">
+        Sekcja #club pokazuje odliczanie (dni / godz / min / sek) z etykietą <strong>"OFERTA OGRANICZONA CZASOWO"</strong>. Presja jest wbudowana w kartę cennikową — nie pływa jako agresywny overlay. Timer tickuje w czasie rzeczywistym, co sprawia że strona "żyje".
+        <div class="rec">
+          <div class="rec-label">Jak to wdrożyć w follio.io</div>
+          Dodaj countdown do hero sekcji Early Access: "Pierwsze 500 miejsc zamykamy za X dni — Free AI report dla zapisanych dzisiaj." Zamiast statycznego CTA — czas robi całą robotę sprzedażową. Implementacja: czysty JS, zero zależności.
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-top">
+        <span class="badge badge-steal">steal #2</span>
+        <div class="card-title">Duże liczby jako social proof — 11x, 17/7</div>
+      </div>
+      <div class="card-body">
+        Już na hero widać dwie karty z liczbami: <strong>"11x więcej efektów"</strong> i <strong>"17/7 AI pracuje za Ciebie"</strong>. Nie tekst — liczba jako główny element wizualny (ok. 60px). Działa jak billboard, nie jak lista funkcji. Użytkownik zatrzymuje wzrok na liczbie, nie czyta bulletów.
+        <div class="rec">
+          <div class="rec-label">Jak to wdrożyć w follio.io</div>
+          Zamień feature cards na metryki: <strong>"&lt;47s"</strong> czas generowania raportu AI, <strong>"300+"</strong> sygnałów analizowanych dziennie, <strong>"8/10"</strong> skuteczność poprzednich alertów. Liczby muszą być konkretne, śmiałe i weryfikowalne.
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-top">
+        <span class="badge badge-steal">steal #3</span>
+        <div class="card-title">Dwukolorowy headline + maskot/charakter</div>
+      </div>
+      <div class="card-body">
+        "Zdobądź <strong style="color:var(--green)">przewagę dzięki AI</strong>, zanim reszta ogarnie co się dzieje." — kluczowe słowa w kolorze akcentu (limonkowy), reszta biała na czarnym. Obok stoi zielony robot-maskot. Strona ma <strong>osobowość</strong>, nie wygląda jak kolejny generyczny SaaS landing page.
+        <div class="rec">
+          <div class="rec-label">Jak to wdrożyć w follio.io</div>
+          "Your Edge in <strong style="color:var(--green)">Crypto Trading</strong>" już tam jest — dobry start! Brakuje ikonicznego elementu graficznego. Rozważ animowany ticker/wykres jako żywy element hero, albo prostą animację CSS linii wykresu rysującej się od lewej. Strona musi "oddychać".
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-top">
+        <span class="badge badge-steal">steal #4</span>
+        <div class="card-title">Fullwidth testimonial — cytat 50/50 z CTA</div>
+      </div>
+      <div class="card-body">
+        Testimonial zajmuje pełną szerokość: lewa połowa = duży cytat (~36px), prawa = gwiazdki + CTA. Cytat jest <strong>emocjonalny i konkretny</strong>: "To jak karnet na siłkę, niby mógłbym sam, ale z tą społecznością wchodzę poziom wyżej. Super wydana kasa!" — nie "świetny produkt polecam".
+        <div class="rec">
+          <div class="rec-label">Jak to wdrożyć w follio.io</div>
+          Zamień drobne review-kardy na jedną fullwidth sekcję testimonial. Duży cytat po lewej z imieniem + awatarem. Po prawej: 5 gwiazdek + jeden konkretny CTA. Jeden mocny cytat > cztery ogólne recenzje.
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-top">
+        <span class="badge badge-steal">steal #5</span>
+        <div class="card-title">Persony "Dla kogo" — segmentacja wizualna</div>
+      </div>
+      <div class="card-body">
+        Sekcja pokazuje 4 archetypy użytkownika z obrazem + etykietą: <em>Zarabiam z AI / Zmieniam branżę / Skoluję firmę / Buduję startup AI</em>. Każdy odwiedzający widzi siebie. Personalizacja = wyższy czas na stronie i niższy bounce rate.
+        <div class="rec">
+          <div class="rec-label">Jak to wdrożyć w follio.io</div>
+          Sekcja "Kto używa Follio": Trader detaliczny / DeFi inwestor / Crypto fund / Hodler szukający sygnałów. Każda karta z innym copy i CTA. Segmentacja pomaga też w remarketingu — wiesz czego szukał użytkownik.
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-top">
+        <span class="badge badge-steal">steal #6</span>
+        <div class="card-title">Avatar stack + gwiazdki jako micro social proof</div>
+      </div>
+      <div class="card-body">
+        Pod CTA w hero widać 4 nakładające się avatary + ⭐⭐⭐⭐⭐. Małe, subtelne, zajmuje &lt;40px wysokości — ale komunikuje "inni już tu są". Koszt implementacji: ~30 minut. Efekt psychologiczny: FOMO.
+        <div class="rec">
+          <div class="rec-label">Jak to wdrożyć w follio.io</div>
+          Pod formularzem "Get Early Access": [4 avatary] <strong>"Dołączyło już 847 traderów w tym tygodniu."</strong> Liczba powinna wyglądać jak żywa (możesz ją hardkodować i raz na tydzień aktualizować). Avatary: zdjęcia stockowe lub inicjały.
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-top">
+        <span class="badge badge-steal">steal #7</span>
+        <div class="card-title">Navbar CTA w jaskrawym kolorze akcentu</div>
+      </div>
+      <div class="card-body">
+        "Dołącz do klubu" w navbarze to limonkowozielony przycisk który wyróżnia się z czarnego tła. Kontrast jest celowo agresywny — nie da się go przegapić podczas scrollowania. Reszta navbaru jest szara/biała. Jeden element krzyczy.
+        <div class="rec">
+          <div class="rec-label">Jak to wdrożyć w follio.io</div>
+          "Launch App" w navbarze jest biały tekst — zlewa się z białymi linkami menu. Zmień na filled button z kolorem akcentu (teal #1D9E75 lub twój green). Zasada: jeden button w nav powinien krzyczeć, reszta jest cicha.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- SEKCJA 2: PROBLEMY -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon" style="background:var(--red-dim);">▲</div>
+      <div class="section-title">Problemy follio.io — co naprawić</div>
+    </div>
+
+    <div class="card" style="border-color: rgba(255,107,107,0.3);">
+      <div class="card-top">
+        <span class="badge badge-fix-urgent">pilne #1</span>
+        <div class="card-title">Formularz hero ma za dużo tarcia</div>
+      </div>
+      <div class="card-body">
+        Dwa pola (email + dropdown "I'm interested in...") + checkbox RODO + przycisk = 4 elementy do obsługi zanim ktoś kliknie. Cold traffic nie wie jeszcze "w co jest zainteresowany". Każde dodatkowe pole obniża konwersję o ~10-15% wg badań Baymard Institute.
+        <div class="rec">
+          <div class="rec-label">Fix — 30 minut</div>
+          Jedno pole email + jeden przycisk. Dropdown przenieś do kroku 2 onboardingu (po wpisaniu emaila). Checkbox RODO zostaw, ale zmniejsz font i daj mniej widoczną pozycję. Prostota > kompletność danych na etapie hero.
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="border-color: rgba(255,107,107,0.3);">
+      <div class="card-top">
+        <span class="badge badge-fix-urgent">pilne #2</span>
+        <div class="card-title">Headline mówi o funkcjach, nie o benefitach</div>
+      </div>
+      <div class="card-body">
+        <strong>"Professional-grade analysis tools, AI-powered reports, and smart alerts."</strong> — to lista funkcji. Pytanie które zadaje sobie użytkownik: "Co ja z tego mam? Ile zarobię? Ile czasu oszczędzę?" Odpowiedź na te pytania nie pojawia się w hero.
+        <div class="rec">
+          <div class="rec-label">Fix — przepisanie copy</div>
+          Zmień subheadline na konkretny outcome: <em>"Trade smarter. Miss fewer opportunities. AI analysis in 47 seconds — not 3 hours."</em> Funkcje opisz niżej. Hero = benefit, nie feature list.
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-top">
+        <span class="badge badge-fix">fix #3</span>
+        <div class="card-title">Duplicate sekcje feature cards — "dead scroll"</div>
+      </div>
+      <div class="card-body">
+        Strona ma dwie oddzielne sekcje pokazujące te same 4 funkcje (AI Reports, Portfolio Tracker, Trading Signals, Smart Alerts): pierwsza jako karty 2×2, potem ta sama treść jako karty 2×2 z opisami. Użytkownik podczas scrollowania ma poczucie déjà vu i traci zainteresowanie.
+        <div class="rec">
+          <div class="rec-label">Fix — refactor struktury strony</div>
+          Scal obie sekcje w jedną z prawdziwymi screenami produktu (nie ikonkami). Albo zastąp pierwszą sekcję interaktywnym GIF demo / animowanym mockupem dashboardu. Każda sekcja powinna "otwierać nową informację".
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-top">
+        <span class="badge badge-fix">fix #4</span>
+        <div class="card-title">Zero screenshotów produktu — "show, don't tell"</div>
+      </div>
+      <div class="card-body">
+        Cała strona to tekst + ikony + czarne tło. Nie ma ani jednego screenshota aplikacji, mockupa interfejsu ani animowanego GIF. Dla produktu B2C to krytyczny brak — użytkownicy podejmują decyzje wizualnie zanim przeczytają jakikolwiek tekst.
+        <div class="rec">
+          <div class="rec-label">Fix — asset produkcja</div>
+          Wstaw min. 1 mockup UI (dashboard z wykresem i fragmentem AI raportu) w ramce laptop/phone. Sekcja "See it in Action" powinna DOSŁOWNIE pokazywać, nie opisywać. Nawet screenshot z Figmy działa lepiej niż ikonka.
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-top">
+        <span class="badge badge-fix">fix #5</span>
+        <div class="card-title">Trust signals są generyczne — każdy to ma</div>
+      </div>
+      <div class="card-body">
+        "Privacy First / No Credit Card / Cancel Anytime" — to standarowy zestaw każdego SaaS od 2018. Nie mówią nic o unikalnej wartości Follio i nie różnicują produktu. Użytkownik ślepo to pomija.
+        <div class="rec">
+          <div class="rec-label">Fix — zamień na specyficzne</div>
+          Zamień na trust signale specyficzne dla Follio: <strong>"Powered by Claude AI + CoinGecko real-time data"</strong> / <strong>"Telegram alerts in &lt;30s"</strong> / <strong>"300+ signals backtested 2023–2025"</strong>. Konkretność tworzy zaufanie, ogólniki nie.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- SCORES -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon" style="background:var(--yellow-dim);">◉</div>
+      <div class="section-title">Ocena porównawcza</div>
+    </div>
+
+    <div class="scores-grid">
+      <div class="score-card">
+        <div class="score-card-title">
+          <div class="score-dot" style="background:var(--green)"></div>
+          hyperhuman.pl
+        </div>
+        <div class="score-row">
+          <div class="score-meta"><span>Klarowność przekazu</span><span>9 / 10</span></div>
+          <div class="score-track"><div class="score-fill" style="width:90%;background:var(--green);"></div></div>
+        </div>
+        <div class="score-row">
+          <div class="score-meta"><span>Social proof</span><span>8 / 10</span></div>
+          <div class="score-track"><div class="score-fill" style="width:80%;background:var(--green);"></div></div>
+        </div>
+        <div class="score-row">
+          <div class="score-meta"><span>Siła CTA</span><span>9 / 10</span></div>
+          <div class="score-track"><div class="score-fill" style="width:90%;background:var(--green);"></div></div>
+        </div>
+        <div class="score-row">
+          <div class="score-meta"><span>Tarcie konwersji</span><span>7 / 10</span></div>
+          <div class="score-track"><div class="score-fill" style="width:70%;background:var(--green);"></div></div>
+        </div>
+        <div class="score-row">
+          <div class="score-meta"><span>Wizualna tożsamość</span><span>9 / 10</span></div>
+          <div class="score-track"><div class="score-fill" style="width:90%;background:var(--green);"></div></div>
+        </div>
+      </div>
+
+      <div class="score-card">
+        <div class="score-card-title">
+          <div class="score-dot" style="background:var(--orange)"></div>
+          follio.io (obecny stan)
+        </div>
+        <div class="score-row">
+          <div class="score-meta"><span>Klarowność przekazu</span><span>5 / 10</span></div>
+          <div class="score-track"><div class="score-fill" style="width:50%;background:var(--orange);"></div></div>
+        </div>
+        <div class="score-row">
+          <div class="score-meta"><span>Social proof</span><span>3 / 10</span></div>
+          <div class="score-track"><div class="score-fill" style="width:30%;background:var(--red);"></div></div>
+        </div>
+        <div class="score-row">
+          <div class="score-meta"><span>Siła CTA</span><span>5 / 10</span></div>
+          <div class="score-track"><div class="score-fill" style="width:50%;background:var(--orange);"></div></div>
+        </div>
+        <div class="score-row">
+          <div class="score-meta"><span>Tarcie konwersji</span><span>4 / 10</span></div>
+          <div class="score-track"><div class="score-fill" style="width:40%;background:var(--red);"></div></div>
+        </div>
+        <div class="score-row">
+          <div class="score-meta"><span>Wizualna tożsamość</span><span>6 / 10</span></div>
+          <div class="score-track"><div class="score-fill" style="width:60%;background:var(--orange);"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- ROADMAP -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon" style="background:var(--green-dim);">→</div>
+      <div class="section-title">Plan wdrożenia — 3 tygodnie</div>
+    </div>
+
+    <div class="roadmap">
+      <div class="roadmap-item">
+        <div class="roadmap-line">
+          <div class="roadmap-dot" style="background:var(--red)"></div>
+          <div class="roadmap-connector"></div>
+        </div>
+        <div class="roadmap-content">
+          <div class="roadmap-week" style="color:var(--red)">Tydzień 1 — Quick wins (max efekt, min nakład)</div>
+          <ul class="roadmap-tasks">
+            <li>Uprość formularz hero do 1 pola email + 1 przycisk</li>
+            <li>Zmień kolor "Launch App" w navbarze na teal/green filled button</li>
+            <li>Dodaj avatar stack + licznik zapisanych pod formularzem</li>
+            <li>Zamień 3 generyczne trust signals na specyficzne dla Follio</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="roadmap-item">
+        <div class="roadmap-line">
+          <div class="roadmap-dot" style="background:var(--orange)"></div>
+          <div class="roadmap-connector"></div>
+        </div>
+        <div class="roadmap-content">
+          <div class="roadmap-week" style="color:var(--orange)">Tydzień 2 — Treść i struktura</div>
+          <ul class="roadmap-tasks">
+            <li>Przepisz headline na benefit-driven (outcome, nie feature)</li>
+            <li>Usuń jedną z duplikat sekcji feature cards</li>
+            <li>Wstaw min. 1 screenshot/mockup produktu (laptop frame)</li>
+            <li>Dodaj konkretne liczby do hero: czas, liczba sygnałów, skuteczność</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="roadmap-item">
+        <div class="roadmap-line">
+          <div class="roadmap-dot" style="background:var(--green)"></div>
+        </div>
+        <div class="roadmap-content">
+          <div class="roadmap-week" style="color:var(--green)">Tydzień 3 — Konwersja i retencja</div>
+          <ul class="roadmap-tasks">
+            <li>Dodaj countdown timer early access z urgency badge</li>
+            <li>Zamień małe reviews na fullwidth testimonial section</li>
+            <li>Wdróż sekcję "Dla kogo" z 3-4 personami tradera</li>
+            <li>Dodaj animowany element do hero (wykres, ticker, sygnał)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    audyt UI/UX wygenerowany przez Claude · kwiecień 2026 · źródła: hyperhuman.pl, follio.io
+  </div>
+
+</div>
+</body>
+</html>

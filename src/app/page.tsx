@@ -81,6 +81,48 @@ export default async function Home() {
 
       {/* Main Content */}
       <main className="max-w-screen-xl mx-auto px-6 py-8">
+        {/* Quick Access Banner */}
+        <div className="bg-gradient-to-r from-emerald-900/20 to-zinc-900 border border-emerald-800/30 rounded-xl p-6 mb-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-zinc-100 mb-1">Market Analysis Dashboard</h2>
+              <p className="text-sm text-zinc-400">Real-time data, AI-powered insights, and comprehensive market coverage</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <a href="/briefing" className="text-sm text-emerald-400 hover:text-emerald-300 transition-colors font-medium">
+                Daily Briefing →
+              </a>
+              <a href="/assistant" className="text-sm text-cyan-400 hover:text-cyan-300 transition-colors font-medium">
+                AI Assistant →
+              </a>
+            </div>
+          </div>
+        </div>
+
+        {/* Feature Highlights - Real Data */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-6">
+            <div className="text-4xl font-bold text-emerald-400 mb-2 font-mono">{coins.length}</div>
+            <div className="text-sm text-zinc-400">Cryptocurrencies</div>
+            <div className="text-xs text-emerald-500 mt-1">Live tracking</div>
+          </div>
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-6">
+            <div className="text-4xl font-bold text-cyan-400 mb-2 font-mono">4</div>
+            <div className="text-sm text-zinc-400">Timeframes</div>
+            <div className="text-xs text-cyan-500 mt-1">15m, 1h, 4h, 1d</div>
+          </div>
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-6">
+            <div className="text-4xl font-bold text-amber-400 mb-2 font-mono">24/7</div>
+            <div className="text-sm text-zinc-400">Market Monitoring</div>
+            <div className="text-xs text-amber-500 mt-1">Real-time updates</div>
+          </div>
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-6">
+            <div className="text-4xl font-bold text-emerald-400 mb-2 font-mono">AI</div>
+            <div className="text-sm text-zinc-400">Powered Analysis</div>
+            <div className="text-xs text-emerald-500 mt-1">Advanced models</div>
+          </div>
+        </div>
+
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-zinc-100">Top 50 Cryptocurrencies</h2>
           {!coinsError && (

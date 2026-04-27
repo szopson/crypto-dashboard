@@ -98,7 +98,16 @@ export default function BiasGrid() {
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900">
       <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-800">
-        <h2 className="font-semibold text-zinc-100">Market Bias</h2>
+        <div className="flex items-center gap-3">
+          <h2 className="font-semibold text-zinc-100">Market Bias</h2>
+          <div className="flex items-center gap-2">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span className="text-xs text-emerald-400 font-medium">Live</span>
+          </div>
+        </div>
         {lastUpdated && (
           <span className="text-xs text-zinc-500">
             Updated {lastUpdated.toLocaleTimeString()}
@@ -141,9 +150,10 @@ export default function BiasGrid() {
                           {biasLabel(r.bias)}
                         </span>
                         <span
-                          className={`text-xs rounded px-1.5 py-0.5 font-mono font-bold ${scoreColor(r.score)}`}
+                          className={`text-sm rounded px-2 py-1 font-mono font-bold ${scoreColor(r.score)}`}
                         >
                           {r.score}
+                          {r.bias > 0.2 ? ' ↗' : r.bias < -0.2 ? ' ↘' : ' →'}
                         </span>
                       </div>
                     </td>

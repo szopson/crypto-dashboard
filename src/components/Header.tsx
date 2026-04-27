@@ -76,6 +76,14 @@ export default function Header() {
             Journal
           </Link>
         </nav>
+        <div className="ml-auto flex items-center gap-4">
+          <Link
+            href="/assistant"
+            className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-medium rounded-lg transition-colors text-sm"
+          >
+            Ask AI Assistant
+          </Link>
+        </div>
       </div>
     </header>
   );
