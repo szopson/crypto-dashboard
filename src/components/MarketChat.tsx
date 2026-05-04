@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
+import PromptLibrary from './PromptLibrary';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -41,6 +42,12 @@ export default function MarketChat() {
   const [isStreaming, setIsStreaming] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const insertPrompt = useCallback((text: string) => {
+    setInput(text);
+    requestAnimationFrame(() => textareaRef.current?.focus());
+  }, []);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -145,6 +152,8 @@ export default function MarketChat() {
   };
 
   return (
+    <div className="flex flex-col gap-3">
+    <PromptLibrary onSelect={insertPrompt} />
     <div className="flex flex-col h-[600px] rounded-xl border border-zinc-800 bg-zinc-900">
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -224,6 +233,7 @@ export default function MarketChat() {
           📎
         </button>
         <textarea
+          ref={textareaRef}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -241,6 +251,7 @@ export default function MarketChat() {
           {isStreaming ? '…' : 'Send'}
         </button>
       </div>
+    </div>
     </div>
   );
 }
