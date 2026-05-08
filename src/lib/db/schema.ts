@@ -138,3 +138,139 @@ export const CREATE_BRIEFINGS = `
     created_at  INTEGER NOT NULL DEFAULT (unixepoch())
   )
 `;
+
+// ---------------------------------------------------------------------------
+// Blueprint tables (All In Pro → BTC Pattern Recognition)
+// ---------------------------------------------------------------------------
+
+// Pattern Engine output — every ConfluenceScorer.compute() snapshot lands here.
+// raw_metrics is JSON-encoded TEXT (Velo + SMC breakdown).
+export const CREATE_PATTERN_HISTORY = `
+  CREATE TABLE IF NOT EXISTS pattern_history (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    ticker       TEXT    NOT NULL,
+    pattern_type TEXT,
+    confidence   REAL,
+    smc_score    REAL,
+    velo_score   REAL,
+    final_score  REAL,
+    bias         TEXT,
+    raw_metrics  TEXT,
+    detected_at  INTEGER NOT NULL DEFAULT (unixepoch())
+  )
+`;
+
+export const CREATE_PATTERN_HISTORY_INDEX = `
+  CREATE INDEX IF NOT EXISTS idx_pattern_history_ticker_time
+  ON pattern_history(ticker, detected_at DESC)
+`;
+
+// Strategies — user-defined containers grouping trades of the same class.
+// pattern_filter is JSON-encoded TEXT (e.g. {"velo_pattern":["E","A"],"min_score":50}).
+export const CREATE_STRATEGIES = `
+  CREATE TABLE IF NOT EXISTS strategies (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    name             TEXT    NOT NULL UNIQUE,
+    description      TEXT,
+    archetype        TEXT    CHECK(archetype IN ('SCALP','SWING','POSITION','DEGEN')),
+    default_rr       REAL,
+    default_risk_pct REAL,
+    default_session  TEXT,
+    pattern_filter   TEXT,
+    is_active        INTEGER NOT NULL DEFAULT 1,
+    created_at       INTEGER NOT NULL DEFAULT (unixepoch())
+  )
+`;
+
+// Watchlist — single-user MVP, no user_id (add when auth lands).
+export const CREATE_WATCHLIST = `
+  CREATE TABLE IF NOT EXISTS watchlist (
+    id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    ticker    TEXT    NOT NULL UNIQUE,
+    position  INTEGER NOT NULL DEFAULT 0,
+    added_at  INTEGER NOT NULL DEFAULT (unixepoch())
+  )
+`;
+
+// Trade partial closes — multi-row per trade (TP1/TP2/TP3).
+export const CREATE_TRADE_PARTIAL_CLOSES = `
+  CREATE TABLE IF NOT EXISTS trade_partial_closes (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    trade_id        INTEGER NOT NULL REFERENCES trades(id) ON DELETE CASCADE,
+    closed_at       INTEGER NOT NULL DEFAULT (unixepoch()),
+    pct_closed      REAL    NOT NULL,
+    exit_price      REAL    NOT NULL,
+    realized_pnl    REAL    NOT NULL,
+    commission_paid REAL
+  )
+`;
+
+export const CREATE_TRADE_PARTIAL_CLOSES_INDEX = `
+  CREATE INDEX IF NOT EXISTS idx_trade_partial_closes_trade
+  ON trade_partial_closes(trade_id, closed_at DESC)
+`;
+
+// Journal entries — daily / per-trade markdown notes with mood tracking.
+// tags is JSON-encoded TEXT array.
+export const CREATE_JOURNAL_ENTRIES = `
+  CREATE TABLE IF NOT EXISTS journal_entries (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    trade_id    INTEGER REFERENCES trades(id),
+    title       TEXT,
+    content_md  TEXT    NOT NULL,
+    mood        INTEGER CHECK(mood BETWEEN 1 AND 5),
+    tags        TEXT,
+    entry_date  TEXT    NOT NULL DEFAULT (date('now')),
+    created_at  INTEGER NOT NULL DEFAULT (unixepoch())
+  )
+`;
+
+export const CREATE_JOURNAL_ENTRIES_INDEX = `
+  CREATE INDEX IF NOT EXISTS idx_journal_entries_date
+  ON journal_entries(entry_date DESC)
+`;
+
+// Alert subscriptions — per-channel toggle + optional ticker_filter (JSON array).
+export const CREATE_ALERT_SUBSCRIPTIONS = `
+  CREATE TABLE IF NOT EXISTS alert_subscriptions (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    channel       TEXT    NOT NULL UNIQUE,
+    enabled       INTEGER NOT NULL DEFAULT 1,
+    ticker_filter TEXT,
+    min_severity  TEXT    CHECK(min_severity IN ('LOW','MEDIUM','HIGH','VERY_HIGH')),
+    created_at    INTEGER NOT NULL DEFAULT (unixepoch())
+  )
+`;
+
+// Alerts — pending queue consumed by Telegram dispatcher.
+// payload is JSON-encoded TEXT.
+export const CREATE_ALERTS = `
+  CREATE TABLE IF NOT EXISTS alerts (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    channel     TEXT    NOT NULL,
+    ticker      TEXT,
+    severity    TEXT    CHECK(severity IN ('LOW','MEDIUM','HIGH','VERY_HIGH')),
+    payload     TEXT    NOT NULL,
+    created_at  INTEGER NOT NULL DEFAULT (unixepoch()),
+    sent_at     INTEGER
+  )
+`;
+
+// Partial index — dispatcher only scans pending rows.
+export const CREATE_ALERTS_PENDING_INDEX = `
+  CREATE INDEX IF NOT EXISTS idx_alerts_pending
+  ON alerts(created_at)
+  WHERE sent_at IS NULL
+`;
+
+// Macro snapshots — Dashboard top bar cache.
+// sparkline_7d is JSON array of values.
+export const CREATE_MACRO_SNAPSHOTS = `
+  CREATE TABLE IF NOT EXISTS macro_snapshots (
+    symbol         TEXT PRIMARY KEY,
+    last_value     REAL NOT NULL,
+    change_24h_pct REAL,
+    sparkline_7d   TEXT,
+    updated_at     INTEGER NOT NULL DEFAULT (unixepoch())
+  )
+`;

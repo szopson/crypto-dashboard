@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:migrate": "tsx src/lib/db/migrate.ts",
+    "alerts:dispatch": "tsx src/lib/dispatcher.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.84.0",
