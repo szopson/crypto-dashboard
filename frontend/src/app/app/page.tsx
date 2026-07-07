@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import { ScanSearch } from "lucide-react";
 import { useMarketData } from "@/hooks/useMarketData";
 import { useSymbol, formatSymbolShort, formatSymbol } from "@/contexts/SymbolContext";
 import { BiasGrid } from "@/components/BiasGrid";
@@ -287,6 +289,18 @@ export default function Dashboard() {
           </TabsContent>
 
           <TabsContent value="journal" className="space-y-6">
+            <Link
+              href="/app/trade-review"
+              className="flex items-center gap-3 rounded-lg border border-primary/30 bg-primary/5 p-4 hover:bg-primary/10 transition-colors"
+            >
+              <ScanSearch className="size-5 text-primary shrink-0" />
+              <div className="min-w-0">
+                <p className="text-sm font-medium">Analiza zagrania</p>
+                <p className="text-xs text-muted-foreground">
+                  Wrzuć screenshot zagrania — oceń jakość decyzji, nie wynik.
+                </p>
+              </div>
+            </Link>
             <TradeJournal />
           </TabsContent>
 
