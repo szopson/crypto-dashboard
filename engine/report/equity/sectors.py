@@ -79,7 +79,18 @@ SECTORS: dict[str, dict] = {
         "description": "Defense primes and emerging drone, autonomy, and missile companies.",
         "tickers": ["LMT", "RTX", "NOC", "KTOS", "AVAV"],
     },
+    "crypto-infra": {
+        "name": "Crypto Infrastructure",
+        "slug": "crypto-infra",
+        "description": "Exchanges, miners, and treasury-proxy equities levered to crypto market structure.",
+        "tickers": ["COIN", "MARA", "MSTR", "RIOT", "HOOD"],
+    },
 }
+
+
+# Sectors whose equity reports get enriched with live crypto-derivatives macro
+# context (Coinglass): BTC open interest, funding regime, ETF flows.
+CRYPTO_ENRICHED_SECTORS = {"crypto-infra"}
 
 
 def get_sector_for_ticker(ticker: str) -> Optional[dict]:

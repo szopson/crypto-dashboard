@@ -18,9 +18,10 @@ from typing import Any, Optional
 
 from loguru import logger
 
-from .sectors import SECTORS, get_sector_for_ticker
+from .sectors import SECTORS, CRYPTO_ENRICHED_SECTORS, get_sector_for_ticker
 from .yfinance_source import get_yfinance_source, EquityNotFoundError
 from .finnhub_source import get_finnhub_source
+from .coinglass_source import get_coinglass_source
 from .ai_synthesis import get_equity_synthesis
 from .mdx_renderer import get_mdx_renderer
 
@@ -37,6 +38,7 @@ class EquityReportGenerator:
         self.output_root = Path(output_root)
         self.source = get_yfinance_source()
         self.finnhub = get_finnhub_source()
+        self.coinglass = get_coinglass_source()
         self.synthesizer = get_equity_synthesis(api_key=anthropic_api_key, model=model)
         self.renderer = get_mdx_renderer(output_root)
 
@@ -86,6 +88,21 @@ class EquityReportGenerator:
                 f"{len(finnhub_data.get('insider_transactions', []))} insider tx, "
                 f"beat rate={finnhub_data.get('computed', {}).get('beat_rate')}"
             )
+
+        # Crypto-infra names: enrich with live BTC derivatives + ETF macro context.
+        if sector["slug"] in CRYPTO_ENRICHED_SECTORS and self.coinglass.is_available():
+            try:
+                crypto_ctx = await self.coinglass.fetch_context()
+                if crypto_ctx:
+                    data["crypto_market_context"] = crypto_ctx
+                    logger.info(
+                        f"Coinglass: BTC ${crypto_ctx.get('price')}, "
+                        f"OI 24h {crypto_ctx.get('oi_change_24h_pct')}%, "
+                        f"funding {(crypto_ctx.get('funding') or {}).get('avg_pct_8h')}, "
+                        f"{len(crypto_ctx.get('signals', []))} signals"
+                    )
+            except Exception as e:
+                logger.warning(f"Coinglass enrichment failed for {ticker} (non-fatal): {e}")
 
         # Optionally dump raw data for debugging
         if write_raw:

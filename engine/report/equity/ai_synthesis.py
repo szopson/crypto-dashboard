@@ -119,6 +119,10 @@ REPORT_SCHEMA_PROMPT = """Produce a JSON object with EXACTLY these top-level key
     "key_resistance": <number>,
     "commentary": "<3-4 sentences on price action, where current price sits in the 52w range, what setup means for risk-reward>"
   },
+  "crypto_market_context": {
+    "regime": "<short phrase summarizing the BTC derivatives/ETF regime, e.g. 'Neutral funding, 7d ETF outflows'. Use null if NO crypto market data section was provided in the input.>",
+    "commentary": "<2-3 sentences tying the BTC derivatives + ETF-flow regime to THIS specific stock's near-term setup — e.g. how funding/OI/ETF flows drive COIN trading volumes, MSTR's NAV premium, or miner (MARA/RIOT) hashprice economics. Cite the actual numbers provided. Use null if no crypto market data was provided.>"
+  },
   "macro_context": "<1-2 sentences on macro/sector backdrop relevant to this name>",
   "verdict": "<2-3 sentence concluding investment thesis tying everything together>"
 }
@@ -174,18 +178,37 @@ class EquityAISynthesis:
                 text = text[5:]
         text = text.strip()
 
-        try:
-            parsed = json.loads(text)
-        except json.JSONDecodeError as e:
-            logger.error(f"Claude returned invalid JSON for {ticker}: {e}")
-            logger.debug(f"Raw output: {text[:2000]}")
-            raise
+        parsed = self._parse_json(text, ticker)
 
         logger.info(
             f"Synthesis complete for {ticker}: rating={parsed.get('cover', {}).get('rating')}, "
             f"target={parsed.get('cover', {}).get('target_price')}"
         )
         return parsed
+
+    @staticmethod
+    def _parse_json(text: str, ticker: str) -> dict[str, Any]:
+        """Parse the report JSON, tolerant of prose/trailing text around it.
+
+        Opus-tier models occasionally append a sentence after the closing brace
+        (→ 'Extra data') or a lead-in before it. `raw_decode` from the first '{'
+        parses exactly one JSON object and ignores anything after it.
+        """
+        try:
+            return json.loads(text)
+        except json.JSONDecodeError:
+            start = text.find("{")
+            if start != -1:
+                try:
+                    obj, _ = json.JSONDecoder().raw_decode(text[start:])
+                    if isinstance(obj, dict):
+                        logger.warning(f"{ticker}: recovered JSON from noisy output")
+                        return obj
+                except json.JSONDecodeError:
+                    pass
+            logger.error(f"Claude returned unparseable JSON for {ticker}")
+            logger.debug(f"Raw output: {text[:2000]}")
+            raise
 
     def _build_prompt(self, ticker: str, sector: dict, data: dict) -> str:
         """Compose the input prompt with company data + schema instructions."""
@@ -236,6 +259,17 @@ class EquityAISynthesis:
                 }
 
         news_summary = [{"title": n.get("title"), "publisher": n.get("publisher")} for n in news[:8]]
+
+        # Crypto-infra names carry a live BTC derivatives + ETF macro snapshot.
+        crypto_ctx = data.get("crypto_market_context") or {}
+        crypto_block = ""
+        if crypto_ctx:
+            crypto_block = (
+                "\n=== LIVE CRYPTO MARKET CONTEXT (Coinglass v4 — this name is a crypto proxy) ===\n"
+                f"{json.dumps(crypto_ctx, indent=2, default=str)}\n"
+                "Use this to populate `crypto_market_context` and to sharpen the macro/technical/verdict\n"
+                "sections. Funding is percent-per-8h (0.01 ≈ 11% APR). Frame the stock against this regime.\n"
+            )
 
         prompt = f"""Generate an equity research report for {ticker} ({company.get('name')}), classified under sector "{sector.get('name')}" ({sector.get('description')}).
 
@@ -293,7 +327,7 @@ Insider transactions (SEC Form 4, with transaction codes — P=purchase, S=sale,
 
 Computed Finnhub signals:
 {json.dumps(finnhub.get('computed', {}), indent=2, default=str)}
-
+{crypto_block}
 === TODAY'S DATE ===
 {__import__('datetime').date.today().isoformat()}
 

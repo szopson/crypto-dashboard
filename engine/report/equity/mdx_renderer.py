@@ -148,6 +148,7 @@ class MDXRenderer:
         sections = [
             self._section_intro(ticker, sector, data, synthesis),
             self._section_scoreboard(data, synthesis),
+            self._section_crypto_market(data, synthesis),
             self._section_qoq(synthesis),
             self._section_ownership(data, synthesis),
             self._section_earnings_quality(data, synthesis),
@@ -200,6 +201,33 @@ class MDXRenderer:
             "## Scoreboard\n\n"
             f"<Scoreboard data={_jsx_json_prop(sb_data)} />\n\n"
             f"{scoreboard.get('narrative', '')}"
+        )
+
+    def _section_crypto_market(self, data: dict, synthesis: dict) -> str:
+        """Live BTC derivatives + ETF regime — only for crypto-proxy names."""
+        ctx = data.get("crypto_market_context")
+        if not ctx:
+            return ""
+        section = synthesis.get("crypto_market_context") or {}
+        funding = ctx.get("funding") or {}
+        etf = ctx.get("etf") or {}
+        strip = {
+            "price": ctx.get("price"),
+            "price_change_24h_pct": ctx.get("price_change_24h_pct"),
+            "oi_usd": ctx.get("open_interest_usd"),
+            "oi_change_24h_pct": ctx.get("oi_change_24h_pct"),
+            "funding_pct_8h": funding.get("avg_pct_8h"),
+            "etf_flow_24h_usd": etf.get("flow_24h_usd"),
+            "etf_flow_7d_usd": etf.get("flow_7d_usd"),
+            "etf_flow_30d_usd": etf.get("flow_30d_usd"),
+            "regime": section.get("regime"),
+            "signals": ctx.get("signals", []),
+        }
+        commentary = section.get("commentary") or ""
+        return (
+            "## Crypto Market Context\n\n"
+            f"<CryptoMarketContext data={_jsx_json_prop(strip)} />\n\n"
+            f"{_md_escape(commentary)}"
         )
 
     def _section_qoq(self, synthesis: dict) -> str:
