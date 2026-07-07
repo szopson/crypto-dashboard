@@ -97,6 +97,16 @@ async def main_async(args):
         logger.error("Provide --ticker, --sector, --all, or --brief")
         return 1
 
+    # Resumability for long batches: skip tickers whose MDX already exists.
+    if args.skip_existing:
+        before = len(workload)
+        workload = [
+            (tk, sec_slug)
+            for tk, sec_slug in workload
+            if not (output_root / (sec_slug or "") / f"{tk.lower()}.mdx").exists()
+        ]
+        logger.info(f"--skip-existing: {before - len(workload)} already present, skipped")
+
     logger.info(f"Workload: {len(workload)} report(s)")
 
     successes = 0
@@ -118,6 +128,7 @@ def main():
     parser.add_argument("--model", default="claude-sonnet-4-5", help="Anthropic model id")
     parser.add_argument("--api-key", help="Anthropic API key (or set ANTHROPIC_API_KEY)")
     parser.add_argument("--write-raw", action="store_true", help="Also dump raw fetched data as JSON for debugging")
+    parser.add_argument("--skip-existing", action="store_true", help="Skip tickers whose MDX already exists (resume a batch)")
     parser.add_argument("--brief", help="Generate sector brief instead of ticker reports. Pass a sector slug or 'all'.")
     parser.add_argument("--briefs-out", help="Override sector briefs output directory")
     args = parser.parse_args()
