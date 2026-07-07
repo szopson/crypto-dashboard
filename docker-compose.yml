@@ -51,6 +51,10 @@ services:
     restart: always
     environment:
       - BACKEND_URL=http://backend:8000
+      # Server-side only (never NEXT_PUBLIC): read at request time by the
+      # /api/crypto-pulse route + cockpit server component. Sourced on the VPS
+      # from engine/.env via the deploy workflow.
+      - COINGLASS_API_KEY=${COINGLASS_API_KEY}
     depends_on:
       backend:
         condition: service_healthy
