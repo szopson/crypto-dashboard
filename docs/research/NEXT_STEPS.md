@@ -23,7 +23,18 @@ Paused at 2026-05-19. Pick this up next session.
 
 ## Open work, in priority order
 
-### 1. Coinglass into crypto-infra equity reports (high priority)
+### 1. Coinglass into crypto-infra equity reports (high priority) — ✅ DONE 2026-07-07
+Shipped: `crypto-infra` sector (COIN/MARA/MSTR/RIOT/HOOD) added to `sectors.py` +
+frontend `reports.ts` SECTOR_LABELS. New `engine/report/equity/coinglass_source.py`
+fetches BTC price/OI/funding/ETF flows; `generator.py` enriches conditionally via
+`CRYPTO_ENRICHED_SECTORS`; `ai_synthesis.py` gained a `crypto_market_context` schema key
++ conditional prompt block; `mdx_renderer.py` emits `<CryptoMarketContext>`; frontend
+component added to `ReportComponents.tsx`. COIN report generated + verified in-browser
+(ACCUMULATE, target 215). Remaining tickers (MARA/MSTR/RIOT/HOOD) not yet generated — run:
+`python -m engine.report.equity.cli --sector crypto-infra --out frontend/content/reports --model claude-opus-4-8`.
+No `crypto-infra` sector brief yet (see #6).
+
+_Original spec (reference):_
 For tickers `COIN`, `MARA`, `MSTR`, `RIOT`, `HOOD` (sector `crypto-infra` — not in current seed list, would need to add or repurpose existing reports), enrich the Macro Context section with:
 - BTC OI level + 24h delta
 - BTC ETF cumulative flows (1m, 3m)
