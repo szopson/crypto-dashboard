@@ -24,9 +24,10 @@ jobs:
             git pull origin main
             export NEXT_PUBLIC_POSTHOG_KEY="${NEXT_PUBLIC_POSTHOG_KEY}"
             # Server-side key for the frontend cockpit / crypto-pulse route.
-            # Already present on the VPS in engine/.env — source it here so
-            # docker compose can inject it into the frontend runtime env.
-            export COINGLASS_API_KEY="$(grep -E '^COINGLASS_API_KEY=' engine/.env | head -1 | cut -d= -f2-)"
+            # Already present on the VPS in engine/.env. Name-agnostic + CRLF-safe:
+            # match any line mentioning coinglass (COINGLASS_API_KEY=, "coinglass - ",
+            # "coinglass:", etc.) and pull out the 32-char hex token.
+            export COINGLASS_API_KEY="$(grep -iE 'coinglass' engine/.env | grep -oiE '[a-f0-9]{32}' | head -1)"
             docker compose build --no-cache
             docker compose up -d
             docker compose logs --tail 10
