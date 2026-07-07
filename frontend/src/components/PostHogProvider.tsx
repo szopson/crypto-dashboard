@@ -183,6 +183,23 @@ export const analytics = {
   },
 
   /**
+   * Track an affiliate/reflink click — the conversion signal for the
+   * exchange-affiliate revenue model. Fired when a user clicks "execute" on a
+   * venue CTA in the cockpit.
+   */
+  trackAffiliateClick: (params: {
+    exchange: string;
+    symbol: string;
+    effectiveFeePct: number;
+    rebatePct: number;
+    surface: string; // where the click happened, e.g. "cockpit_coin" | "cockpit_deviation"
+  }) => {
+    if (POSTHOG_KEY) {
+      posthog.capture("affiliate_click", params);
+    }
+  },
+
+  /**
    * Identify user after login
    */
   identify: (userId: string, traits?: Record<string, unknown>) => {

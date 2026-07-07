@@ -11,6 +11,8 @@
 import { Activity, RefreshCw } from "lucide-react";
 import { fetchCryptoPulse, type CockpitCoin } from "@/lib/coinglass";
 import { DeviationBanner } from "./DeviationBanner";
+import { ExchangeCTA } from "./ExchangeCTA";
+import { AffiliateDisclosure } from "./AffiliateDisclosure";
 
 function fmtUsdShort(n: number | null | undefined): string {
   if (n == null) return "—";
@@ -69,8 +71,16 @@ export async function DerivativesCockpit() {
         </span>
       </header>
 
-      {/* Deviations first — interpretation over raw numbers */}
-      <DeviationBanner deviations={snap.deviations} />
+      {/* Deviations first — interpretation over raw numbers, each with an
+          "execute here" bridge to the cheapest-net venue for that symbol. */}
+      <DeviationBanner
+        deviations={snap.deviations}
+        ctaSlot={(d) =>
+          d.symbol && d.symbol !== "MKT" ? (
+            <ExchangeCTA symbol={d.symbol} surface="cockpit_deviation" compact />
+          ) : null
+        }
+      />
 
       {/* Per-coin derivatives grid */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -137,6 +147,8 @@ export async function DerivativesCockpit() {
         </section>
       </div>
 
+      <AffiliateDisclosure />
+
       <p className="pt-1 text-center text-[11px] text-zinc-400">
         Read-only market data. Not financial advice, not a buy/sell signal.
       </p>
@@ -177,6 +189,10 @@ function CoinCard({ c }: { c: CockpitCoin }) {
             </span>
           }
         />
+      </div>
+
+      <div className="mt-3">
+        <ExchangeCTA symbol={c.symbol} surface="cockpit_coin" />
       </div>
     </div>
   );
