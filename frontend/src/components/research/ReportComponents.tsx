@@ -1056,6 +1056,84 @@ export function RiskList({ items }: { items: string[] | string }) {
 
 /* ──────────── Export bundle for MDX runtime ──────────── */
 
+/* ──────────── CryptoMarketContext ──────────── */
+
+interface CryptoMarketData {
+  price?: number | null;
+  price_change_24h_pct?: number | null;
+  oi_usd?: number | null;
+  oi_change_24h_pct?: number | null;
+  funding_pct_8h?: number | null;
+  etf_flow_24h_usd?: number | null;
+  etf_flow_7d_usd?: number | null;
+  etf_flow_30d_usd?: number | null;
+  regime?: string | null;
+  signals?: string[];
+}
+
+/** Signed delta as "+1.2%" / "-3.4%", raw percent value (not ×100). */
+function fmtDelta(n: number | null | undefined): string {
+  if (n == null) return "n/a";
+  return `${n >= 0 ? "+" : ""}${n.toFixed(1)}%`;
+}
+
+export function CryptoMarketContext({ data }: { data: CryptoMarketData | string }) {
+  const d = parseProp<CryptoMarketData>(data, {} as CryptoMarketData);
+  const oiDelta = parseNum(d.oi_change_24h_pct);
+  const pxDelta = parseNum(d.price_change_24h_pct);
+  const funding = parseNum(d.funding_pct_8h);
+  const etf7 = parseNum(d.etf_flow_7d_usd);
+  const signals = Array.isArray(d.signals) ? d.signals : [];
+
+  return (
+    <div className="not-prose space-y-3">
+      {d.regime && (
+        <div className="inline-flex items-center gap-2 rounded-full border border-orange-500/30 bg-orange-500/10 px-3 py-1 text-xs font-medium text-orange-700 dark:text-orange-300">
+          <CircleDollarSign className="h-3.5 w-3.5" />
+          {d.regime}
+        </div>
+      )}
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <Card
+          title="BTC Price"
+          value={fmtMoney(parseNum(d.price))}
+          sub={pxDelta != null ? `${fmtDelta(pxDelta)} 24h` : null}
+          subTone={pxDelta != null ? (pxDelta >= 0 ? "pos" : "neg") : "mute"}
+        />
+        <Card
+          title="BTC Open Interest"
+          value={fmtMoney(parseNum(d.oi_usd))}
+          sub={oiDelta != null ? `${fmtDelta(oiDelta)} 24h` : null}
+          subTone={oiDelta != null ? (oiDelta >= 0 ? "pos" : "neg") : "mute"}
+        />
+        <Card
+          title="Funding (8h)"
+          value={funding != null ? `${funding.toFixed(4)}%` : "n/a"}
+          sub={funding != null ? (funding >= 0 ? "longs pay" : "shorts pay") : null}
+          subTone={funding != null ? (funding >= 0 ? "neg" : "pos") : "mute"}
+        />
+        <Card
+          title="BTC ETF Flow 7d"
+          value={fmtMoney(etf7)}
+          sub={etf7 != null ? (etf7 >= 0 ? "net inflow" : "net outflow") : null}
+          subTone={etf7 != null ? (etf7 >= 0 ? "pos" : "neg") : "mute"}
+          small
+        />
+      </div>
+      {signals.length > 0 && (
+        <ul className="space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
+          {signals.map((s, i) => (
+            <li key={i} className="flex items-start gap-2">
+              <Activity className="mt-0.5 h-3.5 w-3.5 shrink-0 text-orange-500" />
+              <span>{s}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 export const reportComponents = {
   ReportHeader,
   Scoreboard,
@@ -1076,5 +1154,6 @@ export const reportComponents = {
   RiskList,
   EarningsHistory,
   AnalystRatings,
+  CryptoMarketContext,
   YouTube: YouTubeEmbed,
 };

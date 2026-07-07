@@ -162,4 +162,8 @@ export const SECTOR_LABELS: Record<string, { name: string; description: string }
     name: "Defense",
     description: "Defense primes and emerging drone/autonomy companies.",
   },
+  "crypto-infra": {
+    name: "Crypto Infrastructure",
+    description: "Exchanges, miners, and treasury proxies levered to crypto market structure.",
+  },
 };
