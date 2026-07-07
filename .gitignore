@@ -68,3 +68,16 @@ Thumbs.db
 
 # Docker
 docker-compose.override.yml
+
+# Local data & scratch
+data/
+files/
+files.zip
+dashboard-current.png
+.playwright-mcp/
+
+# Next.js generated
+next-env.d.ts
+
+# Stale duplicate content — source of truth is frontend/content/ (pending decision to hard-delete)
+/content/
