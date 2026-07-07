@@ -49,15 +49,12 @@ services:
         - NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL:-https://follio.io}
     container_name: tcc-frontend
     restart: always
-    # Load the same env file the backend uses, so server-side keys the frontend
-    # needs at request time (COINGLASS_API_KEY for the cockpit / crypto-pulse
-    # route) are present exactly as named in engine/.env — no workflow-side
-    # extraction to get wrong. Values are server-side only (never NEXT_PUBLIC),
-    # so they are not exposed to the browser.
-    env_file:
-      - ./engine/.env
     environment:
       - BACKEND_URL=http://backend:8000
+      # Server-side only (never NEXT_PUBLIC): read at request time by the
+      # cockpit / crypto-pulse route. Provided by the deploy workflow from the
+      # COINGLASS_API_KEY GitHub secret.
+      - COINGLASS_API_KEY=${COINGLASS_API_KEY}
     depends_on:
       backend:
         condition: service_healthy
