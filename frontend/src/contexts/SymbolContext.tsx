@@ -17,6 +17,16 @@ export function SymbolProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Skip backend fetch on routes that don't need market data — keeps the
+    // dev overlay clean when running frontend without the FastAPI engine.
+    const path = typeof window !== "undefined" ? window.location.pathname : "";
+    const needsBackend = path.startsWith("/app") || path.startsWith("/api");
+    if (!needsBackend) {
+      setAvailableSymbols(["BTC/USDT:USDT", "ETH/USDT:USDT", "SOL/USDT:USDT"]);
+      setLoading(false);
+      return;
+    }
+
     // Fetch available symbols from backend
     const fetchSymbols = async () => {
       try {
@@ -32,8 +42,10 @@ export function SymbolProvider({ children }: { children: ReactNode }) {
             setSymbolState(data.default || "BTC/USDT:USDT");
           }
         }
-      } catch (error) {
-        console.error("Error fetching symbols:", error);
+      } catch {
+        // Backend unavailable (e.g. running frontend without FastAPI in dev) —
+        // fall back to a static symbol list silently. Don't console.error: in
+        // Next.js dev the overlay surfaces error-level logs even when caught.
         setAvailableSymbols(["BTC/USDT:USDT", "ETH/USDT:USDT", "SOL/USDT:USDT"]);
       } finally {
         setLoading(false);
