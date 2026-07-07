@@ -56,24 +56,69 @@ interface LongShortPoint {
   top_account_long_short_ratio?: number;
 }
 
+/**
+ * A structured, typed deviation — the cockpit renders these as highlighted
+ * "something is off" cards rather than raw numbers. `signals` (string[]) is
+ * kept for the legacy widget and the daily digest; `deviations` is the machine
+ * readable version the Derivatives Cockpit consumes.
+ */
+export type DeviationKind =
+  | "funding_hot"
+  | "funding_cold"
+  | "funding_flip"
+  | "funding_dispersion"
+  | "oi_spike"
+  | "oi_drop_price_up"
+  | "oi_up_price_down"
+  | "liq_cluster"
+  | "ls_extreme"
+  | "positioning_divergence"
+  | "etf_inflow"
+  | "etf_outflow";
+
+export interface Deviation {
+  kind: DeviationKind;
+  severity: "info" | "watch" | "alert";
+  symbol: string; // "BTC" | "ETH" | "SOL" | "MKT"
+  headline: string; // terse, e.g. "Funding flipped negative"
+  detail: string; // one line of context
+  direction: "bullish" | "bearish" | "neutral";
+}
+
+export interface CockpitCoin {
+  symbol: string;
+  price: number;
+  funding_rate_oi: number; // %
+  oi_usd: number;
+  oi_change_1h_pct: number;
+  oi_change_4h_pct: number;
+  oi_change_24h_pct: number;
+  long_short_1h: number;
+  long_short_4h: number;
+  long_short_24h: number;
+  price_change_1h_pct: number;
+  price_change_4h_pct: number;
+  price_change_24h_pct: number;
+  liquidation_1h_usd: number;
+  liquidation_4h_usd: number;
+  liquidation_24h_usd: number;
+  long_liq_24h_usd: number;
+  short_liq_24h_usd: number;
+}
+
 export interface CryptoPulseSnapshot {
   generated_at: string;
-  coins: {
-    symbol: string;
-    price: number;
-    funding_rate_oi: number; // %
-    oi_usd: number;
-    oi_change_24h_pct: number;
-    long_short_24h: number;
-    price_change_24h_pct: number;
-    liquidation_24h_usd: number;
-    long_liq_24h_usd: number;
-    short_liq_24h_usd: number;
-  }[];
+  coins: CockpitCoin[];
   funding_aggregate: {
     btc_avg_pct: number | null;
     eth_avg_pct: number | null;
     btc_exchanges: { exchange: string; rate_pct: number }[];
+    // Cross-exchange dispersion (max − min) from the exchange list above.
+    // A wide spread flags venue divergence (institutional vs retail venue),
+    // the same signal Velo surfaces more granularly — added there later.
+    btc_spread_pct: number | null;
+    btc_max: { exchange: string; rate_pct: number } | null;
+    btc_min: { exchange: string; rate_pct: number } | null;
   };
   etf: {
     btc_24h_flow_usd: number | null;
@@ -86,7 +131,8 @@ export interface CryptoPulseSnapshot {
     top_trader_long_pct: number | null;
     divergence_pct: number | null; // top_trader - retail
   };
-  signals: string[]; // human-readable interpretation tags
+  signals: string[]; // human-readable interpretation tags (legacy widget + digest)
+  deviations: Deviation[]; // structured, cockpit-consumed
   source: "coinglass.v4";
 }
 
@@ -132,16 +178,24 @@ export async function fetchCryptoPulse(): Promise<CryptoPulseSnapshot> {
     ),
   ]);
 
-  const coins = symbols.map((sym) => {
+  const coins: CockpitCoin[] = symbols.map((sym) => {
     const m = pickCoin(markets, sym);
     return {
       symbol: sym,
       price: m?.current_price ?? 0,
       funding_rate_oi: m?.avg_funding_rate_by_oi ?? 0,
       oi_usd: m?.open_interest_usd ?? 0,
+      oi_change_1h_pct: m?.open_interest_change_percent_1h ?? 0,
+      oi_change_4h_pct: m?.open_interest_change_percent_4h ?? 0,
       oi_change_24h_pct: m?.open_interest_change_percent_24h ?? 0,
+      long_short_1h: m?.long_short_ratio_1h ?? 0,
+      long_short_4h: m?.long_short_ratio_4h ?? 0,
       long_short_24h: m?.long_short_ratio_24h ?? 0,
+      price_change_1h_pct: m?.price_change_percent_1h ?? 0,
+      price_change_4h_pct: m?.price_change_percent_4h ?? 0,
       price_change_24h_pct: m?.price_change_percent_24h ?? 0,
+      liquidation_1h_usd: m?.liquidation_usd_1h ?? 0,
+      liquidation_4h_usd: m?.liquidation_usd_4h ?? 0,
       liquidation_24h_usd: m?.liquidation_usd_24h ?? 0,
       long_liq_24h_usd: m?.long_liquidation_usd_24h ?? 0,
       short_liq_24h_usd: m?.short_liquidation_usd_24h ?? 0,
@@ -158,6 +212,14 @@ export async function fetchCryptoPulse(): Promise<CryptoPulseSnapshot> {
     : null;
   const ethCoin = pickCoin(markets, "ETH");
   const ethAvg = ethCoin?.avg_funding_rate_by_oi ?? null;
+
+  // Cross-exchange funding dispersion: which venue is richest/cheapest and by
+  // how much. Wide spread = venue divergence worth an execution edge.
+  const sortedFunding = btcExchanges.slice().sort((a, b) => a.rate_pct - b.rate_pct);
+  const btcMin = sortedFunding[0] ?? null;
+  const btcMax = sortedFunding[sortedFunding.length - 1] ?? null;
+  const btcSpread =
+    btcMin && btcMax ? btcMax.rate_pct - btcMin.rate_pct : null;
 
   // ETF flows: 24h + 7d sum
   const flowsSorted = (etfFlows ?? []).slice().sort((a, b) => b.timestamp - a.timestamp);
@@ -197,6 +259,17 @@ export async function fetchCryptoPulse(): Promise<CryptoPulseSnapshot> {
     signals.push("OI rising while price falls — leveraged shorts adding, squeeze risk");
   }
 
+  const deviations = buildDeviations({
+    coins,
+    btcAvg,
+    btcSpread,
+    btcMax,
+    btcMin,
+    btc24h,
+    btc7d,
+    divergence,
+  });
+
   return {
     generated_at: new Date().toISOString(),
     coins,
@@ -204,6 +277,9 @@ export async function fetchCryptoPulse(): Promise<CryptoPulseSnapshot> {
       btc_avg_pct: btcAvg,
       eth_avg_pct: ethAvg,
       btc_exchanges: btcExchanges,
+      btc_spread_pct: btcSpread,
+      btc_max: btcMax,
+      btc_min: btcMin,
     },
     etf: {
       btc_24h_flow_usd: btc24h,
@@ -217,6 +293,165 @@ export async function fetchCryptoPulse(): Promise<CryptoPulseSnapshot> {
       divergence_pct: divergence,
     },
     signals,
+    deviations,
     source: "coinglass.v4",
   };
+}
+
+/**
+ * Turn raw derivatives numbers into a small set of typed deviations. Thresholds
+ * mirror the string-signal heuristics but are structured so the cockpit can
+ * rank, colour and (Phase 2) attach an execution CTA to each. Funding rates are
+ * percent-per-8h (Coinglass convention).
+ */
+function buildDeviations(x: {
+  coins: CockpitCoin[];
+  btcAvg: number | null;
+  btcSpread: number | null;
+  btcMax: { exchange: string; rate_pct: number } | null;
+  btcMin: { exchange: string; rate_pct: number } | null;
+  btc24h: number | null;
+  btc7d: number | null;
+  divergence: number | null;
+}): Deviation[] {
+  const out: Deviation[] = [];
+  const { btcAvg, btcSpread, btcMax, btcMin, btc24h, btc7d, divergence } = x;
+
+  // Funding regime
+  if (btcAvg != null) {
+    if (btcAvg > 0.03)
+      out.push({
+        kind: "funding_hot",
+        severity: "alert",
+        symbol: "BTC",
+        headline: "Funding overheated",
+        detail: `Avg ${btcAvg.toFixed(4)}%/8h — crowded longs, contrarian short bias`,
+        direction: "bearish",
+      });
+    else if (btcAvg > 0.015)
+      out.push({
+        kind: "funding_hot",
+        severity: "watch",
+        symbol: "BTC",
+        headline: "Funding elevated",
+        detail: `Avg ${btcAvg.toFixed(4)}%/8h — longs paying up`,
+        direction: "bearish",
+      });
+    if (btcAvg < -0.005)
+      out.push({
+        kind: "funding_cold",
+        severity: "alert",
+        symbol: "BTC",
+        headline: "Funding negative",
+        detail: `Avg ${btcAvg.toFixed(4)}%/8h — shorts paying, contrarian long bias`,
+        direction: "bullish",
+      });
+  }
+
+  // Cross-exchange funding dispersion
+  if (btcSpread != null && btcMax && btcMin && btcSpread > 0.01)
+    out.push({
+      kind: "funding_dispersion",
+      severity: btcSpread > 0.03 ? "alert" : "watch",
+      symbol: "BTC",
+      headline: "Funding split across venues",
+      detail: `${btcMax.exchange} ${btcMax.rate_pct.toFixed(4)}% vs ${btcMin.exchange} ${btcMin.rate_pct.toFixed(4)}% (Δ ${btcSpread.toFixed(4)}%/8h)`,
+      direction: "neutral",
+    });
+
+  // Per-coin OI / price structure + liquidation clusters
+  for (const c of x.coins) {
+    if (c.oi_change_24h_pct < -3 && c.price_change_24h_pct > 0)
+      out.push({
+        kind: "oi_drop_price_up",
+        severity: "watch",
+        symbol: c.symbol,
+        headline: "OI falling as price rises",
+        detail: `OI ${c.oi_change_24h_pct.toFixed(1)}% / price +${c.price_change_24h_pct.toFixed(1)}% — short squeeze cooling`,
+        direction: "neutral",
+      });
+    if (c.oi_change_24h_pct > 5 && c.price_change_24h_pct < 0)
+      out.push({
+        kind: "oi_up_price_down",
+        severity: "alert",
+        symbol: c.symbol,
+        headline: "OI rising as price falls",
+        detail: `OI +${c.oi_change_24h_pct.toFixed(1)}% / price ${c.price_change_24h_pct.toFixed(1)}% — leveraged shorts adding, squeeze risk`,
+        direction: "bullish",
+      });
+    if (c.oi_change_1h_pct > 4)
+      out.push({
+        kind: "oi_spike",
+        severity: "watch",
+        symbol: c.symbol,
+        headline: "OI spiking (1h)",
+        detail: `+${c.oi_change_1h_pct.toFixed(1)}% in 1h — fresh leverage entering`,
+        direction: "neutral",
+      });
+    // Liquidation cluster: last 1h is a large fraction of the 24h total.
+    if (c.liquidation_1h_usd > 25_000_000 && c.liquidation_1h_usd > 0.25 * (c.liquidation_24h_usd || 1))
+      out.push({
+        kind: "liq_cluster",
+        severity: "alert",
+        symbol: c.symbol,
+        headline: "Liquidation cluster (1h)",
+        detail: `$${(c.liquidation_1h_usd / 1e6).toFixed(0)}M in 1h — cascade in progress`,
+        direction: "neutral",
+      });
+  }
+
+  // Positioning divergence: top traders vs retail
+  if (divergence != null) {
+    if (divergence < -8)
+      out.push({
+        kind: "positioning_divergence",
+        severity: "watch",
+        symbol: "BTC",
+        headline: "Top traders less long than retail",
+        detail: `Δ ${divergence.toFixed(1)}pp — distribution risk`,
+        direction: "bearish",
+      });
+    if (divergence > 8)
+      out.push({
+        kind: "positioning_divergence",
+        severity: "watch",
+        symbol: "BTC",
+        headline: "Top traders more long than retail",
+        detail: `Δ +${divergence.toFixed(1)}pp — accumulation`,
+        direction: "bullish",
+      });
+  }
+
+  // ETF flows
+  if (btc24h != null && btc24h > 200_000_000)
+    out.push({
+      kind: "etf_inflow",
+      severity: "info",
+      symbol: "BTC",
+      headline: "Strong ETF inflow (24h)",
+      detail: `$${(btc24h / 1e6).toFixed(0)}M — institutional bid`,
+      direction: "bullish",
+    });
+  if (btc24h != null && btc24h < -100_000_000)
+    out.push({
+      kind: "etf_outflow",
+      severity: "watch",
+      symbol: "BTC",
+      headline: "ETF outflow (24h)",
+      detail: `$${(btc24h / 1e6).toFixed(0)}M — institutional risk-off`,
+      direction: "bearish",
+    });
+  if (btc7d != null && btc7d < -500_000_000)
+    out.push({
+      kind: "etf_outflow",
+      severity: "alert",
+      symbol: "BTC",
+      headline: "Sustained ETF outflow (7d)",
+      detail: `$${(btc7d / 1e6).toFixed(0)}M cumulative — institutions selling`,
+      direction: "bearish",
+    });
+
+  // Rank alert > watch > info so the cockpit shows the loudest first.
+  const rank = { alert: 0, watch: 1, info: 2 } as const;
+  return out.sort((a, b) => rank[a.severity] - rank[b.severity]);
 }
