@@ -16,7 +16,10 @@ export const revalidate = 60;
 export async function GET() {
   try {
     const snapshot = await fetchCryptoPulse();
-    return NextResponse.json(snapshot, {
+    // TEMP diagnostic: reveals only whether the key env var is set (a boolean),
+    // never its value. Remove once prod data is confirmed flowing.
+    const withDiag = { ...snapshot, key_present: !!process.env.COINGLASS_API_KEY };
+    return NextResponse.json(withDiag, {
       headers: {
         "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120",
       },

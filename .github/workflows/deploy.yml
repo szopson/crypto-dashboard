@@ -23,11 +23,8 @@ jobs:
             cd /root/crypto-dashboard
             git pull origin main
             export NEXT_PUBLIC_POSTHOG_KEY="${NEXT_PUBLIC_POSTHOG_KEY}"
-            # Server-side key for the frontend cockpit / crypto-pulse route.
-            # Already present on the VPS in engine/.env. Name-agnostic + CRLF-safe:
-            # match any line mentioning coinglass (COINGLASS_API_KEY=, "coinglass - ",
-            # "coinglass:", etc.) and pull out the 32-char hex token.
-            export COINGLASS_API_KEY="$(grep -iE 'coinglass' engine/.env | grep -oiE '[a-f0-9]{32}' | head -1)"
+            # COINGLASS_API_KEY is provided to the frontend via env_file
+            # (./engine/.env) in docker-compose.yml — no extraction needed here.
             docker compose build --no-cache
             docker compose up -d
             docker compose logs --tail 10
