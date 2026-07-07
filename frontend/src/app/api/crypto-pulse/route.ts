@@ -17,12 +17,28 @@ export async function GET() {
   try {
     const snapshot = await fetchCryptoPulse();
     // TEMP diagnostic: names only (never values) of env vars containing
-    // "coinglass", plus whether the resolver found a usable key. Reveals what
-    // env_file actually loaded, without VPS access. Remove once data flows.
+    // "coinglass", whether the resolver found a usable key, and a single probe
+    // call to Coinglass reporting HTTP status + API code (distinguishes
+    // invalid/IP-restricted key from network issues). Remove once data flows.
+    const key = resolveCoinglassKey();
+    let probe: Record<string, unknown> = { skipped: !key };
+    if (key) {
+      try {
+        const r = await fetch(
+          "https://open-api-v4.coinglass.com/api/futures/coins-markets",
+          { headers: { "CG-API-KEY": key }, cache: "no-store" },
+        );
+        const j = (await r.json().catch(() => ({}))) as { code?: unknown; msg?: unknown };
+        probe = { http: r.status, code: j.code ?? null, msg: j.msg ?? null, key_len: key.length };
+      } catch (err) {
+        probe = { error: String(err).slice(0, 200), key_len: key.length };
+      }
+    }
     const withDiag = {
       ...snapshot,
-      key_present: !!resolveCoinglassKey(),
+      key_present: !!key,
       coinglass_env_keys: Object.keys(process.env).filter((k) => /coinglass/i.test(k)),
+      cg_probe: probe,
     };
     return NextResponse.json(withDiag, {
       headers: {
