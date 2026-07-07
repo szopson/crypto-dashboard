@@ -13,7 +13,19 @@ import "server-only";
 
 const BASE = "https://open-api-v4.coinglass.com";
 
-const KEY = process.env.COINGLASS_API_KEY;
+/**
+ * Resolve the Coinglass API key tolerantly. Prod stores it in engine/.env under
+ * a non-standard name (`coinglass`), so we also scan any env var whose name
+ * contains "coinglass" and whose value looks like a 32-hex key. Server-only.
+ */
+export function resolveCoinglassKey(): string | undefined {
+  const direct = process.env.COINGLASS_API_KEY?.trim();
+  if (direct) return direct;
+  for (const [k, v] of Object.entries(process.env)) {
+    if (/coinglass/i.test(k) && v && /^[a-f0-9]{32}$/i.test(v.trim())) return v.trim();
+  }
+  return undefined;
+}
 
 interface CoinMarket {
   symbol: string;
@@ -137,7 +149,7 @@ export interface CryptoPulseSnapshot {
 }
 
 async function cgGet<T = unknown>(path: string): Promise<T | null> {
-  const key = process.env.COINGLASS_API_KEY;
+  const key = resolveCoinglassKey();
   if (!key) return null;
   try {
     const res = await fetch(`${BASE}${path}`, {

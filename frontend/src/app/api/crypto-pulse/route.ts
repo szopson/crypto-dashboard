@@ -8,7 +8,7 @@
  * (COINGLASS_API_KEY) never reaches the client.
  */
 import { NextResponse } from "next/server";
-import { fetchCryptoPulse } from "@/lib/coinglass";
+import { fetchCryptoPulse, resolveCoinglassKey } from "@/lib/coinglass";
 
 // Allow caching at the edge for a minute to absorb refresh storms.
 export const revalidate = 60;
@@ -16,9 +16,14 @@ export const revalidate = 60;
 export async function GET() {
   try {
     const snapshot = await fetchCryptoPulse();
-    // TEMP diagnostic: reveals only whether the key env var is set (a boolean),
-    // never its value. Remove once prod data is confirmed flowing.
-    const withDiag = { ...snapshot, key_present: !!process.env.COINGLASS_API_KEY };
+    // TEMP diagnostic: names only (never values) of env vars containing
+    // "coinglass", plus whether the resolver found a usable key. Reveals what
+    // env_file actually loaded, without VPS access. Remove once data flows.
+    const withDiag = {
+      ...snapshot,
+      key_present: !!resolveCoinglassKey(),
+      coinglass_env_keys: Object.keys(process.env).filter((k) => /coinglass/i.test(k)),
+    };
     return NextResponse.json(withDiag, {
       headers: {
         "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120",
