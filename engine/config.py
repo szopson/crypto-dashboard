@@ -137,6 +137,15 @@ class Settings(BaseSettings):
     daily_briefing_minute: int = 0
     daily_briefing_timezone: str = "Europe/Warsaw"
 
+    # Cockpit daily digest (X/Telegram content export)
+    # The digest reads the frontend's /api/crypto-pulse so the derivatives
+    # snapshot has a single source of truth (Coinglass key + cache live there).
+    frontend_base_url: str = "http://localhost:3000"
+    cockpit_digest_enabled: bool = False  # opt-in; drafts to Telegram admin
+    cockpit_digest_hour: int = 9
+    cockpit_digest_minute: int = 0
+    cockpit_digest_timezone: str = "Europe/Warsaw"
+
     # Report Generation
     report_playwright_timeout: int = 30000  # 30 seconds
     report_template_dir: str = "report/templates"

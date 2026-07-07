@@ -21,6 +21,7 @@ from calculations.structure import analyze_structure
 from calculations.sniper import analyze_sniper
 from services.llm import get_llm_service
 from services.telegram import get_telegram_service
+from services.cockpit_digest import get_cockpit_digest_service
 
 
 class SchedulerService:
@@ -91,6 +92,54 @@ class SchedulerService:
         if existing:
             self.scheduler.remove_job(job_id)
             logger.info("Daily briefing removed")
+
+    def add_daily_cockpit_digest(
+        self,
+        hour: int = 9,
+        minute: int = 0,
+        timezone: str = "Europe/Warsaw",
+    ):
+        """
+        Schedule the daily cockpit digest (X/Telegram content export).
+
+        Delivers a DRAFT to the Telegram admin chat for review — never
+        auto-posts to a public channel.
+        """
+        job_id = "cockpit_digest"
+
+        existing = self.scheduler.get_job(job_id)
+        if existing:
+            self.scheduler.remove_job(job_id)
+
+        self.scheduler.add_job(
+            self._run_cockpit_digest,
+            trigger=CronTrigger(hour=hour, minute=minute, timezone=timezone),
+            id=job_id,
+            name="Daily Cockpit Digest",
+            replace_existing=True,
+        )
+
+        logger.info(f"Cockpit digest scheduled for {hour:02d}:{minute:02d} {timezone}")
+
+    def remove_daily_cockpit_digest(self):
+        """Remove the cockpit digest schedule."""
+        job_id = "cockpit_digest"
+        existing = self.scheduler.get_job(job_id)
+        if existing:
+            self.scheduler.remove_job(job_id)
+            logger.info("Cockpit digest removed")
+
+    async def _run_cockpit_digest(self):
+        """Generate and deliver the daily cockpit digest draft."""
+        logger.info("Generating cockpit digest...")
+        try:
+            result = await get_cockpit_digest_service().generate_and_deliver(publish=True)
+            if result.get("success"):
+                logger.info(f"Cockpit digest ready (delivered={result.get('delivered')})")
+            else:
+                logger.warning(f"Cockpit digest not generated: {result.get('error')}")
+        except Exception as e:
+            logger.error(f"Error generating cockpit digest: {e}")
 
     def add_periodic_snapshot(
         self,

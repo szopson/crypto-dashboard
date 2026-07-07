@@ -65,6 +65,14 @@ async def lifespan(app: FastAPI):
                     timezone=settings.daily_briefing_timezone,
                 )
 
+            # Schedule daily cockpit digest if enabled (drafts to Telegram admin)
+            if settings.cockpit_digest_enabled:
+                scheduler.add_daily_cockpit_digest(
+                    hour=settings.cockpit_digest_hour,
+                    minute=settings.cockpit_digest_minute,
+                    timezone=settings.cockpit_digest_timezone,
+                )
+
             logger.info("Scheduler started")
         except Exception as e:
             logger.warning(f"Could not start scheduler: {e}")
