@@ -6,12 +6,15 @@
  * Upload a trade screenshot, get a decision-quality scorecard. Crypto-first: the
  * backend enriches the review with live Coinglass derivatives context.
  */
-import { useCallback, useRef, useState } from "react";
-import { Upload, Loader2, X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Upload, Loader2, X, Save, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { TradeScorecard } from "@/components/research/TradeScorecard";
+import { TradeReviewJournal } from "@/components/research/TradeReviewJournal";
+import { useAuth } from "@/contexts/AuthContext";
+import { saveTradeReview, JournalNotProvisionedError } from "@/lib/trade-journal";
 import type { TradeReviewResult } from "@/lib/trade-review";
 
 const ALLOWED = ["image/png", "image/jpeg", "image/gif", "image/webp"];
@@ -24,8 +27,24 @@ export default function TradeReviewPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<TradeReviewResult | null>(null);
+  const [elapsed, setElapsed] = useState(0);
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { user } = useAuth();
+
+  // Tick an elapsed-seconds counter while analyzing so the wait feels bounded
+  // (Opus 4.8 vision is ~20-40s; a silent spinner reads as "hung").
+  useEffect(() => {
+    if (!loading) return;
+    setElapsed(0);
+    const t = setInterval(() => setElapsed((e) => e + 1), 1000);
+    return () => clearInterval(t);
+  }, [loading]);
+
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [journalKey, setJournalKey] = useState(0);
 
   const accept = useCallback((f: File | undefined | null) => {
     setError(null);
@@ -49,6 +68,33 @@ export default function TradeReviewPage() {
     setResult(null);
     setError(null);
     setNotes("");
+    setSaved(false);
+    setSaveError(null);
+  };
+
+  const save = async () => {
+    if (!result || !user) return;
+    setSaving(true);
+    setSaveError(null);
+    try {
+      await saveTradeReview({
+        userId: user.id,
+        scorecard: result.scorecard,
+        notes: notes.trim() || undefined,
+      });
+      setSaved(true);
+      setJournalKey((k) => k + 1);
+    } catch (e) {
+      setSaveError(
+        e instanceof JournalNotProvisionedError
+          ? "Dziennik nie jest skonfigurowany (migracja Supabase nie zastosowana)."
+          : e instanceof Error
+            ? e.message
+            : "Nie udało się zapisać.",
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
   const analyze = async () => {
@@ -76,6 +122,8 @@ export default function TradeReviewPage() {
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Analiza nie powiodła się.");
       setResult(json as TradeReviewResult);
+      setSaved(false);
+      setSaveError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Analiza nie powiodła się.");
     } finally {
@@ -165,12 +213,17 @@ export default function TradeReviewPage() {
       >
         {loading ? (
           <>
-            <Loader2 className="size-4 animate-spin" /> Analizuję zagranie…
+            <Loader2 className="size-4 animate-spin" /> Analizuję zagranie… {elapsed}s
           </>
         ) : (
           "Oceń zagranie"
         )}
       </Button>
+      {loading && (
+        <p className="-mt-2 text-center text-xs text-muted-foreground">
+          Opus 4.8 czyta wykres i dociąga kontekst Coinglass — zwykle 20–40s.
+        </p>
+      )}
 
       {error && (
         <p className="text-sm text-red-500" role="alert">
@@ -178,7 +231,46 @@ export default function TradeReviewPage() {
         </p>
       )}
 
-      {result && <TradeScorecard data={result.scorecard} />}
+      {result && (
+        <div className="space-y-4">
+          <TradeScorecard data={result.scorecard} />
+
+          <div className="flex items-center gap-3">
+            {user ? (
+              <Button
+                variant={saved ? "secondary" : "default"}
+                onClick={save}
+                disabled={saving || saved}
+              >
+                {saving ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin" /> Zapisuję…
+                  </>
+                ) : saved ? (
+                  <>
+                    <Check className="size-4" /> Zapisano w dzienniku
+                  </>
+                ) : (
+                  <>
+                    <Save className="size-4" /> Zapisz do dziennika
+                  </>
+                )}
+              </Button>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Zaloguj się, aby zapisać analizę do dziennika.
+              </p>
+            )}
+          </div>
+          {saveError && (
+            <p className="text-sm text-red-500" role="alert">
+              {saveError}
+            </p>
+          )}
+        </div>
+      )}
+
+      {user && <TradeReviewJournal refreshKey={journalKey} />}
     </div>
   );
 }
