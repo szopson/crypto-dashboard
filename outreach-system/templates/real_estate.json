@@ -1,0 +1,80 @@
+{
+  "name": "Real Estate - Lead Automation",
+  "version": "1.0",
+  "target": "Real estate agents, agencies, property managers",
+  "offer": "Lead-to-appointment automation",
+  "sender": {
+    "name": "Jakub",
+    "company": "NexOperandi",
+    "calendly": "https://calendly.com/nexoperandi/nexoperandi-demo-automation"
+  },
+  "variables": {
+    "{{first_name}}": "Recipient first name",
+    "{{company_name}}": "Business name",
+    "{{custom1}}": "City",
+    "{{custom2}}": "Rating (e.g., '4.5 stars (47 reviews)')",
+    "{{custom3}}": "Website URL (without https://)"
+  },
+  "sequence": [
+    {
+      "day": 0,
+      "name": "Initial Outreach",
+      "subject": "Quick question about {{company_name}}",
+      "body": "Hey {{first_name}},\n\nJust reaching out to see if you're currently handling lead follow-up manually?\n\nWe help real estate agencies automatically respond to property inquiries within 60 seconds - even at 2am or weekends when most agents miss calls.\n\nTypically this means 3-5 extra appointments per month that would have otherwise gone to competitors.\n\nOpen to a quick chat to see if this would work for {{company_name}}?\n\nBest,\nJakub"
+    },
+    {
+      "day": 3,
+      "name": "Follow-up 1",
+      "subject": "Re: Quick question about {{company_name}}",
+      "body": "Hey {{first_name}},\n\nJust following up on my last email.\n\nCurious - how do you currently handle inquiries that come in after hours?\n\nMost agencies we work with were losing 30-40% of leads before automating their response system.\n\nHappy to share how it works if you're interested.\n\nBest,\nJakub"
+    },
+    {
+      "day": 7,
+      "name": "Value Add",
+      "subject": "Saw this and thought of {{company_name}}",
+      "body": "Hey {{first_name}},\n\nI was reading about how response time affects conversion in real estate - turns out leads contacted within 5 minutes are 21x more likely to convert.\n\nMost agents respond in 45+ minutes. That's a lot of lost deals.\n\nWe built a system that handles instant response + qualification automatically, so you only talk to serious buyers.\n\nWorth a 15-min call to see if it fits?\n\nBest,\nJakub"
+    },
+    {
+      "day": 14,
+      "name": "Breakup",
+      "subject": "Should I close your file?",
+      "body": "Hey {{first_name}},\n\nI've reached out a few times about helping {{company_name}} automate lead response.\n\nNo worries if the timing isn't right - I'll close your file for now.\n\nIf things change, feel free to reach out.\n\nBest,\nJakub\n\nP.S. If you're curious, here's a quick 2-min demo of how it works: [CALENDLY_LINK]"
+    }
+  ],
+  "ab_variants": {
+    "subject_lines": [
+      "Quick question about {{company_name}}",
+      "{{first_name}} - quick question",
+      "Regarding {{company_name}}'s lead response",
+      "Question about after-hours leads"
+    ],
+    "opening_lines": [
+      "Just reaching out to see if you're currently handling lead follow-up manually?",
+      "I noticed {{company_name}} has great reviews ({{custom2}}). Quick question for you.",
+      "Was looking at {{custom3}} and had a quick question."
+    ]
+  },
+  "tips": {
+    "personalization": [
+      "Reference their rating/reviews when high (4.5+)",
+      "Mention their city for local relevance",
+      "For video: Show their website, mention something specific"
+    ],
+    "do_not": [
+      "Don't include links in first email (hurts deliverability)",
+      "Don't use images or attachments",
+      "Don't be too salesy - focus on curiosity"
+    ],
+    "follow_up_triggers": [
+      "If they ask questions -> Answer and soft pitch call",
+      "If they say 'not interested' -> Ask why, learn for targeting",
+      "If they say 'maybe later' -> Set reminder for 30 days"
+    ]
+  },
+  "metrics_targets": {
+    "open_rate": "40-60%",
+    "reply_rate": "2-5%",
+    "positive_reply_rate": "1-2%",
+    "booking_rate": "0.5-1%"
+  }
+}
