@@ -152,9 +152,14 @@ async function cgGet<T = unknown>(path: string): Promise<T | null> {
   const key = resolveCoinglassKey();
   if (!key) return null;
   try {
+    // NOTE: must be ISR-compatible. `cache: "no-store"` makes Next throw a
+    // "Dynamic server usage" bailout during static/ISR rendering of the
+    // consumers (route + /cockpit page, both `revalidate = 60`) — and the
+    // catch below would swallow it, caching an all-zero snapshot. A
+    // revalidate-tagged fetch caches the data itself for 60s instead.
     const res = await fetch(`${BASE}${path}`, {
       headers: { "CG-API-KEY": key },
-      cache: "no-store",
+      next: { revalidate: 60 },
     });
     if (!res.ok) return null;
     const j = (await res.json()) as { code?: number | string; msg?: string; data?: T };

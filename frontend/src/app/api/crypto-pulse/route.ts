@@ -16,30 +16,10 @@ export const revalidate = 60;
 export async function GET() {
   try {
     const snapshot = await fetchCryptoPulse();
-    // TEMP diagnostic: names only (never values) of env vars containing
-    // "coinglass", whether the resolver found a usable key, and a single probe
-    // call to Coinglass reporting HTTP status + API code (distinguishes
-    // invalid/IP-restricted key from network issues). Remove once data flows.
-    const key = resolveCoinglassKey();
-    let probe: Record<string, unknown> = { skipped: !key };
-    if (key) {
-      try {
-        const r = await fetch(
-          "https://open-api-v4.coinglass.com/api/futures/coins-markets",
-          { headers: { "CG-API-KEY": key }, cache: "no-store" },
-        );
-        const j = (await r.json().catch(() => ({}))) as { code?: unknown; msg?: unknown };
-        probe = { http: r.status, code: j.code ?? null, msg: j.msg ?? null, key_len: key.length };
-      } catch (err) {
-        probe = { error: String(err).slice(0, 200), key_len: key.length };
-      }
-    }
-    const withDiag = {
-      ...snapshot,
-      key_present: !!key,
-      coinglass_env_keys: Object.keys(process.env).filter((k) => /coinglass/i.test(k)),
-      cg_probe: probe,
-    };
+    // TEMP diagnostic (boolean only, no fetch — ISR-safe). Root cause of the
+    // earlier zeros was `cache: "no-store"` fetches breaking ISR rendering;
+    // fixed in lib/coinglass.ts. Remove once prod data is confirmed flowing.
+    const withDiag = { ...snapshot, key_present: !!resolveCoinglassKey() };
     return NextResponse.json(withDiag, {
       headers: {
         "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120",
