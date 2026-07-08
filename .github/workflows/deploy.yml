@@ -36,6 +36,14 @@ jobs:
             # engine/.env stores it in proper KEY=VALUE form (backend loads it
             # via pydantic), so source it there; tr -d strips a stray CR.
             export ANTHROPIC_API_KEY="$(grep -E '^ANTHROPIC_API_KEY=' engine/.env | head -1 | cut -d= -f2- | tr -d '\r')"
+            # Reclaim disk before building: --no-cache makes the builder cache
+            # useless anyway, and stale layers filled the disk on 2026-07-08
+            # ("no space left on device" killed the build mid-deploy).
+            # Deliberately NOT pruning volumes — tcc-backend-data holds the
+            # digest/opportunity-card state.
+            docker builder prune -af
+            docker image prune -af
+            df -h / | tail -1
             docker compose build --no-cache
             docker compose up -d
             docker compose logs --tail 10
