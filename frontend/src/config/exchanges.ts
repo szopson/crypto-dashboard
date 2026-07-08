@@ -114,18 +114,25 @@ export const EXCHANGES: Exchange[] = [
     enabled: false,
   },
   {
+    // LIVE deal. Referral code 96351543 (user-provided invite:
+    // my.okx.com/pl/join/96351543). Attribution at signup — market-page
+    // channelId params are unverified, so the CTA routes through the join
+    // page. Standard perp taker 0.05%; no confirmed automatic user rebate in
+    // the plain referral program (rebatePct 0) — upgrade if/when an
+    // affiliate rev-share tier with user rebate is confirmed.
     id: "okx",
-    attribution: "market-param",
     name: "OKX",
     products: ["perp", "spot"],
+    attribution: "signup-link",
+    signupUrl: "https://my.okx.com/pl/join/96351543",
     perpMarketTemplate: "https://www.okx.com/trade-swap/{market}",
     perpSymbol: (base) => `${base.toLowerCase()}-usdt-swap`,
     refParam: "channelId",
-    refCode: "TODO_OKX_REF",
+    refCode: "96351543",
     takerFeePct: 0.05,
-    rebatePct: 0.2,
+    rebatePct: 0,
     restrictedRegions: ["US"],
-    enabled: false,
+    enabled: true,
   },
   {
     id: "hyperliquid",
