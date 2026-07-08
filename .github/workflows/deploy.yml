@@ -27,6 +27,10 @@ jobs:
             # injected into the frontend container via docker-compose.yml.
             export COINGLASS_API_KEY="${COINGLASS_API_KEY}"
             export VELO_API_KEY="${VELO_API_KEY}"
+            # Trade-review (frontend, server-side) needs the Anthropic key.
+            # engine/.env stores it in proper KEY=VALUE form (backend loads it
+            # via pydantic), so source it there; tr -d strips a stray CR.
+            export ANTHROPIC_API_KEY="$(grep -E '^ANTHROPIC_API_KEY=' engine/.env | head -1 | cut -d= -f2- | tr -d '\r')"
             docker compose build --no-cache
             docker compose up -d
             docker compose logs --tail 10
