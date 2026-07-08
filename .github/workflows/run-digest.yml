@@ -30,7 +30,7 @@ jobs:
 
             async def main():
                 digest = await get_cockpit_digest_service().generate_and_deliver(publish=True)
-                print('digest:', {k: digest.get(k) for k in ('success', 'date', 'delivered', 'error')})
+                print('digest:', {k: digest.get(k) for k in ('success', 'date', 'delivered', 'delivery_error', 'error')})
                 cards = await get_opportunity_engine_service().generate()
                 print('cards:', {k: cards.get(k) for k in ('success', 'date', 'error')})
                 for c in cards.get('cards') or []:
