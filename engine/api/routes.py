@@ -388,6 +388,29 @@ async def get_latest_digest():
     }
 
 
+# === Opportunity Engine ===
+
+@router.get("/opportunities/latest")
+async def get_latest_opportunities():
+    """
+    Latest daily opportunity watch cards (public) — rendered as the
+    "Today's watch" section on /cockpit. Returns available=false until the
+    first card set is generated. Not investment advice; cards describe
+    unusual derivatives configurations, never trade directions.
+    """
+    from services.opportunity_engine import OpportunityEngineService
+
+    latest = OpportunityEngineService.load_latest()
+    if not latest:
+        return {"available": False}
+    return {
+        "available": True,
+        "date": latest.get("date"),
+        "generated_at": latest.get("generated_at"),
+        "cards": latest.get("cards") or [],
+    }
+
+
 # === Structure Endpoints ===
 
 @router.get("/structure/{timeframe}", response_model=StructureResponse)
