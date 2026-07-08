@@ -158,12 +158,24 @@ export default function LandingPage() {
       <header className="relative border-b border-white/[0.08] backdrop-blur-sm bg-black/20 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <h1 className="text-xl font-bold tracking-tight">Trading Command Center</h1>
-          <Link
-            href="/app"
-            className="text-sm text-zinc-400 hover:text-white transition-colors"
-          >
-            Launch App
-          </Link>
+          <div className="flex items-center gap-5">
+            <Link
+              href="/cockpit"
+              className="flex items-center gap-1.5 text-sm text-zinc-400 hover:text-white transition-colors"
+            >
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+              </span>
+              Cockpit
+            </Link>
+            <Link
+              href="/app"
+              className="text-sm text-zinc-400 hover:text-white transition-colors"
+            >
+              Launch App
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -195,6 +207,21 @@ export default function LandingPage() {
 
             {/* Waitlist Counter */}
             <WaitlistCounter />
+
+            {/* Live cockpit CTA — public, no signup */}
+            <div className="pt-2">
+              <Link
+                href="/cockpit"
+                className="group inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-emerald-400 transition-colors"
+              >
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                </span>
+                Or open the live <span className="font-semibold text-zinc-200 group-hover:text-emerald-300">Derivatives Cockpit</span> — free, no signup
+                <span aria-hidden>→</span>
+              </Link>
+            </div>
           </div>
         </div>
       </section>
