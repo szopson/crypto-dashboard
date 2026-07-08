@@ -25,10 +25,20 @@ jobs:
             cd /root/crypto-dashboard
             docker compose exec -T backend python -c "
             import asyncio
+            from config import settings
+            from services.telegram import TELEGRAM_AVAILABLE, get_telegram_service
             from services.cockpit_digest import get_cockpit_digest_service
             from services.opportunity_engine import get_opportunity_engine_service
 
             async def main():
+                tg = get_telegram_service()
+                print('tg:', {
+                    'available': tg.is_available(),
+                    'lib_installed': TELEGRAM_AVAILABLE,
+                    'token_set': bool(settings.telegram_bot_token),
+                    'admin_chat_set': bool(settings.telegram_admin_chat_id),
+                    'chat_set': bool(settings.telegram_chat_id),
+                })
                 digest = await get_cockpit_digest_service().generate_and_deliver(publish=True)
                 print('digest:', {k: digest.get(k) for k in ('success', 'date', 'delivered', 'delivery_error', 'error')})
                 cards = await get_opportunity_engine_service().generate()
