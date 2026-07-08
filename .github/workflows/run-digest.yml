@@ -1,0 +1,40 @@
+name: Run digest + opportunity cards now
+
+# Manual trigger for the daily cockpit digest and opportunity watch cards —
+# the scheduler runs them at 09:00 Europe/Warsaw; this lets us generate
+# on demand (e.g. right after a deploy) without SSHing in by hand.
+# Security note: no untrusted event input reaches the script (workflow_dispatch
+# only, no inputs); the SSH script is fully static.
+on:
+  workflow_dispatch:
+
+jobs:
+  run-digest:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Generate digest + cards on VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            set -euo pipefail
+            cd /root/crypto-dashboard
+            docker compose exec -T backend python -c "
+            import asyncio
+            from services.cockpit_digest import get_cockpit_digest_service
+            from services.opportunity_engine import get_opportunity_engine_service
+
+            async def main():
+                digest = await get_cockpit_digest_service().generate_and_deliver(publish=True)
+                print('digest:', {k: digest.get(k) for k in ('success', 'date', 'delivered', 'error')})
+                cards = await get_opportunity_engine_service().generate()
+                print('cards:', {k: cards.get(k) for k in ('success', 'date', 'error')})
+                for c in cards.get('cards') or []:
+                    print(f\"  {c['symbol']}: {c['score']} — {c['headline']}\")
+
+            asyncio.run(main())
+            "
