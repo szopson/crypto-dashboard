@@ -52,9 +52,10 @@ services:
     environment:
       - BACKEND_URL=http://backend:8000
       # Server-side only (never NEXT_PUBLIC): read at request time by the
-      # cockpit / crypto-pulse route. Provided by the deploy workflow from the
-      # COINGLASS_API_KEY GitHub secret.
+      # cockpit / crypto-pulse route. Provided by the deploy workflow from
+      # GitHub secrets (COINGLASS_API_KEY, VELO_API).
       - COINGLASS_API_KEY=${COINGLASS_API_KEY}
+      - VELO_API_KEY=${VELO_API_KEY}
     depends_on:
       backend:
         condition: service_healthy

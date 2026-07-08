@@ -11,6 +11,8 @@
  */
 import "server-only";
 
+import { fetchVeloFundingSpread, type VeloFundingSpread } from "./velo";
+
 const BASE = "https://open-api-v4.coinglass.com";
 
 /**
@@ -145,6 +147,8 @@ export interface CryptoPulseSnapshot {
   };
   signals: string[]; // human-readable interpretation tags (legacy widget + digest)
   deviations: Deviation[]; // structured, cockpit-consumed
+  /** Binance↔Hyperliquid funding spread (institutional vs retail venue). */
+  velo_funding: VeloFundingSpread | null;
   source: "coinglass.v4";
 }
 
@@ -178,7 +182,7 @@ function pickCoin(markets: CoinMarket[] | null, symbol: string): CoinMarket | un
 export async function fetchCryptoPulse(): Promise<CryptoPulseSnapshot> {
   const symbols = ["BTC", "ETH", "SOL"];
 
-  const [markets, btcFunding, etfFlows, retailLS, topLS] = await Promise.all([
+  const [markets, btcFunding, etfFlows, retailLS, topLS, veloFunding] = await Promise.all([
     cgGet<CoinMarket[]>("/api/futures/coins-markets"),
     cgGet<
       {
@@ -193,6 +197,7 @@ export async function fetchCryptoPulse(): Promise<CryptoPulseSnapshot> {
     cgGet<LongShortPoint[]>(
       "/api/futures/top-long-short-account-ratio/history?exchange=Binance&symbol=BTCUSDT&interval=1h&limit=4",
     ),
+    fetchVeloFundingSpread(),
   ]);
 
   const coins: CockpitCoin[] = symbols.map((sym) => {
@@ -285,6 +290,7 @@ export async function fetchCryptoPulse(): Promise<CryptoPulseSnapshot> {
     btc24h,
     btc7d,
     divergence,
+    veloFunding,
   });
 
   return {
@@ -311,6 +317,7 @@ export async function fetchCryptoPulse(): Promise<CryptoPulseSnapshot> {
     },
     signals,
     deviations,
+    velo_funding: veloFunding,
     source: "coinglass.v4",
   };
 }
@@ -330,9 +337,10 @@ function buildDeviations(x: {
   btc24h: number | null;
   btc7d: number | null;
   divergence: number | null;
+  veloFunding: VeloFundingSpread | null;
 }): Deviation[] {
   const out: Deviation[] = [];
-  const { btcAvg, btcSpread, btcMax, btcMin, btc24h, btc7d, divergence } = x;
+  const { btcAvg, btcSpread, btcMax, btcMin, btc24h, btc7d, divergence, veloFunding } = x;
 
   // Funding regime
   if (btcAvg != null) {
@@ -375,6 +383,20 @@ function buildDeviations(x: {
       detail: `${btcMax.exchange} ${btcMax.rate_pct.toFixed(4)}% vs ${btcMin.exchange} ${btcMin.rate_pct.toFixed(4)}% (Δ ${btcSpread.toFixed(4)}%/8h)`,
       direction: "neutral",
     });
+
+  // Velo: Binance (institutional) vs Hyperliquid (retail) funding divergence.
+  // Same thresholds as the Coinglass dispersion above, %/8h.
+  if (veloFunding?.spread_pct_8h != null && Math.abs(veloFunding.spread_pct_8h) > 0.01) {
+    const s = veloFunding.spread_pct_8h;
+    out.push({
+      kind: "funding_dispersion",
+      severity: Math.abs(s) > 0.03 ? "alert" : "watch",
+      symbol: "BTC",
+      headline: s > 0 ? "Binance funding rich vs Hyperliquid" : "Hyperliquid funding rich vs Binance",
+      detail: `Binance ${veloFunding.binance_pct_8h?.toFixed(4)}% vs HL ${veloFunding.hyperliquid_pct_8h?.toFixed(4)}% (Δ ${s.toFixed(4)}%/8h) — institutional vs retail venue divergence`,
+      direction: "neutral",
+    });
+  }
 
   // Per-coin OI / price structure + liquidation clusters
   for (const c of x.coins) {

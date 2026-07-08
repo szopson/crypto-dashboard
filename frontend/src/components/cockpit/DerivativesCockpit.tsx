@@ -114,7 +114,30 @@ export async function DerivativesCockpit() {
             </span>
           ))}
         </div>
-        {/* Velo (Binance↔Hyperliquid granular spread) slots in here once keyed. */}
+        {snap.velo_funding && snap.velo_funding.spread_pct_8h != null && (
+          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-zinc-100 pt-2.5 text-xs dark:border-zinc-800/60">
+            <span className="font-medium text-zinc-500">Binance ↔ Hyperliquid</span>
+            <span className="tabular-nums">
+              <span className={tone(snap.velo_funding.binance_pct_8h)}>
+                {fmtPct(snap.velo_funding.binance_pct_8h, 4)}
+              </span>
+              <span className="mx-1 text-zinc-400">vs</span>
+              <span className={tone(snap.velo_funding.hyperliquid_pct_8h)}>
+                {fmtPct(snap.velo_funding.hyperliquid_pct_8h, 4)}
+              </span>
+            </span>
+            <span className="tabular-nums text-zinc-500">
+              Δ {snap.velo_funding.spread_pct_8h.toFixed(4)}%
+              {snap.velo_funding.spread_1h_ago_pct_8h != null && (
+                <> · 1h ago {snap.velo_funding.spread_1h_ago_pct_8h.toFixed(4)}%</>
+              )}
+              {snap.velo_funding.spread_24h_ago_pct_8h != null && (
+                <> · 24h ago {snap.velo_funding.spread_24h_ago_pct_8h.toFixed(4)}%</>
+              )}
+            </span>
+            <span className="text-[10px] uppercase tracking-wide text-zinc-400">Velo</span>
+          </div>
+        )}
       </section>
 
       {/* Positioning + ETF */}
