@@ -202,6 +202,19 @@ function CoinCard({ c }: { c: CockpitCoin }) {
       <div className="mt-3 space-y-1 border-t border-zinc-100 pt-2 text-xs dark:border-zinc-800/60">
         <Row label="Open interest" value={fmtUsdShort(c.oi_usd)} />
         <Row label="L/S ratio 24h" value={c.long_short_24h ? c.long_short_24h.toFixed(2) : "—"} />
+        {c.basis_pct != null && (
+          <Row
+            label="Basis (perp−spot)"
+            value={
+              <span>
+                <span className={tone(c.basis_pct)}>{fmtPct(c.basis_pct, 3)}</span>
+                {c.basis_24h_ago_pct != null && (
+                  <span className="ml-1 text-zinc-400">· 24h {fmtPct(c.basis_24h_ago_pct, 3)}</span>
+                )}
+              </span>
+            }
+          />
+        )}
         <Row
           label="Liq 24h (L / S)"
           value={

@@ -60,6 +60,14 @@ interface ETFFlowDay {
   etf_flows?: { etf_ticker: string; flow_usd: number }[];
 }
 
+interface BasisPoint {
+  time: number;
+  open_basis: number;
+  close_basis: number; // perp premium vs spot, percent
+  open_change: number;
+  close_change: number; // premium in USD
+}
+
 interface LongShortPoint {
   time: number;
   global_account_long_percent?: number;
@@ -88,7 +96,9 @@ export type DeviationKind =
   | "ls_extreme"
   | "positioning_divergence"
   | "etf_inflow"
-  | "etf_outflow";
+  | "etf_outflow"
+  | "basis_rich"
+  | "basis_backwardation";
 
 export interface Deviation {
   kind: DeviationKind;
@@ -118,6 +128,11 @@ export interface CockpitCoin {
   liquidation_24h_usd: number;
   long_liq_24h_usd: number;
   short_liq_24h_usd: number;
+  /** Perp premium vs spot (Binance), percent; null when unavailable. */
+  basis_pct: number | null;
+  basis_usd: number | null;
+  basis_1h_ago_pct: number | null;
+  basis_24h_ago_pct: number | null;
 }
 
 export interface CryptoPulseSnapshot {
@@ -182,7 +197,17 @@ function pickCoin(markets: CoinMarket[] | null, symbol: string): CoinMarket | un
 export async function fetchCryptoPulse(): Promise<CryptoPulseSnapshot> {
   const symbols = ["BTC", "ETH", "SOL"];
 
-  const [markets, btcFunding, etfFlows, retailLS, topLS, veloFunding] = await Promise.all([
+  // Perp basis (premium vs spot) per coin, hourly over the last ~24h on
+  // Binance. limit=25 → [0] ≈ 24h ago, [len-2] ≈ 1h ago, [len-1] = current.
+  const basisHistories = Promise.all(
+    symbols.map((sym) =>
+      cgGet<BasisPoint[]>(
+        `/api/futures/basis/history?exchange=Binance&symbol=${sym}USDT&interval=1h&limit=25`,
+      ),
+    ),
+  );
+
+  const [markets, btcFunding, etfFlows, retailLS, topLS, veloFunding, basisBySymbol] = await Promise.all([
     cgGet<CoinMarket[]>("/api/futures/coins-markets"),
     cgGet<
       {
@@ -198,10 +223,15 @@ export async function fetchCryptoPulse(): Promise<CryptoPulseSnapshot> {
       "/api/futures/top-long-short-account-ratio/history?exchange=Binance&symbol=BTCUSDT&interval=1h&limit=4",
     ),
     fetchVeloFundingSpread(),
+    basisHistories,
   ]);
 
-  const coins: CockpitCoin[] = symbols.map((sym) => {
+  const coins: CockpitCoin[] = symbols.map((sym, i) => {
     const m = pickCoin(markets, sym);
+    const bh = basisBySymbol[i];
+    const cur = bh?.[bh.length - 1];
+    const h1 = bh && bh.length >= 2 ? bh[bh.length - 2] : undefined;
+    const h24 = bh?.[0];
     return {
       symbol: sym,
       price: m?.current_price ?? 0,
@@ -221,6 +251,10 @@ export async function fetchCryptoPulse(): Promise<CryptoPulseSnapshot> {
       liquidation_24h_usd: m?.liquidation_usd_24h ?? 0,
       long_liq_24h_usd: m?.long_liquidation_usd_24h ?? 0,
       short_liq_24h_usd: m?.short_liquidation_usd_24h ?? 0,
+      basis_pct: cur?.close_basis ?? null,
+      basis_usd: cur?.close_change ?? null,
+      basis_1h_ago_pct: h1?.close_basis ?? null,
+      basis_24h_ago_pct: h24?.close_basis ?? null,
     };
   });
 
@@ -426,6 +460,26 @@ function buildDeviations(x: {
         headline: "OI spiking (1h)",
         detail: `+${c.oi_change_1h_pct.toFixed(1)}% in 1h — fresh leverage entering`,
         direction: "neutral",
+      });
+    // Perp basis extremes (premium vs spot, %). Rich premium = crowded longs;
+    // backwardation = shorts dominant / fear, contrarian long bias.
+    if (c.basis_pct != null && c.basis_pct > 0.2)
+      out.push({
+        kind: "basis_rich",
+        severity: c.basis_pct > 0.5 ? "alert" : "watch",
+        symbol: c.symbol,
+        headline: "Perp premium rich",
+        detail: `Basis +${c.basis_pct.toFixed(3)}% vs spot — leveraged longs crowding`,
+        direction: "bearish",
+      });
+    if (c.basis_pct != null && c.basis_pct < -0.05)
+      out.push({
+        kind: "basis_backwardation",
+        severity: c.basis_pct < -0.15 ? "alert" : "watch",
+        symbol: c.symbol,
+        headline: "Perp in backwardation",
+        detail: `Basis ${c.basis_pct.toFixed(3)}% vs spot — shorts paying, contrarian long bias`,
+        direction: "bullish",
       });
     // Liquidation cluster: last 1h is a large fraction of the 24h total.
     if (c.liquidation_1h_usd > 25_000_000 && c.liquidation_1h_usd > 0.25 * (c.liquidation_24h_usd || 1))
