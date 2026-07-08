@@ -155,7 +155,7 @@ class Settings(BaseSettings):
     report_playwright_timeout: int = 30000  # 30 seconds
     report_template_dir: str = "report/templates"
     report_output_dir: str = "/tmp/reports"
-    report_ai_model: str = "claude-sonnet-4-20250514"
+    report_ai_model: str = "claude-sonnet-4-6"
     report_ai_max_tokens: int = 4000
 
     class Config:

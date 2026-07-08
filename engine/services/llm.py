@@ -120,7 +120,7 @@ Provide:
 
             # Call Claude API
             message = self.client.messages.create(
-                model="claude-sonnet-4-20250514",
+                model="claude-sonnet-4-6",
                 max_tokens=1024,
                 system=TRADING_SYSTEM_PROMPT,
                 messages=[
@@ -203,7 +203,7 @@ Format the briefing as:
 Keep it concise but comprehensive. Use bullet points."""
 
             message = self.client.messages.create(
-                model="claude-sonnet-4-20250514",
+                model="claude-sonnet-4-6",
                 max_tokens=1500,
                 system=TRADING_SYSTEM_PROMPT,
                 messages=[
@@ -275,7 +275,7 @@ User: {message}"""
 
             # Call API
             response = self.client.messages.create(
-                model="claude-sonnet-4-20250514",
+                model="claude-sonnet-4-6",
                 max_tokens=1024,
                 system=TRADING_SYSTEM_PROMPT,
                 messages=messages,

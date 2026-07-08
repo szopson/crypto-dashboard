@@ -149,7 +149,7 @@ class AISynthesisService:
 
             # Call Claude API (synchronous - anthropic SDK)
             message = self.client.messages.create(
-                model="claude-sonnet-4-20250514",
+                model="claude-sonnet-4-6",
                 max_tokens=4000,
                 system=INVESTMENT_ANALYST_PROMPT,
                 messages=[
