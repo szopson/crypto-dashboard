@@ -20,6 +20,11 @@ jobs:
           port: ${{ secrets.VPS_PORT }}
           envs: NEXT_PUBLIC_POSTHOG_KEY,COINGLASS_API_KEY,VELO_API_KEY
           script: |
+            # Fail the workflow on ANY command failure. Without this, a failed
+            # `docker compose build` silently deployed the previous image
+            # (compose up recreated containers from the old tag) while the run
+            # reported success — exactly what happened on 2026-07-08.
+            set -euo pipefail
             cd /root/crypto-dashboard
             git pull origin main
             export NEXT_PUBLIC_POSTHOG_KEY="${NEXT_PUBLIC_POSTHOG_KEY}"
