@@ -20,8 +20,13 @@ export interface RankedExchange {
   rebateDisplayPct: number;
 }
 
-/** Build the affiliate deep-link to a specific perp market. */
+/** Build the affiliate link for a venue. For "signup-link" venues attribution
+ * happens at registration, so the CTA routes to the invite page; for
+ * "market-param" venues it deep-links the specific perp market with the ref. */
 export function buildAffiliateLink(exchange: Exchange, base: string): string {
+  if (exchange.attribution === "signup-link" && exchange.signupUrl) {
+    return exchange.signupUrl;
+  }
   const market = exchange.perpSymbol(base);
   const url = exchange.perpMarketTemplate.replace("{market}", market);
   const sep = url.includes("?") ? "&" : "?";

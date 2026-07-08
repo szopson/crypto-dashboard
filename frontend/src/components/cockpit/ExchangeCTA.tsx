@@ -65,7 +65,8 @@ export function ExchangeCTA({
         <ArrowUpRight className="h-4 w-4" />
       </span>
       <span className="text-[11px] font-normal opacity-90">
-        {best.rebateDisplayPct}% rebate · net {best.effectiveFeePct.toFixed(3)}%
+        {best.rebateDisplayPct > 0 && <>{best.rebateDisplayPct}% rebate · </>}
+        net fee {best.effectiveFeePct.toFixed(3)}%
       </span>
     </a>
   );
