@@ -16,6 +16,7 @@ publishing integration, so its post is produced as a draft for manual posting.
 """
 from __future__ import annotations
 
+import asyncio
 import json
 from datetime import datetime
 from pathlib import Path
@@ -68,17 +69,43 @@ class CockpitDigestService:
             else None
         )
 
-    async def fetch_snapshot(self) -> Optional[dict]:
-        """Fetch the shared derivatives snapshot from the frontend API."""
+    @staticmethod
+    def snapshot_has_data(snap: Optional[dict]) -> bool:
+        """
+        Guard against the all-zero snapshot the frontend caches when its
+        Coinglass fetches fail (typically the first request after a container
+        recreate — see the note in frontend/src/lib/coinglass.ts).
+        """
+        if not snap:
+            return False
+        return any((c.get("price") or 0) > 0 for c in snap.get("coins") or [])
+
+    async def fetch_snapshot(self, retries: int = 2, wait_s: float = 75.0) -> Optional[dict]:
+        """
+        Fetch the shared derivatives snapshot from the frontend API.
+
+        Retries past an empty (all-zero) snapshot: the route caches for 60s,
+        so waiting >60s gives the frontend a fresh Coinglass pull.
+        """
         url = f"{self.internal_url}/api/crypto-pulse"
-        try:
-            async with httpx.AsyncClient(timeout=15.0) as client:
-                resp = await client.get(url)
-                resp.raise_for_status()
-                return resp.json()
-        except Exception as e:
-            logger.error(f"Cockpit digest: failed to fetch {url}: {e}")
-            return None
+        snap: Optional[dict] = None
+        for attempt in range(retries + 1):
+            try:
+                async with httpx.AsyncClient(timeout=15.0) as client:
+                    resp = await client.get(url)
+                    resp.raise_for_status()
+                    snap = resp.json()
+            except Exception as e:
+                logger.error(f"Cockpit digest: failed to fetch {url}: {e}")
+                snap = None
+            if self.snapshot_has_data(snap):
+                return snap
+            if attempt < retries:
+                logger.warning(
+                    f"Cockpit digest: snapshot empty/all-zero — retrying in {wait_s:.0f}s"
+                )
+                await asyncio.sleep(wait_s)
+        return snap
 
     def _cta(self) -> str:
         return f"Full derivatives cockpit → {self.base_url}/cockpit"
@@ -177,6 +204,10 @@ class CockpitDigestService:
         snap = await self.fetch_snapshot()
         if not snap:
             return {"success": False, "error": "snapshot unavailable"}
+        if not self.snapshot_has_data(snap):
+            # Keep the previous good digest rather than publishing a
+            # "no data" note; the frontend hides anything older than 48h.
+            return {"success": False, "error": "snapshot empty (all-zero)"}
 
         post = self.build_post(snap)
         date = datetime.utcnow().strftime("%Y-%m-%d")
