@@ -16,7 +16,9 @@ publishing integration, so its post is produced as a draft for manual posting.
 """
 from __future__ import annotations
 
+import json
 from datetime import datetime
+from pathlib import Path
 from typing import Optional
 
 import anthropic
@@ -25,6 +27,11 @@ from loguru import logger
 
 from config import settings
 from services.telegram import get_telegram_service
+
+
+# Persisted next to trading.db (same cwd-relative volume on the VPS) so the
+# frontend can render the latest digest on /cockpit between engine restarts.
+DIGEST_STATE_FILE = Path("./cockpit_digest_latest.json")
 
 
 DIGEST_SYSTEM_PROMPT = """You write a once-daily crypto derivatives snapshot for \
@@ -124,6 +131,41 @@ class CockpitDigestService:
             logger.error(f"Cockpit digest: LLM failed, using fallback: {e}")
             return self._fallback_post(snap)
 
+    def _web_body(self, post: str) -> str:
+        """Digest body for the /cockpit strip — the CTA line points at the page
+        the reader is already on, so it is dropped for the web surface."""
+        cta = self._cta()
+        return "\n".join(line for line in post.splitlines() if line.strip() != cta).strip()
+
+    def save_latest(self, date: str, post: str) -> None:
+        """Persist the latest digest so the frontend can render it on /cockpit."""
+        try:
+            DIGEST_STATE_FILE.write_text(
+                json.dumps(
+                    {
+                        "date": date,
+                        "generated_at": datetime.utcnow().isoformat() + "Z",
+                        "post": post,
+                        "web_body": self._web_body(post),
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+        except Exception as e:
+            logger.error(f"Cockpit digest: failed to persist latest digest: {e}")
+
+    @staticmethod
+    def load_latest() -> Optional[dict]:
+        """Read the persisted digest; None when nothing has been generated yet."""
+        try:
+            return json.loads(DIGEST_STATE_FILE.read_text(encoding="utf-8"))
+        except FileNotFoundError:
+            return None
+        except Exception as e:
+            logger.error(f"Cockpit digest: failed to read persisted digest: {e}")
+            return None
+
     async def generate_and_deliver(self, publish: bool = False) -> dict:
         """
         Build the digest and (optionally) deliver it as a Telegram DRAFT.
@@ -137,6 +179,7 @@ class CockpitDigestService:
 
         post = self.build_post(snap)
         date = datetime.utcnow().strftime("%Y-%m-%d")
+        self.save_latest(date, post)
         result = {"success": True, "date": date, "post": post, "delivered": False}
 
         if publish and self.telegram.is_available():

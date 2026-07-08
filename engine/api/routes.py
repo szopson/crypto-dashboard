@@ -367,6 +367,27 @@ async def get_fear_greed_index():
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# === Cockpit Digest ===
+
+@router.get("/digest/latest")
+async def get_latest_digest():
+    """
+    Latest daily cockpit digest (public) — rendered as the "AI read" strip
+    on /cockpit. Returns available=false until the first digest is generated.
+    """
+    from services.cockpit_digest import CockpitDigestService
+
+    latest = CockpitDigestService.load_latest()
+    if not latest:
+        return {"available": False}
+    return {
+        "available": True,
+        "date": latest.get("date"),
+        "generated_at": latest.get("generated_at"),
+        "body": latest.get("web_body") or latest.get("post"),
+    }
+
+
 # === Structure Endpoints ===
 
 @router.get("/structure/{timeframe}", response_model=StructureResponse)
