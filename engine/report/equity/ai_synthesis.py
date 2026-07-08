@@ -137,6 +137,33 @@ Rules:
 """
 
 
+def call_claude_cli(prompt: str, model: str, system: str = "", timeout: int = 600) -> str:
+    """Headless `claude -p` on the local subscription login — no API credits.
+
+    System prompt is prepended to the user prompt (simpler than relying on CLI
+    system-prompt flags across versions); prompt goes via stdin to dodge ARG_MAX.
+    Strips API-key env vars: an exported ANTHROPIC_API_KEY silently overrides
+    the CLI's subscription auth — which is the whole point of this path.
+    """
+    import os
+    import subprocess
+    full_prompt = f"{system}\n\n---\n\n{prompt}" if system else prompt
+    env = {k: v for k, v in os.environ.items()
+           if k not in ("ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN")}
+    result = subprocess.run(
+        ["claude", "-p", "--output-format", "text", "--model", model],
+        input=full_prompt,
+        capture_output=True,
+        text=True,
+        timeout=timeout,
+        env=env,
+    )
+    if result.returncode != 0:
+        detail = (result.stderr or result.stdout or "").strip()[:400]
+        raise RuntimeError(f"claude -p failed (rc={result.returncode}): {detail}")
+    return result.stdout
+
+
 class EquityAISynthesis:
     """Generates structured equity report JSON from raw data using Claude.
 
@@ -226,31 +253,7 @@ class EquityAISynthesis:
         return text.strip()
 
     def _call_claude_cli(self, prompt: str) -> str:
-        """Headless `claude -p` on the local subscription login.
-
-        System prompt is prepended to the user prompt (simpler than relying on
-        CLI system-prompt flags across versions); prompt goes via stdin to dodge
-        ARG_MAX. Model aliases: the CLI accepts full ids like claude-opus-4-8.
-        """
-        import os
-        import subprocess
-        full_prompt = f"{EQUITY_ANALYST_SYSTEM}\n\n---\n\n{prompt}"
-        # Strip API-key env vars: an exported ANTHROPIC_API_KEY silently overrides
-        # the CLI's subscription login — which is the whole point of this engine.
-        env = {k: v for k, v in os.environ.items()
-               if k not in ("ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN")}
-        result = subprocess.run(
-            ["claude", "-p", "--output-format", "text", "--model", self.model],
-            input=full_prompt,
-            capture_output=True,
-            text=True,
-            timeout=600,
-            env=env,
-        )
-        if result.returncode != 0:
-            detail = (result.stderr or result.stdout or "").strip()[:400]
-            raise RuntimeError(f"claude -p failed (rc={result.returncode}): {detail}")
-        return result.stdout
+        return call_claude_cli(prompt, model=self.model, system=EQUITY_ANALYST_SYSTEM)
 
     @staticmethod
     def _parse_json(text: str, ticker: str) -> dict[str, Any]:

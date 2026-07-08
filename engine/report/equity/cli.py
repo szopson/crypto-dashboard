@@ -68,6 +68,7 @@ async def main_async(args):
             briefs_root=Path(args.briefs_out) if args.briefs_out else output_root.parent / "sector_briefs",
             anthropic_api_key=api_key,
             model=args.model,
+            engine=args.engine,
         )
         ok = 0
         for slug in targets:

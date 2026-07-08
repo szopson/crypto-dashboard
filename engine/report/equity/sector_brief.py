@@ -80,13 +80,18 @@ class SectorBriefGenerator:
         briefs_root: str | Path = "content/sector_briefs",
         anthropic_api_key: Optional[str] = None,
         model: str = "claude-sonnet-4-5",
+        engine: str = "api",
     ):
-        import os
-        api_key = anthropic_api_key or os.getenv("ANTHROPIC_API_KEY")
-        if not api_key:
-            raise ValueError("ANTHROPIC_API_KEY required")
-        self.client = anthropic.Anthropic(api_key=api_key)
+        self.engine = engine
         self.model = model
+        if engine == "api":
+            import os
+            api_key = anthropic_api_key or os.getenv("ANTHROPIC_API_KEY")
+            if not api_key:
+                raise ValueError("ANTHROPIC_API_KEY required (or use engine='claude-cli')")
+            self.client = anthropic.Anthropic(api_key=api_key)
+        else:
+            self.client = None
         self.reports_root = Path(reports_root)
         self.briefs_root = Path(briefs_root)
         self.briefs_root.mkdir(parents=True, exist_ok=True)
@@ -139,17 +144,23 @@ Use these member reports' ratings, targets, and one-liners as anchor points — 
 """
 
         loop = asyncio.get_event_loop()
-        response = await loop.run_in_executor(
-            None,
-            lambda: self.client.messages.create(
-                model=self.model,
-                max_tokens=4000,
-                system=SECTOR_ANALYST_SYSTEM,
-                messages=[{"role": "user", "content": prompt}],
-            ),
-        )
-
-        text = response.content[0].text.strip()
+        if self.engine == "claude-cli":
+            from .ai_synthesis import call_claude_cli
+            text = (await loop.run_in_executor(
+                None,
+                lambda: call_claude_cli(prompt, model=self.model, system=SECTOR_ANALYST_SYSTEM),
+            )).strip()
+        else:
+            response = await loop.run_in_executor(
+                None,
+                lambda: self.client.messages.create(
+                    model=self.model,
+                    max_tokens=4000,
+                    system=SECTOR_ANALYST_SYSTEM,
+                    messages=[{"role": "user", "content": prompt}],
+                ),
+            )
+            text = response.content[0].text.strip()
         if text.startswith("```"):
             text = text.split("\n", 1)[1] if "\n" in text else text
             if text.endswith("```"):
