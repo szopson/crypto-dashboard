@@ -138,16 +138,37 @@ Rules:
 
 
 class EquityAISynthesis:
-    """Generates structured equity report JSON from raw data using Claude."""
+    """Generates structured equity report JSON from raw data using Claude.
 
-    def __init__(self, api_key: Optional[str] = None, model: str = "claude-sonnet-4-5"):
-        if not api_key:
-            import os
-            api_key = os.getenv("ANTHROPIC_API_KEY")
-        if not api_key:
-            raise ValueError("ANTHROPIC_API_KEY required for AI synthesis")
-        self.client = anthropic.Anthropic(api_key=api_key)
+    Two engines:
+    - "api" (default): direct Anthropic SDK call — billed against API credits.
+    - "claude-cli": shells out to headless `claude -p` — runs on the local
+      Claude Code login (subscription), no API credits consumed. Slower per
+      call and subject to the plan's usage windows, but $0 marginal cost.
+    """
+
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        model: str = "claude-sonnet-4-5",
+        engine: str = "api",
+    ):
+        self.engine = engine
         self.model = model
+        if engine == "api":
+            if not api_key:
+                import os
+                api_key = os.getenv("ANTHROPIC_API_KEY")
+            if not api_key:
+                raise ValueError("ANTHROPIC_API_KEY required for AI synthesis")
+            self.client = anthropic.Anthropic(api_key=api_key)
+        elif engine == "claude-cli":
+            import shutil
+            if not shutil.which("claude"):
+                raise ValueError("`claude` CLI not found on PATH (required for --engine claude-cli)")
+            self.client = None
+        else:
+            raise ValueError(f"Unknown synthesis engine: {engine}")
 
     async def generate(self, ticker: str, sector: dict, data: dict) -> dict[str, Any]:
         """Produce structured 11-section report JSON for the given ticker.
@@ -178,20 +199,23 @@ class EquityAISynthesis:
         return parsed
 
     async def _call_claude(self, prompt: str) -> str:
-        """One API call → fenced-stripped response text."""
-        # Anthropic SDK is sync; offload
+        """One model call (API or headless CLI) → fenced-stripped response text."""
         import asyncio
         loop = asyncio.get_event_loop()
-        response = await loop.run_in_executor(
-            None,
-            lambda: self.client.messages.create(
-                model=self.model,
-                max_tokens=8000,
-                system=EQUITY_ANALYST_SYSTEM,
-                messages=[{"role": "user", "content": prompt}],
-            ),
-        )
-        text = response.content[0].text.strip()
+        if self.engine == "claude-cli":
+            text = (await loop.run_in_executor(None, lambda: self._call_claude_cli(prompt))).strip()
+        else:
+            # Anthropic SDK is sync; offload
+            response = await loop.run_in_executor(
+                None,
+                lambda: self.client.messages.create(
+                    model=self.model,
+                    max_tokens=8000,
+                    system=EQUITY_ANALYST_SYSTEM,
+                    messages=[{"role": "user", "content": prompt}],
+                ),
+            )
+            text = response.content[0].text.strip()
         # Strip potential ```json fences just in case
         if text.startswith("```"):
             text = text.split("\n", 1)[1] if "\n" in text else text
@@ -200,6 +224,33 @@ class EquityAISynthesis:
             if text.startswith("json\n"):
                 text = text[5:]
         return text.strip()
+
+    def _call_claude_cli(self, prompt: str) -> str:
+        """Headless `claude -p` on the local subscription login.
+
+        System prompt is prepended to the user prompt (simpler than relying on
+        CLI system-prompt flags across versions); prompt goes via stdin to dodge
+        ARG_MAX. Model aliases: the CLI accepts full ids like claude-opus-4-8.
+        """
+        import os
+        import subprocess
+        full_prompt = f"{EQUITY_ANALYST_SYSTEM}\n\n---\n\n{prompt}"
+        # Strip API-key env vars: an exported ANTHROPIC_API_KEY silently overrides
+        # the CLI's subscription login — which is the whole point of this engine.
+        env = {k: v for k, v in os.environ.items()
+               if k not in ("ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN")}
+        result = subprocess.run(
+            ["claude", "-p", "--output-format", "text", "--model", self.model],
+            input=full_prompt,
+            capture_output=True,
+            text=True,
+            timeout=600,
+            env=env,
+        )
+        if result.returncode != 0:
+            detail = (result.stderr or result.stdout or "").strip()[:400]
+            raise RuntimeError(f"claude -p failed (rc={result.returncode}): {detail}")
+        return result.stdout
 
     @staticmethod
     def _parse_json(text: str, ticker: str) -> dict[str, Any]:
@@ -356,8 +407,12 @@ Now produce the report JSON following this schema precisely:
 _singleton: Optional[EquityAISynthesis] = None
 
 
-def get_equity_synthesis(api_key: Optional[str] = None, model: str = "claude-sonnet-4-5") -> EquityAISynthesis:
+def get_equity_synthesis(
+    api_key: Optional[str] = None,
+    model: str = "claude-sonnet-4-5",
+    engine: str = "api",
+) -> EquityAISynthesis:
     global _singleton
     if _singleton is None:
-        _singleton = EquityAISynthesis(api_key=api_key, model=model)
+        _singleton = EquityAISynthesis(api_key=api_key, model=model, engine=engine)
     return _singleton

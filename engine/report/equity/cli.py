@@ -56,8 +56,8 @@ async def run_one(generator, ticker: str, sector_slug: str | None, write_raw: bo
 async def main_async(args):
     output_root = Path(args.out).resolve()
     api_key = args.api_key or os.getenv("ANTHROPIC_API_KEY")
-    if not api_key:
-        logger.error("ANTHROPIC_API_KEY not set (use --api-key or env var)")
+    if not api_key and args.engine == "api":
+        logger.error("ANTHROPIC_API_KEY not set (use --api-key, env var, or --engine claude-cli)")
         return 1
 
     # Brief-only mode: regenerate sector brief(s) without touching ticker reports
@@ -79,7 +79,7 @@ async def main_async(args):
                 logger.error(f"❌ brief {slug} failed: {e}")
         return 0 if ok == len(targets) else 1
 
-    generator = get_equity_generator(output_root=output_root, anthropic_api_key=api_key, model=args.model)
+    generator = get_equity_generator(output_root=output_root, anthropic_api_key=api_key, model=args.model, engine=args.engine)
 
     # Determine workload
     workload: list[tuple[str, str]] = []
@@ -129,6 +129,7 @@ def main():
     parser.add_argument("--api-key", help="Anthropic API key (or set ANTHROPIC_API_KEY)")
     parser.add_argument("--write-raw", action="store_true", help="Also dump raw fetched data as JSON for debugging")
     parser.add_argument("--skip-existing", action="store_true", help="Skip tickers whose MDX already exists (resume a batch)")
+    parser.add_argument("--engine", default="api", choices=["api", "claude-cli"], help="api = Anthropic API (credits); claude-cli = headless `claude -p` on the local subscription login")
     parser.add_argument("--brief", help="Generate sector brief instead of ticker reports. Pass a sector slug or 'all'.")
     parser.add_argument("--briefs-out", help="Override sector briefs output directory")
     args = parser.parse_args()

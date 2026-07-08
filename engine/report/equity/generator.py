@@ -34,12 +34,13 @@ class EquityReportGenerator:
         output_root: str | Path = "content/reports",
         anthropic_api_key: Optional[str] = None,
         model: str = "claude-sonnet-4-5",
+        engine: str = "api",
     ):
         self.output_root = Path(output_root)
         self.source = get_yfinance_source()
         self.finnhub = get_finnhub_source()
         self.coinglass = get_coinglass_source()
-        self.synthesizer = get_equity_synthesis(api_key=anthropic_api_key, model=model)
+        self.synthesizer = get_equity_synthesis(api_key=anthropic_api_key, model=model, engine=engine)
         self.renderer = get_mdx_renderer(output_root)
 
     async def generate(
@@ -138,6 +139,7 @@ def get_equity_generator(
     output_root: str | Path = "content/reports",
     anthropic_api_key: Optional[str] = None,
     model: str = "claude-sonnet-4-5",
+    engine: str = "api",
 ) -> EquityReportGenerator:
     global _singleton
     if _singleton is None:
@@ -145,5 +147,6 @@ def get_equity_generator(
             output_root=output_root,
             anthropic_api_key=anthropic_api_key,
             model=model,
+            engine=engine,
         )
     return _singleton
