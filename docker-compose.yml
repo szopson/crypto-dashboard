@@ -19,6 +19,10 @@ services:
       - COCKPIT_DIGEST_ENABLED=true
       - FRONTEND_BASE_URL=https://follio.io
       - FRONTEND_INTERNAL_URL=http://frontend:3000
+    volumes:
+      # Daily digest + opportunity-card state (engine writes ./data/*.json);
+      # a named volume so the state survives container recreates on deploy.
+      - tcc-backend-data:/app/data
     networks:
       - traefik-public
     healthcheck:
@@ -95,3 +99,6 @@ services:
 networks:
   traefik-public:
     external: true
+
+volumes:
+  tcc-backend-data:

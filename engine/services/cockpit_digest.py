@@ -29,9 +29,9 @@ from config import settings
 from services.telegram import get_telegram_service
 
 
-# Persisted next to trading.db (same cwd-relative volume on the VPS) so the
-# frontend can render the latest digest on /cockpit between engine restarts.
-DIGEST_STATE_FILE = Path("./cockpit_digest_latest.json")
+# Persisted under ./data — mounted as a named volume in docker-compose so the
+# digest survives container recreates on deploy (the container FS does not).
+DIGEST_STATE_FILE = Path("./data/cockpit_digest_latest.json")
 
 
 DIGEST_SYSTEM_PROMPT = """You write a once-daily crypto derivatives snapshot for \
@@ -140,6 +140,7 @@ class CockpitDigestService:
     def save_latest(self, date: str, post: str) -> None:
         """Persist the latest digest so the frontend can render it on /cockpit."""
         try:
+            DIGEST_STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
             DIGEST_STATE_FILE.write_text(
                 json.dumps(
                     {

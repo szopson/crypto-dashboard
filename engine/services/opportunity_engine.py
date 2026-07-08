@@ -28,9 +28,9 @@ from loguru import logger
 from config import settings
 
 
-# Persisted next to trading.db (same cwd-relative volume as the digest state)
-# so the frontend can render cards between engine restarts.
-CARDS_STATE_FILE = Path("./opportunity_cards_latest.json")
+# Persisted under ./data — mounted as a named volume in docker-compose so the
+# cards survive container recreates on deploy (the container FS does not).
+CARDS_STATE_FILE = Path("./data/opportunity_cards_latest.json")
 
 # Universe = the coins the cockpit covers. Market-wide deviations ("MKT")
 # contribute to every coin at half weight.
@@ -269,6 +269,7 @@ class OpportunityEngineService:
 
     def save_latest(self, date: str, cards: list[dict]) -> None:
         try:
+            CARDS_STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
             CARDS_STATE_FILE.write_text(
                 json.dumps(
                     {
