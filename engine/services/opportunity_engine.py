@@ -22,7 +22,6 @@ from pathlib import Path
 from typing import Optional
 
 import anthropic
-import httpx
 from loguru import logger
 
 from config import settings
@@ -79,9 +78,6 @@ class OpportunityEngineService:
     """Builds, narrates and persists the daily opportunity cards."""
 
     def __init__(self):
-        self.internal_url = (
-            settings.frontend_internal_url or settings.frontend_base_url
-        ).rstrip("/")
         self.model = settings.report_ai_model
         self._client: Optional[anthropic.Anthropic] = (
             anthropic.Anthropic(api_key=settings.anthropic_api_key)
@@ -90,16 +86,14 @@ class OpportunityEngineService:
         )
 
     async def fetch_snapshot(self) -> Optional[dict]:
-        """Fetch the shared derivatives snapshot from the frontend API."""
-        url = f"{self.internal_url}/api/crypto-pulse"
-        try:
-            async with httpx.AsyncClient(timeout=15.0) as client:
-                resp = await client.get(url)
-                resp.raise_for_status()
-                return resp.json()
-        except Exception as e:
-            logger.error(f"Opportunity engine: failed to fetch {url}: {e}")
-            return None
+        """
+        Fetch the shared derivatives snapshot — delegated to the digest
+        service, which validates against the all-zero cold-cache snapshot
+        and retries past it.
+        """
+        from services.cockpit_digest import get_cockpit_digest_service
+
+        return await get_cockpit_digest_service().fetch_snapshot()
 
     # === Stage 1: deterministic attention score ===
 
@@ -301,6 +295,11 @@ class OpportunityEngineService:
         snap = await self.fetch_snapshot()
         if not snap:
             return {"success": False, "error": "snapshot unavailable"}
+        from services.cockpit_digest import CockpitDigestService
+
+        if not CockpitDigestService.snapshot_has_data(snap):
+            # Keep the previous good card set; the frontend hides stale data.
+            return {"success": False, "error": "snapshot empty (all-zero)"}
 
         deviations = snap.get("deviations") or []
         radar_bonus = self._btc_radar_modifier()
