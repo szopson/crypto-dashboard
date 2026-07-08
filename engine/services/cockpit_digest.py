@@ -223,6 +223,16 @@ class CockpitDigestService:
                 f"{post}"
             )
             send = await self.telegram.send_message(draft, chat_id=admin)
+            if not send.get("success"):
+                # LLM-written text can break Markdown entity parsing (stray
+                # */_) — retry as plain text rather than dropping the draft.
+                logger.warning(
+                    f"Cockpit digest: Markdown draft failed ({send.get('error')}) "
+                    f"— retrying as plain text"
+                )
+                send = await self.telegram.send_message(
+                    draft, chat_id=admin, parse_mode=None
+                )
             result["delivered"] = bool(send.get("success"))
             if not send.get("success"):
                 result["delivery_error"] = send.get("error")

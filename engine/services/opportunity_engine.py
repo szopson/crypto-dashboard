@@ -31,9 +31,9 @@ from config import settings
 # cards survive container recreates on deploy (the container FS does not).
 CARDS_STATE_FILE = Path("./data/opportunity_cards_latest.json")
 
-# Universe = the coins the cockpit covers. Market-wide deviations ("MKT")
-# contribute to every coin at half weight.
-COIN_UNIVERSE = ["BTC", "ETH", "SOL", "XRP"]
+# Universe = whatever coins the crypto-pulse snapshot returns (BTC/ETH/SOL
+# today — see `symbols` in frontend/src/lib/coinglass.ts). Market-wide
+# deviations ("MKT") contribute to every coin at half weight.
 
 SEVERITY_POINTS = {"alert": 3.0, "watch": 1.5, "info": 0.5}
 
@@ -304,8 +304,11 @@ class OpportunityEngineService:
         deviations = snap.get("deviations") or []
         radar_bonus = self._btc_radar_modifier()
 
+        universe = [
+            c["symbol"] for c in snap.get("coins") or [] if c.get("symbol")
+        ]
         scored: list[dict] = []
-        for symbol in COIN_UNIVERSE:
+        for symbol in universe:
             bonus = radar_bonus if symbol == "BTC" else 0.0
             score, pressure = self.score_coin(symbol, deviations, bonus)
             scored.append(
