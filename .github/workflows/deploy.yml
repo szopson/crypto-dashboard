@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - main
+    # A full --no-cache rebuild takes ~7 min — skip it for changes that
+    # cannot affect the running containers.
+    paths-ignore:
+      - ".github/**"
+      - "docs/**"
+      - "**.md"
   workflow_dispatch:  # Manual trigger
 
 jobs:
