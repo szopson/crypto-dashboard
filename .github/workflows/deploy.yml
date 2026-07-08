@@ -18,6 +18,9 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
+          # Full --no-cache rebuild of both images can exceed the 10m default
+          # (killed the 2026-07-08 deploy at backend step 8/8).
+          command_timeout: 30m
           envs: NEXT_PUBLIC_POSTHOG_KEY,COINGLASS_API_KEY,VELO_API_KEY
           script: |
             # Fail the workflow on ANY command failure. Without this, a failed
