@@ -26,7 +26,6 @@ jobs:
             # Server-side key for the frontend cockpit / crypto-pulse route,
             # injected into the frontend container via docker-compose.yml.
             export COINGLASS_API_KEY="${COINGLASS_API_KEY}"
-            echo "DBG env lengths on VPS -> coinglass=${#COINGLASS_API_KEY} posthog=${#NEXT_PUBLIC_POSTHOG_KEY}"
             docker compose build --no-cache
             docker compose up -d
             docker compose logs --tail 10
