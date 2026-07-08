@@ -150,11 +150,35 @@ class EquityAISynthesis:
         self.model = model
 
     async def generate(self, ticker: str, sector: dict, data: dict) -> dict[str, Any]:
-        """Produce structured 11-section report JSON for the given ticker."""
+        """Produce structured 11-section report JSON for the given ticker.
+
+        Malformed JSON (missing comma, unescaped quote) is stochastic — a fresh
+        sample almost always parses. Retry the API call once before giving up.
+        """
         prompt = self._build_prompt(ticker, sector, data)
 
-        logger.info(f"Calling Claude ({self.model}) for {ticker} synthesis")
+        last_err: Optional[Exception] = None
+        for attempt in (1, 2):
+            logger.info(f"Calling Claude ({self.model}) for {ticker} synthesis (attempt {attempt})")
+            text = await self._call_claude(prompt)
+            try:
+                parsed = self._parse_json(text, ticker)
+                break
+            except json.JSONDecodeError as e:
+                last_err = e
+                logger.warning(f"{ticker}: attempt {attempt} returned invalid JSON ({e}); "
+                               f"{'retrying' if attempt == 1 else 'giving up'}")
+        else:
+            raise last_err  # type: ignore[misc]
 
+        logger.info(
+            f"Synthesis complete for {ticker}: rating={parsed.get('cover', {}).get('rating')}, "
+            f"target={parsed.get('cover', {}).get('target_price')}"
+        )
+        return parsed
+
+    async def _call_claude(self, prompt: str) -> str:
+        """One API call → fenced-stripped response text."""
         # Anthropic SDK is sync; offload
         import asyncio
         loop = asyncio.get_event_loop()
@@ -167,7 +191,6 @@ class EquityAISynthesis:
                 messages=[{"role": "user", "content": prompt}],
             ),
         )
-
         text = response.content[0].text.strip()
         # Strip potential ```json fences just in case
         if text.startswith("```"):
@@ -176,15 +199,7 @@ class EquityAISynthesis:
                 text = text.rsplit("```", 1)[0]
             if text.startswith("json\n"):
                 text = text[5:]
-        text = text.strip()
-
-        parsed = self._parse_json(text, ticker)
-
-        logger.info(
-            f"Synthesis complete for {ticker}: rating={parsed.get('cover', {}).get('rating')}, "
-            f"target={parsed.get('cover', {}).get('target_price')}"
-        )
-        return parsed
+        return text.strip()
 
     @staticmethod
     def _parse_json(text: str, ticker: str) -> dict[str, Any]:
