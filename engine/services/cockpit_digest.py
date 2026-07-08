@@ -49,7 +49,11 @@ class CockpitDigestService:
 
     def __init__(self):
         self.telegram = get_telegram_service()
+        # Public URL — lands in the post's CTA link.
         self.base_url = settings.frontend_base_url.rstrip("/")
+        # Internal URL — where we fetch the API from (docker network on the
+        # VPS); falls back to the public URL for local/dev runs.
+        self.internal_url = (settings.frontend_internal_url or settings.frontend_base_url).rstrip("/")
         self.model = settings.report_ai_model
         self._client: Optional[anthropic.Anthropic] = (
             anthropic.Anthropic(api_key=settings.anthropic_api_key)
@@ -59,7 +63,7 @@ class CockpitDigestService:
 
     async def fetch_snapshot(self) -> Optional[dict]:
         """Fetch the shared derivatives snapshot from the frontend API."""
-        url = f"{self.base_url}/api/crypto-pulse"
+        url = f"{self.internal_url}/api/crypto-pulse"
         try:
             async with httpx.AsyncClient(timeout=15.0) as client:
                 resp = await client.get(url)

@@ -13,6 +13,12 @@ services:
       - DATABASE_URL=${DATABASE_URL}
       - RESEND_API_KEY=${RESEND_API_KEY}
       - RESEND_FROM_EMAIL=${RESEND_FROM_EMAIL}
+      # Daily cockpit digest: draft post to the Telegram admin chat at 09:00
+      # Europe/Warsaw. Fetches the snapshot over the docker network; the public
+      # URL only appears in the post's CTA link.
+      - COCKPIT_DIGEST_ENABLED=true
+      - FRONTEND_BASE_URL=https://follio.io
+      - FRONTEND_INTERNAL_URL=http://frontend:3000
     networks:
       - traefik-public
     healthcheck:

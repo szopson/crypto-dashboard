@@ -140,7 +140,12 @@ class Settings(BaseSettings):
     # Cockpit daily digest (X/Telegram content export)
     # The digest reads the frontend's /api/crypto-pulse so the derivatives
     # snapshot has a single source of truth (Coinglass key + cache live there).
+    # frontend_base_url = PUBLIC url (used in the post's CTA link);
+    # frontend_internal_url = where the backend fetches the API from (on the
+    # VPS that's the docker-network service, http://frontend:3000). Falls back
+    # to frontend_base_url when empty.
     frontend_base_url: str = "http://localhost:3000"
+    frontend_internal_url: str = ""
     cockpit_digest_enabled: bool = False  # opt-in; drafts to Telegram admin
     cockpit_digest_hour: int = 9
     cockpit_digest_minute: int = 0
