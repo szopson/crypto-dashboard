@@ -200,6 +200,16 @@ export const analytics = {
   },
 
   /**
+   * Track an opportunity watch-card expand — the attention step of the
+   * card → context → affiliate_click funnel (docs/research/OPPORTUNITY_ENGINE.md).
+   */
+  trackOpportunityCardExpand: (params: { symbol: string; score: number }) => {
+    if (POSTHOG_KEY) {
+      posthog.capture("opportunity_card_expand", params);
+    }
+  },
+
+  /**
    * Identify user after login
    */
   identify: (userId: string, traits?: Record<string, unknown>) => {

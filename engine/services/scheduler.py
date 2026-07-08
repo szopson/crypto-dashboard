@@ -130,7 +130,7 @@ class SchedulerService:
             logger.info("Cockpit digest removed")
 
     async def _run_cockpit_digest(self):
-        """Generate and deliver the daily cockpit digest draft."""
+        """Generate and deliver the daily cockpit digest draft + opportunity cards."""
         logger.info("Generating cockpit digest...")
         try:
             result = await get_cockpit_digest_service().generate_and_deliver(publish=True)
@@ -140,6 +140,17 @@ class SchedulerService:
                 logger.warning(f"Cockpit digest not generated: {result.get('error')}")
         except Exception as e:
             logger.error(f"Error generating cockpit digest: {e}")
+
+        # Opportunity cards ride the same daily cadence and read the same
+        # snapshot source, so both surfaces describe one market state.
+        try:
+            from services.opportunity_engine import get_opportunity_engine_service
+
+            result = await get_opportunity_engine_service().generate()
+            if not result.get("success"):
+                logger.warning(f"Opportunity cards not generated: {result.get('error')}")
+        except Exception as e:
+            logger.error(f"Error generating opportunity cards: {e}")
 
     def add_periodic_snapshot(
         self,

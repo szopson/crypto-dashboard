@@ -29,13 +29,25 @@ export async function generateStaticParams() {
   return params;
 }
 
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://tradingcommandcenter.com";
+
 export async function generateMetadata({ params }: PageProps) {
   const { sector, slug } = await params;
   const report = await readReport(sector, slug);
   if (!report) return {};
+  const url = `${BASE_URL}/research/${sector}/${slug}`;
+  const description = report.one_liner ?? `${report.company} equity research report.`;
   return {
     title: `${report.ticker} — ${report.company} | Follio Research`,
-    description: report.one_liner ?? `${report.company} equity research report.`,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      title: `${report.ticker} — ${report.company}`,
+      description,
+      url,
+      type: "article",
+      publishedTime: report.date,
+    },
   };
 }
 
@@ -46,8 +58,32 @@ export default async function ReportPage({ params }: PageProps) {
 
   const sectorName = SECTOR_LABELS[sector]?.name ?? sector;
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: `${report.ticker} — ${report.company}`,
+    description: report.one_liner ?? `${report.company} equity research report.`,
+    datePublished: report.date,
+    author: { "@type": "Organization", name: "Follio Research" },
+    publisher: { "@type": "Organization", name: "Follio" },
+    mainEntityOfPage: `${BASE_URL}/research/${sector}/${slug}`,
+    about: {
+      "@type": "Corporation",
+      name: report.company,
+      tickerSymbol: report.ticker,
+    },
+    articleSection: sectorName,
+  };
+
   return (
     <article className="mx-auto max-w-4xl px-6 py-12">
+      {/* Escape "<" so frontmatter text can never close the script tag (XSS-safe per Next.js docs). */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c"),
+        }}
+      />
       <nav className="mb-6 flex items-center gap-2 text-sm text-zinc-500">
         <Link href="/research" className="hover:text-zinc-900 dark:hover:text-zinc-100">
           Research
