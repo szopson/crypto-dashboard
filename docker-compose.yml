@@ -84,7 +84,7 @@ services:
       # Next.js API routes must beat the backend's PathPrefix(`/api`) rule
       # (priority 2), otherwise Traefik sends them to FastAPI and they 404.
       # Keep this list in sync with routes under frontend/src/app/api/.
-      - traefik.http.routers.tcc-next-api.rule=Host(`${DOMAIN}`) && (PathPrefix(`/api/crypto-pulse`) || PathPrefix(`/api/trade-review`))
+      - traefik.http.routers.tcc-next-api.rule=Host(`${DOMAIN}`) && (PathPrefix(`/api/crypto-pulse`) || PathPrefix(`/api/trade-review`) || PathPrefix(`/api/ai-setup`))
       - traefik.http.routers.tcc-next-api.priority=10
       - traefik.http.routers.tcc-next-api.entrypoints=websecure
       - traefik.http.routers.tcc-next-api.tls=true

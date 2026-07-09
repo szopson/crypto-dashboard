@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { AiRead } from "@/components/cockpit/AiRead";
 import { TodaysWatch } from "@/components/cockpit/TodaysWatch";
+import { SetupPanel } from "@/components/cockpit/setup/SetupPanel";
 import { DerivativesCockpit } from "@/components/cockpit/DerivativesCockpit";
 
 export const metadata: Metadata = {
@@ -17,6 +18,7 @@ export default function CockpitPage() {
     <main className="mx-auto w-full max-w-3xl px-4 py-6 sm:py-8">
       <AiRead />
       <TodaysWatch />
+      <SetupPanel />
       <DerivativesCockpit />
     </main>
   );
