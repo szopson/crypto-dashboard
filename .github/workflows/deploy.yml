@@ -12,9 +12,19 @@ on:
       - "**.md"
   workflow_dispatch:  # Manual trigger
 
+# One deploy at a time; a newer push cancels the stale in-flight run
+# instead of racing it on the same VPS.
+concurrency:
+  group: deploy-vps
+  cancel-in-progress: true
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # command_timeout caps the SSH step at 30m — this backstops the whole
+    # job so a hung run fails instead of sitting out GitHub's 6h default
+    # (the 2026-07-09 run had to be cancelled by hand).
+    timeout-minutes: 35
 
     steps:
       - name: Deploy to VPS via SSH
