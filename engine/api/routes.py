@@ -926,32 +926,39 @@ async def chat_with_copilot(
 
         market_data = None
         if request.include_market_data:
-            # Gather market data
-            price_data = exchange.get_current_price()
-            funding_data = exchange.fetch_funding_rate()
+            market_data = {}
 
-            # Get bias data
-            ohlcv_1d = exchange.fetch_ohlcv(timeframe="1d", limit=300)
-            radar_result = calculate_full_radar(ohlcv_1d, funding_data.get("funding_rate", 0))
+            # Legacy TCC context (price/RADAR/structure) — 6+ Bybit calls per
+            # message, so rate limits are a fact of life here. Best-effort:
+            # a 429 from the exchange must not kill the chat.
+            try:
+                price_data = exchange.get_current_price()
+                funding_data = exchange.fetch_funding_rate()
 
-            # Get structure for multiple TFs
-            biases = {}
-            for tf in ["1h", "4h", "1d", "1w"]:
-                ohlcv = exchange.fetch_ohlcv(timeframe=tf, limit=300)
-                structure = analyze_structure(ohlcv, tf, price_data["price"])
-                biases[tf.upper()] = {
-                    "structural_bias": structure.get("bias", "NEUTRAL"),
-                    "secondary_swing_level": structure.get("secondary_swing", {}).get("price"),
-                }
+                # Get bias data
+                ohlcv_1d = exchange.fetch_ohlcv(timeframe="1d", limit=300)
+                radar_result = calculate_full_radar(ohlcv_1d, funding_data.get("funding_rate", 0))
 
-            market_data = {
-                "price": price_data,
-                "radar": radar_result,
-                "bias": {
-                    "overall_bias": "BULLISH" if sum(1 for b in biases.values() if b["structural_bias"] == "BULLISH") > 2 else "BEARISH",
-                    "biases": biases,
-                },
-            }
+                # Get structure for multiple TFs
+                biases = {}
+                for tf in ["1h", "4h", "1d", "1w"]:
+                    ohlcv = exchange.fetch_ohlcv(timeframe=tf, limit=300)
+                    structure = analyze_structure(ohlcv, tf, price_data["price"])
+                    biases[tf.upper()] = {
+                        "structural_bias": structure.get("bias", "NEUTRAL"),
+                        "secondary_swing_level": structure.get("secondary_swing", {}).get("price"),
+                    }
+
+                market_data.update({
+                    "price": price_data,
+                    "radar": radar_result,
+                    "bias": {
+                        "overall_bias": "BULLISH" if sum(1 for b in biases.values() if b["structural_bias"] == "BULLISH") > 2 else "BEARISH",
+                        "biases": biases,
+                    },
+                })
+            except Exception as e:
+                logger.warning(f"Chat: legacy market context unavailable: {e}")
 
             # Enrich with the live derivatives snapshot (same source of truth
             # as /cockpit: Coinglass + Velo via the frontend's crypto-pulse).
@@ -964,6 +971,9 @@ async def chat_with_copilot(
                     market_data["derivatives"] = snap
             except Exception as e:
                 logger.warning(f"Chat: derivatives context unavailable: {e}")
+
+            if not market_data:
+                market_data = None
 
         result = await llm.chat(request.message, market_data)
 
