@@ -83,3 +83,6 @@ next-env.d.ts
 # frontend/content/). Kept ignored because the equity CLI's default --out
 # is still the relative "content/reports" and would recreate it.
 /content/
+
+# Local snapshot cache of the /setup Claude Code skill (per-machine state)
+.claude/skills/setup/state/
