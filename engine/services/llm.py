@@ -43,6 +43,17 @@ Your role is to analyze BTC market data and provide actionable insights based on
 - Stop loss at Secondary Swing level
 - Position sizing based on confluence
 
+### 4. LIVE DERIVATIVES (Cockpit)
+When the context includes a "Live Derivatives" section (Coinglass/Velo data),
+treat it as the source of truth for questions about open interest, funding,
+basis, liquidations, ETF flows and positioning. It carries: OI with 1h/4h/24h
+deltas per coin (BTC/ETH/SOL), funding across venues plus the
+Binance↔Hyperliquid spread, perp basis vs spot with 24h context, liquidation
+totals split long/short, spot ETF flows (24h/7d), retail vs top-trader
+positioning, and pre-computed deviations ranked by severity. Quote concrete
+numbers from it; never invent values that are not in the context. Funding is
+percent per 8h; basis is percent vs spot.
+
 ## RESPONSE GUIDELINES
 - Be concise and actionable
 - Focus on the current market context
@@ -343,6 +354,58 @@ User: {message}"""
                 lines.append(f"\n**Nearby Zones:** {len(nearby)}")
                 for zone in nearby[:3]:
                     lines.append(f"  - {zone.get('type')}: ${zone.get('mid', 0):,.0f} ({zone.get('distance_pct', 0):.1f}% away)")
+
+        # Live derivatives (cockpit snapshot: Coinglass + Velo). Rendered
+        # selectively — the raw snapshot never reaches the prompt.
+        if data.get("derivatives"):
+            d = data["derivatives"]
+            lines.append("\n**Live Derivatives (Coinglass/Velo):**")
+            for c in (d.get("coins") or [])[:3]:
+                oi_b = (c.get("oi_usd") or 0) / 1e9
+                lines.append(
+                    f"  - {c.get('symbol')}: ${c.get('price', 0):,.2f} | "
+                    f"funding {c.get('funding_rate_oi', 0):.4f}%/8h | "
+                    f"OI ${oi_b:.2f}B (1h {c.get('oi_change_1h_pct', 0):+.2f}%, "
+                    f"4h {c.get('oi_change_4h_pct', 0):+.2f}%, 24h {c.get('oi_change_24h_pct', 0):+.2f}%) | "
+                    f"L/S {c.get('long_short_24h', 0):.2f} | "
+                    f"liq 24h ${(c.get('liquidation_24h_usd') or 0)/1e6:.0f}M "
+                    f"(L ${(c.get('long_liq_24h_usd') or 0)/1e6:.0f}M / S ${(c.get('short_liq_24h_usd') or 0)/1e6:.0f}M)"
+                )
+                if c.get("basis_pct") is not None:
+                    prev = c.get("basis_24h_ago_pct")
+                    prev_str = f" (24h ago {prev:+.3f}%)" if prev is not None else ""
+                    lines.append(f"    basis vs spot {c['basis_pct']:+.3f}%{prev_str}")
+            fa = d.get("funding_aggregate") or {}
+            if fa.get("btc_exchanges"):
+                venues = ", ".join(
+                    f"{e.get('exchange')} {e.get('rate_pct', 0):.4f}%" for e in fa["btc_exchanges"]
+                )
+                spread = fa.get("btc_spread_pct")
+                spread_str = f" (spread {spread:.4f}%)" if spread is not None else ""
+                lines.append(f"  - BTC funding by venue: {venues}{spread_str}")
+            vf = d.get("velo_funding") or {}
+            if vf.get("spread_pct_8h") is not None:
+                lines.append(
+                    f"  - Binance↔Hyperliquid funding spread: {vf['spread_pct_8h']:+.4f}%/8h (Velo)"
+                )
+            etf = d.get("etf") or {}
+            if etf.get("btc_24h_flow_usd") is not None:
+                flow7 = (etf.get("btc_7d_flow_usd") or 0) / 1e6
+                lines.append(
+                    f"  - BTC spot ETF flow: 24h ${etf['btc_24h_flow_usd']/1e6:+,.0f}M, 7d ${flow7:+,.0f}M"
+                )
+            pos = d.get("positioning") or {}
+            if pos.get("retail_long_pct") is not None:
+                top = pos.get("top_trader_long_pct")
+                top_str = f" vs top traders {top:.1f}% long" if top is not None else ""
+                lines.append(f"  - Positioning: retail {pos['retail_long_pct']:.1f}% long{top_str}")
+            devs = d.get("deviations") or []
+            if devs:
+                lines.append("  - Notable deviations:")
+                for x in devs[:5]:
+                    lines.append(
+                        f"    [{x.get('severity')}] {x.get('symbol')}: {x.get('headline')} — {x.get('detail')}"
+                    )
 
         return "\n".join(lines)
 

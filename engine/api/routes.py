@@ -953,6 +953,18 @@ async def chat_with_copilot(
                 },
             }
 
+            # Enrich with the live derivatives snapshot (same source of truth
+            # as /cockpit: Coinglass + Velo via the frontend's crypto-pulse).
+            # Best-effort — the chat still works without it.
+            try:
+                from services.cockpit_digest import get_cockpit_digest_service
+
+                snap = await get_cockpit_digest_service().fetch_snapshot()
+                if snap and snap.get("coins"):
+                    market_data["derivatives"] = snap
+            except Exception as e:
+                logger.warning(f"Chat: derivatives context unavailable: {e}")
+
         result = await llm.chat(request.message, market_data)
 
         return ChatResponse(
