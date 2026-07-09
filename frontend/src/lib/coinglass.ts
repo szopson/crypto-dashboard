@@ -194,6 +194,45 @@ function pickCoin(markets: CoinMarket[] | null, symbol: string): CoinMarket | un
   return markets?.find((m) => m.symbol === symbol);
 }
 
+interface BtcFundingRow {
+  exchange: string;
+  rate_pct: number;
+}
+
+// The funding-rate/exchange-list endpoint ignores its symbol param and always
+// returns ~1.8MB (every listed coin) — over Next's 2MB fetch-cache limit, so
+// the response can never be cached at the data layer. Memoize the tiny
+// extracted BTC slice at module scope instead: at most one upstream call per
+// TTL per server process, deduped across concurrent renders (route + page).
+const FUNDING_TTL_MS = 60_000;
+let fundingMemo: { at: number; promise: Promise<BtcFundingRow[] | null> } | null = null;
+
+function fetchBtcFundingByVenue(): Promise<BtcFundingRow[] | null> {
+  const now = Date.now();
+  if (fundingMemo && now - fundingMemo.at < FUNDING_TTL_MS) return fundingMemo.promise;
+
+  const promise = cgGet<
+    { symbol: string; stablecoin_margin_list?: { exchange: string; funding_rate: number }[] }[]
+  >("/api/futures/funding-rate/exchange-list?symbol=BTC")
+    .then((rows) => {
+      const list =
+        rows
+          ?.find((r) => r.symbol === "BTC")
+          ?.stablecoin_margin_list?.slice(0, 8)
+          .map((e) => ({ exchange: e.exchange, rate_pct: e.funding_rate })) ?? null;
+      // Don't memoize failures — let the next render retry immediately.
+      if (!list) fundingMemo = null;
+      return list;
+    })
+    .catch(() => {
+      fundingMemo = null;
+      return null;
+    });
+
+  fundingMemo = { at: now, promise };
+  return promise;
+}
+
 export async function fetchCryptoPulse(): Promise<CryptoPulseSnapshot> {
   const symbols = ["BTC", "ETH", "SOL"];
 
@@ -207,14 +246,9 @@ export async function fetchCryptoPulse(): Promise<CryptoPulseSnapshot> {
     ),
   );
 
-  const [markets, btcFunding, etfFlows, retailLS, topLS, veloFunding, basisBySymbol] = await Promise.all([
+  const [markets, btcVenues, etfFlows, retailLS, topLS, veloFunding, basisBySymbol] = await Promise.all([
     cgGet<CoinMarket[]>("/api/futures/coins-markets"),
-    cgGet<
-      {
-        symbol: string;
-        stablecoin_margin_list?: { exchange: string; funding_rate: number }[];
-      }[]
-    >("/api/futures/funding-rate/exchange-list?symbol=BTC"),
+    fetchBtcFundingByVenue(),
     cgGet<ETFFlowDay[]>("/api/etf/bitcoin/flow-history?asset=BTC"),
     cgGet<LongShortPoint[]>(
       "/api/futures/global-long-short-account-ratio/history?exchange=Binance&symbol=BTCUSDT&interval=1h&limit=4",
@@ -258,11 +292,8 @@ export async function fetchCryptoPulse(): Promise<CryptoPulseSnapshot> {
     };
   });
 
-  // BTC funding aggregate across exchanges
-  const btcExchanges = (btcFunding ?? [])
-    .find((r) => r.symbol === "BTC")
-    ?.stablecoin_margin_list?.slice(0, 8)
-    .map((e) => ({ exchange: e.exchange, rate_pct: e.funding_rate })) ?? [];
+  // BTC funding aggregate across exchanges (pre-trimmed + memoized)
+  const btcExchanges = btcVenues ?? [];
   const btcAvg = btcExchanges.length
     ? btcExchanges.reduce((s, e) => s + e.rate_pct, 0) / btcExchanges.length
     : null;

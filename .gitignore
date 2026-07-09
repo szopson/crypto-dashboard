@@ -79,5 +79,7 @@ dashboard-current.png
 # Next.js generated
 next-env.d.ts
 
-# Stale duplicate content — source of truth is frontend/content/ (pending decision to hard-delete)
+# Legacy generator output dir (deleted 2026-07-09; source of truth is
+# frontend/content/). Kept ignored because the equity CLI's default --out
+# is still the relative "content/reports" and would recreate it.
 /content/
