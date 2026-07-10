@@ -7,7 +7,9 @@ Monitors market conditions and sends Telegram alerts when:
 - Price approaches key levels (Secondary Swing)
 """
 import asyncio
+import json
 from datetime import datetime
+from pathlib import Path
 from typing import Optional
 from dataclasses import dataclass, field
 from loguru import logger
@@ -18,6 +20,12 @@ from calculations.radar import calculate_full_radar
 from calculations.structure import analyze_structure
 from calculations.sniper import analyze_sniper
 from services.telegram import get_telegram_service
+
+
+# Persisted under ./data — mounted as a named volume in docker-compose so the
+# dedup/cooldown state survives container recreates on deploy. Without this,
+# every deploy reset the in-memory state and re-fired recent alerts.
+ALERT_STATE_FILE = Path("./data/alert_state.json")
 
 
 @dataclass
@@ -74,9 +82,59 @@ class AlertMonitor:
             logger.warning("Alert monitor already running")
             return
 
+        self._load_dedup_state()
         self.running = True
         self._task = asyncio.create_task(self._monitor_loop())
         logger.info(f"Alert monitor started (interval: {self.check_interval}s)")
+
+    # --- Dedup/cooldown persistence -------------------------------------
+    # Only the fields that prevent re-alerting are persisted; market-state
+    # fields (radar scores, last price, ...) are cheap to re-capture.
+
+    _DEDUP_TIME_FIELDS = ("last_sniper_alert_time", "last_signal_alert_time", "last_ict_alert_time")
+    _DEDUP_STR_FIELDS = (
+        "last_sniper_direction",
+        "last_alerted_signal",
+        "last_ict_signal_id",
+        "last_amd_phase",
+    )
+
+    def _load_dedup_state(self):
+        """Hydrate dedup/cooldown state persisted by a previous container."""
+        try:
+            data = json.loads(ALERT_STATE_FILE.read_text(encoding="utf-8"))
+        except FileNotFoundError:
+            return
+        except Exception as e:
+            logger.warning(f"Alert dedup state unreadable, starting fresh: {e}")
+            return
+
+        try:
+            self.state.alerted_setups = set(data.get("alerted_setups", []))
+            for f in self._DEDUP_STR_FIELDS:
+                setattr(self.state, f, data.get(f))
+            for f in self._DEDUP_TIME_FIELDS:
+                raw = data.get(f)
+                setattr(self.state, f, datetime.fromisoformat(raw) if raw else None)
+            logger.info(
+                f"Alert dedup state restored ({len(self.state.alerted_setups)} setups tracked)"
+            )
+        except Exception as e:
+            logger.warning(f"Alert dedup state malformed, starting fresh: {e}")
+
+    def _save_dedup_state(self):
+        """Persist dedup/cooldown state; best-effort, never breaks the loop."""
+        try:
+            payload = {"alerted_setups": sorted(self.state.alerted_setups)}
+            for f in self._DEDUP_STR_FIELDS:
+                payload[f] = getattr(self.state, f)
+            for f in self._DEDUP_TIME_FIELDS:
+                v = getattr(self.state, f)
+                payload[f] = v.isoformat() if v else None
+            ALERT_STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+            ALERT_STATE_FILE.write_text(json.dumps(payload), encoding="utf-8")
+        except Exception as e:
+            logger.warning(f"Alert dedup state save failed: {e}")
 
     async def stop(self):
         """Stop the monitoring loop."""
@@ -170,6 +228,10 @@ class AlertMonitor:
 
         except Exception as e:
             logger.error(f"Error in check_and_alert: {e}")
+        finally:
+            # Persist dedup/cooldown state every tick so a deploy mid-cycle
+            # can't resurrect already-sent alerts.
+            self._save_dedup_state()
 
     async def _check_radar_changes(self, funding_rate: float):
         """Check for RADAR classification changes."""
