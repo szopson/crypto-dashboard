@@ -30,6 +30,8 @@ class MarketState:
     last_price: float = 0
     last_check: Optional[datetime] = None
     alerted_setups: set = field(default_factory=set)  # Track already alerted setups
+    last_sniper_alert_time: Optional[datetime] = None  # SNIPER cooldown
+    last_sniper_direction: Optional[str] = None  # direction of last SNIPER alert
     last_alerted_signal: Optional[str] = None  # Track last signal we alerted on
     last_signal_alert_time: Optional[datetime] = None  # Cooldown tracking
     # ICT state
@@ -212,16 +214,37 @@ class AlertMonitor:
             new_signal = confluence.get("signal", "NEUTRAL")
             new_score = confluence.get("score", 0)
 
-            # Alert on high confluence setups
+            # Alert on high confluence setups.
+            #
+            # analyze_sniper returns up to 5 setups (one per detected zone),
+            # all sharing the global confluence score. Blasting every zone as
+            # a separate message produced 3+ near-identical alerts per tick
+            # (observed 2026-07-10), re-fired whenever a zone re-detected at a
+            # slightly different price. Instead: keep only risk-sane setups
+            # (R:R >= 1), send the single best one per tick, dedup on a $500
+            # price band, and rate-limit to one SNIPER alert per direction per
+            # hour (a direction flip alerts immediately).
             if new_score >= self.sniper_min_confluence and setups:
-                for setup in setups:
-                    # Create unique setup identifier
-                    setup_id = f"{setup['direction']}_{setup['entry_zone_type']}_{setup['entry_price']:.0f}"
+                viable = [s for s in setups if (s.get("risk_reward") or s.get("rr") or 0) >= 1.0]
+                best = max(viable, key=lambda s: (s.get("risk_reward") or s.get("rr") or 0), default=None)
 
-                    # Only alert if we haven't alerted this setup recently
-                    if setup_id not in self.state.alerted_setups:
-                        await self._send_sniper_alert(setup, confluence, current_price)
+                if best:
+                    band = round(best["entry_price"] / 500) * 500
+                    setup_id = f"{best['direction']}_{best['entry_zone_type']}_{band:.0f}"
+
+                    now = datetime.utcnow()
+                    same_direction = self.state.last_sniper_direction == best["direction"]
+                    in_cooldown = (
+                        same_direction
+                        and self.state.last_sniper_alert_time is not None
+                        and (now - self.state.last_sniper_alert_time).total_seconds() < 3600
+                    )
+
+                    if setup_id not in self.state.alerted_setups and not in_cooldown:
+                        await self._send_sniper_alert(best, confluence, current_price)
                         self.state.alerted_setups.add(setup_id)
+                        self.state.last_sniper_alert_time = now
+                        self.state.last_sniper_direction = best["direction"]
 
                         # Keep only last 20 alerted setups
                         if len(self.state.alerted_setups) > 20:
