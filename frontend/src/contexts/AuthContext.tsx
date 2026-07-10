@@ -18,7 +18,7 @@ interface AuthContextType {
   error: string | null;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, fullName?: string) => Promise<void>;
-  signInWithGoogle: () => Promise<void>;
+  signInWithGoogle: (next?: string) => Promise<void>;
   signOut: () => Promise<void>;
   clearError: () => void;
 }
@@ -142,15 +142,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [supabase.auth]
   );
 
-  // Sign in with Google OAuth
-  const signInWithGoogle = useCallback(async () => {
+  // Sign in with Google OAuth. `next` is a same-origin path to return to
+  // after the callback (e.g. "/cockpit"); defaults to the wealth dashboard.
+  const signInWithGoogle = useCallback(async (next?: string) => {
     setError(null);
 
     try {
+      const nextParam =
+        next && next.startsWith("/") && !next.startsWith("//")
+          ? `?next=${encodeURIComponent(next)}`
+          : "";
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: `${window.location.origin}/auth/callback${nextParam}`,
         },
       });
 

@@ -30,6 +30,14 @@ export default function AuthCallbackPage() {
           return;
         }
 
+        // Where to land after sign-in. Same-origin paths only ("/..." but not
+        // "//...") to rule out open redirects; default: wealth dashboard.
+        const rawNext = params.get("next");
+        const nextPath =
+          rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//")
+            ? rawNext
+            : "/app/wealth";
+
         // Handle the OAuth callback
         const {
           data: { session },
@@ -44,7 +52,7 @@ export default function AuthCallbackPage() {
           setStatus("success");
           // Redirect to wealth dashboard after short delay
           setTimeout(() => {
-            router.push("/app/wealth");
+            router.push(nextPath);
           }, 1500);
         } else {
           // No session - might need to exchange code
@@ -57,7 +65,7 @@ export default function AuthCallbackPage() {
             }
             setStatus("success");
             setTimeout(() => {
-              router.push("/app/wealth");
+              router.push(nextPath);
             }, 1500);
           } else {
             throw new Error("No session or code found");
