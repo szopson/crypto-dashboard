@@ -19,6 +19,12 @@ services:
       - COCKPIT_DIGEST_ENABLED=true
       - FRONTEND_BASE_URL=https://follio.io
       - FRONTEND_INTERNAL_URL=http://frontend:3000
+      # Supabase project URL (public value) — required for ES256 JWT
+      # verification via JWKS in middleware/auth.py. Pinned here because the
+      # VPS engine/.env drifts (observed 2026-07-10: missing SUPABASE_URL broke
+      # wealth auth with "Unable to verify token signature"); real environment
+      # variables take precedence over env_file for pydantic settings.
+      - SUPABASE_URL=https://wkyssmlitsxgvslcyedf.supabase.co
     volumes:
       # Daily digest + opportunity-card state (engine writes ./data/*.json);
       # a named volume so the state survives container recreates on deploy.
