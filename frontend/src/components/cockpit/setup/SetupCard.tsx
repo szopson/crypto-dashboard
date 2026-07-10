@@ -72,13 +72,17 @@ export function SetupCard({ setup, onNextStepClick }: SetupCardProps) {
                 key={s.name}
                 className="border-b border-zinc-100 last:border-0 dark:border-zinc-800/60"
               >
-                <td className="whitespace-nowrap px-3 py-2 font-medium text-zinc-900 dark:text-zinc-100">
+                <td className="whitespace-nowrap px-3 py-2 align-top font-medium text-zinc-900 dark:text-zinc-100">
                   {s.name}
                 </td>
-                <td className="whitespace-nowrap px-3 py-2 tabular-nums text-zinc-700 dark:text-zinc-300">
+                {/* No nowrap here: long values (e.g. liq-imbalance summaries)
+                    otherwise blow the table out to thousands of px, pushing
+                    Read/Bias off-screen and word-wrapping Read one word per
+                    line (the "giant empty rows" bug). */}
+                <td className="min-w-[12rem] px-3 py-2 align-top tabular-nums text-zinc-700 dark:text-zinc-300">
                   {s.value}
                 </td>
-                <td className="px-3 py-2 text-zinc-600 dark:text-zinc-400">{s.read}</td>
+                <td className="min-w-[14rem] px-3 py-2 align-top text-zinc-600 dark:text-zinc-400">{s.read}</td>
                 <td className="px-3 py-2">
                   <BiasBadge bias={s.bias} />
                 </td>
