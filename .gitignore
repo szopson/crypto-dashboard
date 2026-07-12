@@ -86,3 +86,9 @@ next-env.d.ts
 
 # Local snapshot cache of the /setup Claude Code skill (per-machine state)
 .claude/skills/setup/state/
+
+# Agent skills (personal tooling, installed via npx skills)
+.agents/
+.claude/skills/*
+!.claude/skills/setup
+skills-lock.json
