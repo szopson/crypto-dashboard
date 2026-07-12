@@ -1,10 +1,11 @@
 # Task: server-side GeoIP region gating behind Traefik
 
-Status: implemented (2026-07-12). Remaining manual steps: create a MaxMind
-account (GeoLite2), add `GEOIPUPDATE_ACCOUNT_ID` + `GEOIPUPDATE_LICENSE_KEY`
-GitHub secrets, deploy, then run the verification below (US VPN + spoof test).
-Until then `/api/region` returns null and gating falls back to the timezone
-heuristic (fail-closed either way).
+Status: DONE — deployed and verified in prod (2026-07-12). MMDB downloaded by
+the sidecar (deploy assertion passed), PL request returns
+`{"region":null,"resolved":true}` (verified unrestricted), and a spoofed
+`X-Forwarded-For: 8.8.8.8` does NOT change the verdict — Traefik overwrites
+client-supplied forwarded headers, confirming the trust boundary. Remaining
+optional check: a US-VPN request should return `{"region":"US"}`.
 
 ## Why
 
