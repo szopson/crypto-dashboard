@@ -7,7 +7,9 @@
  *  1. Ranking is by the user's REAL net cost — takerFee × (1 − rebate) — not by
  *     our payout. A venue that pays us more but costs the user more ranks lower.
  *  2. Nothing is shown for a venue that is disabled or restricted in the user's
- *     region.
+ *     region. Region gating fails CLOSED: callers must pass an explicit region
+ *     decision, and `null` (unknown) hides every venue that has any regional
+ *     restriction. Detection is best-effort client-side (see region.ts).
  */
 import { EXCHANGES, type Exchange, type ExchangeProduct } from "@/config/exchanges";
 
@@ -41,17 +43,21 @@ export function effectiveFeePct(exchange: Exchange): number {
 /**
  * Rank venues for a symbol by real net cost, ascending. Filters out disabled
  * venues, venues that don't offer the product, and venues restricted in the
- * given region. `region` is optional; when omitted, region gating is skipped
- * (caller is responsible for supplying it once geo-detection is wired).
+ * user's region. The region decision is REQUIRED: an ISO-3166 alpha-2 code when
+ * known, or `null` when unknown — unknown fails closed, i.e. every venue with a
+ * non-empty `restrictedRegions` is excluded until eligibility is established.
  */
 export function rankExchangesForSymbol(
   base: string,
-  opts: { product?: ExchangeProduct; region?: string } = {},
+  opts: { product?: ExchangeProduct; region: string | null },
 ): RankedExchange[] {
   const product = opts.product ?? "perp";
+  const region = opts.region?.toUpperCase() ?? null;
   return EXCHANGES.filter((e) => e.enabled)
     .filter((e) => e.products.includes(product))
-    .filter((e) => !(opts.region && e.restrictedRegions.includes(opts.region)))
+    .filter((e) =>
+      region === null ? e.restrictedRegions.length === 0 : !e.restrictedRegions.includes(region),
+    )
     .map((e) => ({
       exchange: e,
       href: buildAffiliateLink(e, base),
@@ -64,7 +70,7 @@ export function rankExchangesForSymbol(
 /** Convenience: the single best (cheapest net) venue for a symbol, or null. */
 export function bestExchangeForSymbol(
   base: string,
-  opts: { product?: ExchangeProduct; region?: string } = {},
+  opts: { product?: ExchangeProduct; region: string | null },
 ): RankedExchange | null {
   return rankExchangesForSymbol(base, opts)[0] ?? null;
 }

@@ -68,7 +68,7 @@ No SSH to prod from dev machines — prod operations go through
 | Term | Meaning | Where |
 |---|---|---|
 | **Affiliate link** | Deep link to an exchange perp market with embedded referral code, built by `buildAffiliateLink()`. | `frontend/src/lib/affiliate.ts` |
-| **Exchange registry** | `EXCHANGES[]` — single source of truth for venue fees, rebates, attribution and region restrictions; venues ranked by real net cost to the user. **Gotcha:** region restrictions are metadata only — gating is skipped when callers omit `region`, and ExchangeCTA currently ranks without a region, so restricted venues are not actually filtered per user. | `frontend/src/config/exchanges.ts`, `frontend/src/lib/affiliate.ts` |
+| **Exchange registry** | `EXCHANGES[]` — single source of truth for venue fees, rebates, attribution and region restrictions; venues ranked by real net cost to the user. Region gating **fails closed**: ranking requires an explicit region decision (`string \| null`), and unknown region hides every venue with restrictions. Detection is best-effort client-side timezone mapping (`lib/region.ts`) — a mitigation, not enforcement; server-side GeoIP behind Traefik is future work. | `frontend/src/config/exchanges.ts`, `frontend/src/lib/affiliate.ts`, `frontend/src/lib/region.ts` |
 | **Rebate** | Fee share returned to the user via referral (`rebatePct`, 0..1). |  |
 | **ExchangeCTA** | CTA component that deep-links the cheapest venue for the user. | `frontend/src/components/cockpit/ExchangeCTA.tsx` |
 | **MiCA / KNF** | EU/PL regulatory constraints on crypto promotion — affiliate copy and venue availability need legal sign-off. | header notes in `exchanges.ts` |
