@@ -11,19 +11,15 @@
  * never surface a live referral link. Flip an exchange's `enabled` to true (with
  * a real refCode) in config/exchanges.ts to activate it.
  *
- * Region gating: nothing renders until the user's region is resolved (post
- * mount), then ranking fails closed — unknown region hides every venue with
- * regional restrictions. Keeps restricted venues out of SSR HTML entirely.
+ * Region gating: nothing renders until the user's region is resolved (server
+ * GeoIP verdict with timezone fallback — see useRegion), then ranking fails
+ * closed — unknown region hides every venue with regional restrictions.
+ * Keeps restricted venues out of SSR HTML entirely.
  */
-import { useSyncExternalStore } from "react";
 import { ArrowUpRight } from "lucide-react";
 import { rankExchangesForSymbol } from "@/lib/affiliate";
-import { detectRegion } from "@/lib/region";
+import { useRegion } from "@/hooks/useRegion";
 import { analytics } from "@/components/PostHogProvider";
-
-// Region never changes within a page lifetime, so the store never notifies.
-const subscribeNever = () => () => {};
-const PENDING = "pending" as const;
 
 export function ExchangeCTA({
   symbol,
@@ -34,11 +30,9 @@ export function ExchangeCTA({
   surface: string;
   compact?: boolean;
 }) {
-  // "pending" on the server and during hydration, resolved region afterwards —
-  // restricted venues never appear in SSR HTML or the first client paint.
-  const region = useSyncExternalStore(subscribeNever, detectRegion, () => PENDING);
+  const region = useRegion();
 
-  if (region === PENDING) return null;
+  if (region === "pending") return null;
   const ranked = rankExchangesForSymbol(symbol, { region });
   const best = ranked[0];
   if (!best) return null;

@@ -37,7 +37,7 @@ jobs:
           # Full --no-cache rebuild of both images can exceed the 10m default
           # (killed the 2026-07-08 deploy at backend step 8/8).
           command_timeout: 30m
-          envs: NEXT_PUBLIC_POSTHOG_KEY,COINGLASS_API_KEY,VELO_API_KEY,TELEGRAM_BOT_TOKEN,TELEGRAM_ADMIN_CHAT_ID,TELEGRAM_CHAT_ID,TELEGRAM_CHANNEL_ID,TELEGRAM_GROUP_ID
+          envs: NEXT_PUBLIC_POSTHOG_KEY,COINGLASS_API_KEY,VELO_API_KEY,TELEGRAM_BOT_TOKEN,TELEGRAM_ADMIN_CHAT_ID,TELEGRAM_CHAT_ID,TELEGRAM_CHANNEL_ID,TELEGRAM_GROUP_ID,GEOIPUPDATE_ACCOUNT_ID,GEOIPUPDATE_LICENSE_KEY
           script: |
             # Fail the workflow on ANY command failure. Without this, a failed
             # `docker compose build` silently deployed the previous image
@@ -59,7 +59,7 @@ jobs:
             # the canonical secret store the backend reads via env_file.
             # Self-healing: the VPS copy lost these on 2026-07-08 and digest
             # drafts silently stopped delivering.
-            for KV in TELEGRAM_BOT_TOKEN TELEGRAM_ADMIN_CHAT_ID TELEGRAM_CHAT_ID TELEGRAM_CHANNEL_ID TELEGRAM_GROUP_ID; do
+            for KV in TELEGRAM_BOT_TOKEN TELEGRAM_ADMIN_CHAT_ID TELEGRAM_CHAT_ID TELEGRAM_CHANNEL_ID TELEGRAM_GROUP_ID GEOIPUPDATE_ACCOUNT_ID GEOIPUPDATE_LICENSE_KEY; do
               eval "VAL=\"\$$KV\""
               if [ -n "$VAL" ]; then
                 if grep -q "^${KV}=" engine/.env; then
@@ -74,12 +74,39 @@ jobs:
             # ("no space left on device" killed the build mid-deploy).
             # Deliberately NOT pruning volumes — tcc-backend-data holds the
             # digest/opportunity-card state.
+            # geoipupdate sidecar creds: compose interpolates ${GEOIPUPDATE_*}
+            # from the shell, sourced from engine/.env (canonical store) so a
+            # manual redeploy without GitHub secrets still works. Empty values
+            # are fine — the sidecar exits and /api/region degrades to null;
+            # the `|| true` keeps a missing key from killing the deploy under
+            # `set -euo pipefail`.
+            export GEOIPUPDATE_ACCOUNT_ID="$( (grep -E '^GEOIPUPDATE_ACCOUNT_ID=' engine/.env || true) | head -1 | cut -d= -f2- | tr -d '\r')"
+            export GEOIPUPDATE_LICENSE_KEY="$( (grep -E '^GEOIPUPDATE_LICENSE_KEY=' engine/.env || true) | head -1 | cut -d= -f2- | tr -d '\r')"
             docker builder prune -af
             docker image prune -af
             df -h / | tail -1
             docker compose build --no-cache
             docker compose up -d
             docker compose logs --tail 10
+            # Post-deploy assertions for /api/region:
+            # 1. The endpoint must answer (unresolved is a valid degraded
+            #    answer; a 404/500 means the router or engine is broken).
+            sleep 5
+            docker compose exec -T backend curl -fsS http://localhost:8000/api/region | grep -q '"region"'
+            # 2. When GeoIP creds are configured, the MMDB must actually land
+            #    in the shared volume — otherwise the feature silently ships
+            #    dead. Give the sidecar's first download up to ~60s.
+            if [ -n "$GEOIPUPDATE_ACCOUNT_ID" ] && [ -n "$GEOIPUPDATE_LICENSE_KEY" ]; then
+              for i in $(seq 1 12); do
+                if docker compose exec -T backend sh -c 'test -s /geoip/GeoLite2-Country.mmdb'; then
+                  echo "GeoIP MMDB present"; break
+                fi
+                [ "$i" -eq 12 ] && { echo "GeoIP MMDB missing after 60s"; exit 1; }
+                sleep 5
+              done
+            else
+              echo "GeoIP creds not set — skipping MMDB assertion (region gating degrades fail-closed)"
+            fi
         env:
           NEXT_PUBLIC_POSTHOG_KEY: ${{ secrets.NEXT_PUBLIC_POSTHOG_KEY }}
           COINGLASS_API_KEY: ${{ secrets.COINGLASS_API_KEY }}
@@ -89,3 +116,5 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
           TELEGRAM_GROUP_ID: ${{ secrets.TELEGRAM_GROUP_ID }}
+          GEOIPUPDATE_ACCOUNT_ID: ${{ secrets.GEOIPUPDATE_ACCOUNT_ID }}
+          GEOIPUPDATE_LICENSE_KEY: ${{ secrets.GEOIPUPDATE_LICENSE_KEY }}

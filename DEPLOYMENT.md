@@ -173,6 +173,15 @@ docker-compose logs -f
 | `SECRET_KEY` | App encryption key | Yes |
 | `DATABASE_URL` | Database connection | No (defaults to SQLite) |
 | `OPENROUTER_API_KEY` | For AI Copilot | No |
+| `GEOIPUPDATE_ACCOUNT_ID` | MaxMind account ID (GeoLite2 for `/api/region`) | No (region gating degrades to fail-closed null) |
+| `GEOIPUPDATE_LICENSE_KEY` | MaxMind license key for the geoipupdate sidecar | No (see above) |
+
+> Note: the actual production flow deploys via the `Deploy to VPS` GitHub
+> Actions workflow (push to `main` or workflow_dispatch), which upserts
+> secrets from GitHub into `engine/.env` on the VPS. The manual SSH steps in
+> this file are legacy/reference. GeoLite2 data by MaxMind
+> (https://www.maxmind.com) — the sidecar keeps it under 30 days old per the
+> GeoLite EULA.
 
 ### Getting API Keys
 

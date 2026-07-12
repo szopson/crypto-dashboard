@@ -1,11 +1,12 @@
 /**
- * Best-effort client-side region detection for affiliate compliance gating.
+ * Region resolution for affiliate compliance gating.
  *
- * This is a MITIGATION, not enforcement: it maps the browser's IANA timezone
- * to a country code for the regions we actually restrict (currently only US).
- * VPNs, wrong system clocks, and unlisted zones defeat it — the ranking layer
- * compensates by failing CLOSED on unknown regions (see affiliate.ts). Proper
- * enforcement needs server-side GeoIP behind Traefik's trusted client IP.
+ * Primary signal: the engine's GeoIP verdict (`GET /api/region`, GeoLite2
+ * behind Traefik — see engine/api/region.py). Fallback: the browser-timezone
+ * heuristic below. Signals are combined restrictively (server verdict first,
+ * timezone when the server says unknown/fails), and the ranking layer fails
+ * CLOSED on unknown regions (see affiliate.ts) — so every fallback step can
+ * only hide venues, never expose a restricted one.
  */
 
 /** IANA zones that resolve to the United States. Prefix entries (trailing "/")
@@ -54,4 +55,57 @@ export function detectRegion(): string | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * The gating decision consumed by affiliate ranking:
+ * - known + region "US"  → gate venues restricted in US
+ * - known + region null  → POSITIVELY verified unrestricted, show everything
+ * - unknown              → ranking fails closed (hides all restricted venues)
+ */
+export type RegionDecision =
+  | { kind: "known"; region: string | null }
+  | { kind: "unknown" };
+
+const UNKNOWN: RegionDecision = { kind: "unknown" };
+const SERVER_REGION_TIMEOUT_MS = 2000;
+
+async function fetchServerRegion(): Promise<{ region: string | null; resolved: boolean } | null> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), SERVER_REGION_TIMEOUT_MS);
+  try {
+    const res = await fetch("/api/region", { signal: controller.signal, cache: "no-store" });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { region?: string | null; resolved?: boolean };
+    return {
+      region: typeof data.region === "string" ? data.region.toUpperCase() : null,
+      resolved: data.resolved === true,
+    };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// Region can't change within a page lifetime — resolve once and share the
+// promise across every caller (many ExchangeCTA instances → one request).
+let decisionPromise: Promise<RegionDecision> | null = null;
+
+/**
+ * Combine signals RESTRICTIVELY: a restricted verdict from either source
+ * wins; "known unrestricted" needs the server's positive verification; and
+ * anything less resolves to unknown (which fails closed downstream).
+ */
+export function resolveRegion(): Promise<RegionDecision> {
+  if (!decisionPromise) {
+    decisionPromise = fetchServerRegion()
+      .catch(() => null)
+      .then((server): RegionDecision => {
+        const tzRegion = detectRegion();
+        if (server?.region) return { kind: "known", region: server.region };
+        if (tzRegion) return { kind: "known", region: tzRegion };
+        if (server?.resolved) return { kind: "known", region: null };
+        return UNKNOWN;
+      });
+  }
+  return decisionPromise;
 }

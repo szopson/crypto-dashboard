@@ -12,6 +12,7 @@ from loguru import logger
 from config import settings
 from database import init_db, close_db
 from api.routes import router
+from api.region import router as region_router, geoip_db_age_days
 from api.waitlist import router as waitlist_router
 from api.wealth import router as wealth_router
 from report.router import router as report_router
@@ -77,6 +78,27 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             logger.warning(f"Could not start scheduler: {e}")
 
+    # GeoIP DB freshness: missing is a known degraded mode (region gating
+    # fails closed); stale breaches the GeoLite EULA (≤30 days) — alert admin.
+    geoip_age = geoip_db_age_days()
+    if geoip_age is None:
+        logger.warning("GeoIP DB missing — /api/region degrades to null (fail-closed)")
+    elif geoip_age > settings.geoip_stale_days:
+        logger.warning(f"GeoIP DB is {geoip_age:.0f} days old — check the geoipupdate sidecar")
+        try:
+            from services.telegram import get_telegram_service
+            tg = get_telegram_service()
+            if tg.is_available() and settings.telegram_admin_chat_id:
+                await tg.send_message(
+                    f"⚠️ GeoIP DB is {geoip_age:.0f} days old (limit {settings.geoip_stale_days}). "
+                    "Check the geoipupdate sidecar on the VPS.",
+                    chat_id=settings.telegram_admin_chat_id,
+                )
+        except Exception as e:
+            logger.warning(f"Could not send GeoIP staleness alert: {e}")
+    else:
+        logger.info(f"GeoIP DB present ({geoip_age:.1f} days old)")
+
     logger.info(f"{settings.app_name} started successfully")
 
     yield
@@ -126,6 +148,7 @@ app.add_middleware(
 
 # Include routes
 app.include_router(router, prefix="/api")
+app.include_router(region_router, prefix="/api")
 app.include_router(report_router, prefix="/api/report")
 app.include_router(waitlist_router, prefix="/api")
 app.include_router(wealth_router, prefix="/api/wealth")

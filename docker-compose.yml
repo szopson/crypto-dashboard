@@ -29,6 +29,9 @@ services:
       # Daily digest + opportunity-card state (engine writes ./data/*.json);
       # a named volume so the state survives container recreates on deploy.
       - tcc-backend-data:/app/data
+      # GeoLite2 DB maintained by the geoip service; read-only. Missing file
+      # is a supported degraded mode (/api/region returns null → fail-closed).
+      - tcc-geoip:/geoip:ro
     networks:
       - traefik-public
     healthcheck:
@@ -50,6 +53,32 @@ services:
       - traefik.http.middlewares.tcc-api.headers.browserXSSFilter=true
       - traefik.http.middlewares.tcc-api.headers.contentTypeNosniff=true
       - traefik.http.routers.tcc-api.middlewares=tcc-api@docker
+
+  # Keeps GeoLite2-Country fresh for the backend's /api/region (GeoLite EULA
+  # requires data ≤30 days old). Backend does NOT depend on this service —
+  # without credentials or DB it degrades to region=null. Credentials are
+  # upserted into engine/.env by the deploy workflow (GEOIPUPDATE_* keys).
+  geoip:
+    image: ghcr.io/maxmind/geoipupdate:v7.1
+    container_name: tcc-geoip
+    # on-failure (not always): without credentials the container exits
+    # non-zero and must not crash-loop forever next to healthy services.
+    restart: on-failure:5
+    environment:
+      - GEOIPUPDATE_ACCOUNT_ID=${GEOIPUPDATE_ACCOUNT_ID}
+      - GEOIPUPDATE_LICENSE_KEY=${GEOIPUPDATE_LICENSE_KEY}
+      - GEOIPUPDATE_EDITION_IDS=GeoLite2-Country
+      - GEOIPUPDATE_FREQUENCY=72
+    volumes:
+      - tcc-geoip:/usr/share/GeoIP
+    networks:
+      - traefik-public
+    healthcheck:
+      test: ["CMD", "test", "-s", "/usr/share/GeoIP/GeoLite2-Country.mmdb"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
 
   frontend:
     build:
@@ -108,3 +137,4 @@ networks:
 
 volumes:
   tcc-backend-data:
+  tcc-geoip:

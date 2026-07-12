@@ -7,11 +7,13 @@
  *  1. Ranking is by the user's REAL net cost — takerFee × (1 − rebate) — not by
  *     our payout. A venue that pays us more but costs the user more ranks lower.
  *  2. Nothing is shown for a venue that is disabled or restricted in the user's
- *     region. Region gating fails CLOSED: callers must pass an explicit region
- *     decision, and `null` (unknown) hides every venue that has any regional
- *     restriction. Detection is best-effort client-side (see region.ts).
+ *     region. Region gating fails CLOSED: callers must pass an explicit
+ *     RegionDecision, and "unknown" hides every venue that has any regional
+ *     restriction; only a positively verified region (see region.ts) can show
+ *     them.
  */
 import { EXCHANGES, type Exchange, type ExchangeProduct } from "@/config/exchanges";
+import type { RegionDecision } from "@/lib/region";
 
 export interface RankedExchange {
   exchange: Exchange;
@@ -42,22 +44,25 @@ export function effectiveFeePct(exchange: Exchange): number {
 
 /**
  * Rank venues for a symbol by real net cost, ascending. Filters out disabled
- * venues, venues that don't offer the product, and venues restricted in the
- * user's region. The region decision is REQUIRED: an ISO-3166 alpha-2 code when
- * known, or `null` when unknown — unknown fails closed, i.e. every venue with a
- * non-empty `restrictedRegions` is excluded until eligibility is established.
+ * venues, venues that don't offer the product, and venues restricted for the
+ * user. The RegionDecision is REQUIRED: "unknown" fails closed (every venue
+ * with a non-empty `restrictedRegions` is excluded), a known region excludes
+ * venues restricted there, and known-unrestricted (region null) excludes none.
  */
 export function rankExchangesForSymbol(
   base: string,
-  opts: { product?: ExchangeProduct; region: string | null },
+  opts: { product?: ExchangeProduct; region: RegionDecision },
 ): RankedExchange[] {
   const product = opts.product ?? "perp";
-  const region = opts.region?.toUpperCase() ?? null;
+  const decision = opts.region;
+  const allowed = (e: Exchange): boolean => {
+    if (decision.kind === "unknown") return e.restrictedRegions.length === 0;
+    if (decision.region === null) return true;
+    return !e.restrictedRegions.includes(decision.region.toUpperCase());
+  };
   return EXCHANGES.filter((e) => e.enabled)
     .filter((e) => e.products.includes(product))
-    .filter((e) =>
-      region === null ? e.restrictedRegions.length === 0 : !e.restrictedRegions.includes(region),
-    )
+    .filter(allowed)
     .map((e) => ({
       exchange: e,
       href: buildAffiliateLink(e, base),
@@ -70,7 +75,7 @@ export function rankExchangesForSymbol(
 /** Convenience: the single best (cheapest net) venue for a symbol, or null. */
 export function bestExchangeForSymbol(
   base: string,
-  opts: { product?: ExchangeProduct; region: string | null },
+  opts: { product?: ExchangeProduct; region: RegionDecision },
 ): RankedExchange | null {
   return rankExchangesForSymbol(base, opts)[0] ?? null;
 }

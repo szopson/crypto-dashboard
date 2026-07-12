@@ -1,6 +1,10 @@
 # Task: server-side GeoIP region gating behind Traefik
 
-Status: planned (2026-07-12), Codex-reviewed. Not started.
+Status: implemented (2026-07-12). Remaining manual steps: create a MaxMind
+account (GeoLite2), add `GEOIPUPDATE_ACCOUNT_ID` + `GEOIPUPDATE_LICENSE_KEY`
+GitHub secrets, deploy, then run the verification below (US VPN + spoof test).
+Until then `/api/region` returns null and gating falls back to the timezone
+heuristic (fail-closed either way).
 
 ## Why
 

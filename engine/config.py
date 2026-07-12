@@ -151,6 +151,20 @@ class Settings(BaseSettings):
     cockpit_digest_minute: int = 0
     cockpit_digest_timezone: str = "Europe/Warsaw"
 
+    # GeoIP region gating (affiliate compliance; see api/region.py)
+    # DB is maintained by the geoipupdate sidecar (docker-compose.yml) on a
+    # shared volume. Missing DB degrades to region=null → frontend fails closed.
+    geoip_db_path: str = "/geoip/GeoLite2-Country.mmdb"
+    geoip_stale_days: int = 14  # warn + Telegram-alert when the DB is older
+    # Comma-separated ISO-3166 alpha-2 codes. MUST stay in sync with the union
+    # of `restrictedRegions` in frontend/src/config/exchanges.ts.
+    restricted_regions: str = "US"
+
+    @computed_field
+    @property
+    def restricted_regions_set(self) -> set[str]:
+        return {r.strip().upper() for r in self.restricted_regions.split(",") if r.strip()}
+
     # Report Generation
     report_playwright_timeout: int = 30000  # 30 seconds
     report_template_dir: str = "report/templates"
