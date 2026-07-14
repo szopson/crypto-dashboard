@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { TradeScorecard } from "@/components/research/TradeScorecard";
 import { TradeReviewJournal } from "@/components/research/TradeReviewJournal";
+import { TradeInsightsPanel } from "@/components/research/TradeInsightsPanel";
 import { TradeReviewDemo } from "@/components/research/TradeReviewDemo";
 import { useAuth } from "@/contexts/AuthContext";
 import { saveTradeReview, JournalNotProvisionedError } from "@/lib/trade-journal";
@@ -288,6 +289,7 @@ export default function TradeReviewPage() {
       )}
 
       {user && <TradeReviewJournal refreshKey={journalKey} />}
+      {user && <TradeInsightsPanel refreshKey={journalKey} />}
     </div>
   );
 }
