@@ -49,6 +49,15 @@
 
 :root {
   --radius: 0.625rem;
+  /* Glass/glow design layer (dark-first; light values keep it legible) */
+  --glass-bg-from: oklch(0 0 0 / 3%);
+  --glass-bg-to: oklch(0 0 0 / 1%);
+  --glass-border: oklch(0 0 0 / 8%);
+  --glass-subtle-bg: oklch(0 0 0 / 2%);
+  --glow-emerald: oklch(0.765 0.177 163 / 55%);
+  --glow-cyan: oklch(0.789 0.154 211 / 55%);
+  --glow-violet: oklch(0.606 0.25 292.7 / 55%);
+  --glow-amber: oklch(0.769 0.188 70.08 / 55%);
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -83,6 +92,10 @@
 }
 
 .dark {
+  --glass-bg-from: oklch(1 0 0 / 5%);
+  --glass-bg-to: oklch(1 0 0 / 2%);
+  --glass-border: oklch(1 0 0 / 8%);
+  --glass-subtle-bg: oklch(1 0 0 / 3%);
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
@@ -140,6 +153,91 @@
     min-height: 44px;
     min-width: 44px;
   }
+}
+
+/* ---------------------------------------------------------------------------
+   Glass/glow design layer — the premium surface language (landing page is the
+   aesthetic reference: layered translucent cards, 1px light borders, accent
+   glows). Defined with @utility so Tailwind variants (hover:, md:, dark:)
+   compose with them.
+--------------------------------------------------------------------------- */
+
+@utility glass-card {
+  background: linear-gradient(to bottom right, var(--glass-bg-from), var(--glass-bg-to));
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+@utility glass-subtle {
+  background: var(--glass-subtle-bg);
+  border: 1px solid var(--glass-border);
+}
+
+@utility glow-ring-emerald {
+  border-color: oklch(0.765 0.177 163 / 30%);
+  box-shadow: 0 0 24px -8px var(--glow-emerald);
+}
+
+@utility glow-ring-cyan {
+  border-color: oklch(0.789 0.154 211 / 30%);
+  box-shadow: 0 0 24px -8px var(--glow-cyan);
+}
+
+@utility glow-ring-violet {
+  border-color: oklch(0.606 0.25 292.7 / 30%);
+  box-shadow: 0 0 24px -8px var(--glow-violet);
+}
+
+/* Decorative radial accent — position/size/color at the call site via
+   bg-(--glow-*) style arbitrary values or an inline gradient. */
+@utility glow-blob {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(96px);
+  pointer-events: none;
+  user-select: none;
+}
+
+@utility text-gradient-brand {
+  background: linear-gradient(to right, oklch(0.789 0.154 211), oklch(0.765 0.177 163));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@keyframes pulse-glow {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@utility animate-pulse-glow {
+  animation: pulse-glow 4s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@utility animate-shimmer {
+  background: linear-gradient(
+    100deg,
+    transparent 30%,
+    var(--glass-bg-from) 50%,
+    transparent 70%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.8s linear infinite;
 }
 
 /* Research report body styling — applies only to plain markdown between custom components.

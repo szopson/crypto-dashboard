@@ -15,7 +15,7 @@ function Skeleton({
   lines = 1,
   ...props
 }: SkeletonProps) {
-  const baseClasses = "animate-pulse bg-muted rounded";
+  const baseClasses = "relative overflow-hidden animate-pulse bg-muted rounded after:absolute after:inset-0 after:animate-shimmer";
 
   const variantClasses = {
     default: "rounded-md",
