@@ -45,7 +45,7 @@ export async function verifyRequestUser(req: Request): Promise<AuthedRequest | n
   }
 }
 
-export type QuotaKind = "generation" | "chat";
+export type QuotaKind = "generation" | "chat" | "trade_review" | "insight";
 
 export interface QuotaResult {
   allowed: boolean;

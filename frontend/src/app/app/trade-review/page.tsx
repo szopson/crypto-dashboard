@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { TradeScorecard } from "@/components/research/TradeScorecard";
 import { TradeReviewJournal } from "@/components/research/TradeReviewJournal";
+import { TradeReviewDemo } from "@/components/research/TradeReviewDemo";
 import { useAuth } from "@/contexts/AuthContext";
 import { saveTradeReview, JournalNotProvisionedError } from "@/lib/trade-journal";
 import type { TradeReviewResult } from "@/lib/trade-review";
@@ -27,10 +28,11 @@ export default function TradeReviewPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<TradeReviewResult | null>(null);
+  const [remaining, setRemaining] = useState<number | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const { user } = useAuth();
+  const { user, session } = useAuth();
 
   // Tick an elapsed-seconds counter while analyzing so the wait feels bounded
   // (Opus 4.8 vision is ~20-40s; a silent spinner reads as "hung").
@@ -98,7 +100,7 @@ export default function TradeReviewPage() {
   };
 
   const analyze = async () => {
-    if (!file) return;
+    if (!file || !session?.access_token) return;
     setLoading(true);
     setError(null);
     setResult(null);
@@ -112,7 +114,10 @@ export default function TradeReviewPage() {
       const base64 = dataUrl.split(",")[1];
       const res = await fetch("/api/trade-review", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
         body: JSON.stringify({
           image_base64: base64,
           media_type: file.type,
@@ -120,8 +125,14 @@ export default function TradeReviewPage() {
         }),
       });
       const json = await res.json();
+      if (res.status === 401) {
+        throw new Error("Your session expired — sign in again to review trades.");
+      }
       if (!res.ok) throw new Error(json.error || "Analysis failed.");
       setResult(json as TradeReviewResult);
+      if (typeof json.remaining_reviews === "number") {
+        setRemaining(json.remaining_reviews);
+      }
       setSaved(false);
       setSaveError(null);
     } catch (e) {
@@ -142,6 +153,10 @@ export default function TradeReviewPage() {
         </p>
       </header>
 
+      {!user ? (
+        <TradeReviewDemo />
+      ) : (
+        <>
       {/* Dropzone */}
       <Card
         className={dragOver ? "border-primary ring-1 ring-primary" : undefined}
@@ -225,6 +240,11 @@ export default function TradeReviewPage() {
           Opus 4.8 reads the chart and pulls Coinglass context — usually 20–40s.
         </p>
       )}
+      {!loading && remaining != null && (
+        <p className="-mt-2 text-center text-xs text-muted-foreground">
+          {remaining} review{remaining === 1 ? "" : "s"} left today — resets 00:00 UTC.
+        </p>
+      )}
 
       {error && (
         <p className="text-sm text-red-500" role="alert">
@@ -237,31 +257,25 @@ export default function TradeReviewPage() {
           <TradeScorecard data={result.scorecard} />
 
           <div className="flex items-center gap-3">
-            {user ? (
-              <Button
-                variant={saved ? "secondary" : "default"}
-                onClick={save}
-                disabled={saving || saved}
-              >
-                {saving ? (
-                  <>
-                    <Loader2 className="size-4 animate-spin" /> Saving…
-                  </>
-                ) : saved ? (
-                  <>
-                    <Check className="size-4" /> Saved to journal
-                  </>
-                ) : (
-                  <>
-                    <Save className="size-4" /> Save to journal
-                  </>
-                )}
-              </Button>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                Sign in to save this review to your journal.
-              </p>
-            )}
+            <Button
+              variant={saved ? "secondary" : "default"}
+              onClick={save}
+              disabled={saving || saved}
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" /> Saving…
+                </>
+              ) : saved ? (
+                <>
+                  <Check className="size-4" /> Saved to journal
+                </>
+              ) : (
+                <>
+                  <Save className="size-4" /> Save to journal
+                </>
+              )}
+            </Button>
           </div>
           {saveError && (
             <p className="text-sm text-red-500" role="alert">
@@ -269,6 +283,8 @@ export default function TradeReviewPage() {
             </p>
           )}
         </div>
+      )}
+        </>
       )}
 
       {user && <TradeReviewJournal refreshKey={journalKey} />}

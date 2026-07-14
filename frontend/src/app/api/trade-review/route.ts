@@ -5,10 +5,19 @@
  * scorecard. See src/lib/trade-review.ts for the analysis logic and the hard rules
  * (no signals; grade process, not outcome).
  *
+ * Auth-gated (Supabase JWT) with a 5/day quota: verify token → consume quota
+ * (atomic RPC, fail closed) → billed Opus vision call. Quota is attempt-based —
+ * an upstream failure after the consume still costs one attempt (same semantics
+ * as /api/ai-setup/*; no non-atomic refunds).
+ *
  * The image and the ANTHROPIC_API_KEY never round-trip through the client bundle.
+ *
+ * NOTE: this path must be listed in the tcc-next-api Traefik router rule in
+ * docker-compose.yml, or the backend's PathPrefix(`/api`) swallows it.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { reviewTrade, type SupportedMedia } from "@/lib/trade-review";
+import { verifyRequestUser, consumeQuota } from "@/lib/supabase-server";
 
 // Vision + reasoning on Opus 4.8 can take a while — give it room.
 export const maxDuration = 120;
@@ -59,13 +68,33 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const authed = await verifyRequestUser(req);
+  if (!authed) {
+    return NextResponse.json({ error: "Sign in to review trades." }, { status: 401 });
+  }
+
+  // Quota BEFORE the billed call; fail closed if the RPC is unavailable.
+  const quota = await consumeQuota(authed.supabase, "trade_review");
+  if (!quota) {
+    return NextResponse.json(
+      { error: "Trade review is temporarily unavailable." },
+      { status: 503 },
+    );
+  }
+  if (!quota.allowed) {
+    return NextResponse.json(
+      { error: "Daily review limit reached — resets 00:00 UTC.", remaining: 0 },
+      { status: 429 },
+    );
+  }
+
   try {
     const result = await reviewTrade({
       imageBase64: image_base64,
       mediaType: media_type as SupportedMedia,
       notes: notes?.trim() || undefined,
     });
-    return NextResponse.json(result);
+    return NextResponse.json({ ...result, remaining_reviews: quota.remaining });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Analysis failed.";
     // Missing key / config issues shouldn't leak details to the client.

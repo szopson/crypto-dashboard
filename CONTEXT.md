@@ -60,7 +60,7 @@ No SSH to prod from dev machines — prod operations go through
 | **AI Trade Setup** | Claude-generated structured perp setup (entry zone, stop, targets, R:R, confluence) from a live Hyperliquid snapshot. Quota: 10 generations + 30 chat messages per user per day. | `frontend/src/lib/setup-engine.ts` |
 | **Opportunity cards** | Daily ranked watch cards per coin: deterministic 0–100 attention score + Claude narration (headline/why/risks). **Never directional recommendations** — they end in an exchange CTA. | `engine/services/opportunity_engine.py` |
 | **Cockpit digest** | Once-daily deviations snapshot for X/Telegram, drafted to admin Telegram for review before posting. | `engine/services/cockpit_digest.py` |
-| **Trade review** | Upload a trade screenshot → Claude vision scores **decision quality (process), not outcome** (0–100 scorecard), persisted per user. | `frontend/src/lib/trade-review.ts`, `supabase/migrations/0001_trade_reviews.sql` |
+| **Trade review** | Upload a trade screenshot → Claude vision scores **decision quality (process), not outcome** (0–100 scorecard), persisted per user. Auth-gated: 5 reviews per user per day (quota kind `trade_review`). | `frontend/src/lib/trade-review.ts`, `supabase/migrations/0001_trade_reviews.sql` |
 | **SymbolContext** | React context for multi-symbol support (BTC, ETH, SOL, XRP, …). | `frontend/src/contexts/SymbolContext.tsx` |
 
 ### Monetization
@@ -84,7 +84,7 @@ No SSH to prod from dev machines — prod operations go through
 
 ## Data models (one-liners)
 
-- Supabase: `trade_reviews` (per-user scorecards, RLS), `ai_setup_usage` (daily quota counters, pk user_id+day).
+- Supabase: `trade_reviews` (per-user scorecards, RLS), `ai_setup_usage` (daily quota counters — generations, chat_messages, trade_reviews, insights; pk user_id+day).
 - Engine ORM: `BiasRecord` (bias snapshots), `RadarSnapshot`, `Trade` (journal), `TradingViewAlert` (incoming webhooks).
 
 ## External integrations
