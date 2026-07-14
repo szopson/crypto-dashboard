@@ -1,12 +1,12 @@
 /**
- * Client-side persistence for trade-review scorecards ("dziennik zagrań").
+ * Client-side persistence for trade-review scorecards (the trade journal).
  *
  * Writes go through the browser Supabase client (anon key). Row isolation is
  * enforced by RLS (auth.uid() = user_id) — see supabase/migrations/0001_trade_reviews.sql.
  * There is no server route and no service-role key: the logged-in user's session
  * cookie authorizes the insert/select/delete directly.
  *
- * This is the accountability layer under "analiza zagrania": every saved review
+ * This is the accountability layer under the trade review: every saved review
  * is a dated record of a DECISION, so process quality can be tracked over time.
  */
 import { getSupabaseClient } from "@/lib/supabase";

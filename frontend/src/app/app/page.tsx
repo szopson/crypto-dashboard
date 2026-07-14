@@ -295,9 +295,9 @@ export default function Dashboard() {
             >
               <ScanSearch className="size-5 text-primary shrink-0" />
               <div className="min-w-0">
-                <p className="text-sm font-medium">Analiza zagrania</p>
+                <p className="text-sm font-medium">Trade Review</p>
                 <p className="text-xs text-muted-foreground">
-                  Wrzuć screenshot zagrania — oceń jakość decyzji, nie wynik.
+                  Upload a trade screenshot — grade the decision, not the outcome.
                 </p>
               </div>
             </Link>

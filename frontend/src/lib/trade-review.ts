@@ -1,9 +1,9 @@
 /**
- * Server-only trade screenshot analysis ("analiza zagrania").
+ * Server-only trade screenshot analysis (trade review).
  *
  * Takes a screenshot of a trade (TradingView chart, position, setup) and returns
  * a structured scorecard grading the QUALITY OF THE DECISION — not the outcome,
- * and never a buy/sell signal (club rule: "bez sygnałów kup/sprzedaj").
+ * and never a buy/sell signal (club rule: no buy/sell signals).
  *
  * The moat vs. a generic "analyze my chart" prompt: the analysis is enriched with
  * Follio's own live crypto-derivatives context (Coinglass funding/OI/ETF flows),
@@ -41,14 +41,14 @@ const DimensionSchema = z.object({
     "entry_execution",
     "discipline",
   ]),
-  label: z.string().describe("Human-readable dimension name, in Polish."),
+  label: z.string().describe("Human-readable dimension name, in English."),
   score: z
     .number()
     .int()
     .describe("Integer 0-5. 0 = absent/unknowable, 5 = textbook."),
   verdict: z
     .string()
-    .describe("One short phrase, in Polish, e.g. 'brak zdefiniowanego SL'."),
+    .describe("One short phrase, in English, e.g. 'no stop-loss defined'."),
 });
 
 const ScorecardSchema = z.object({
@@ -70,17 +70,17 @@ const ScorecardSchema = z.object({
     .describe("Did the trade make money? Reported SEPARATELY from process_score."),
   outcome_note: z
     .string()
-    .describe("One line, in Polish, on process-vs-outcome (e.g. good process, lost)."),
+    .describe("One line, in English, on process-vs-outcome (e.g. good process, lost)."),
   dimensions: z.array(DimensionSchema),
-  what_went_well: z.array(z.string()).describe("Concrete strengths, in Polish."),
-  what_to_improve: z.array(z.string()).describe("Concrete fixes, in Polish."),
+  what_went_well: z.array(z.string()).describe("Concrete strengths, in English."),
+  what_to_improve: z.array(z.string()).describe("Concrete fixes, in English."),
   key_lesson: z
     .string()
-    .describe("The single most important takeaway, in Polish. One or two sentences."),
+    .describe("The single most important takeaway, in English. One or two sentences."),
   market_context_note: z
     .string()
     .describe(
-      "How the live Coinglass context relates to this setup, in Polish. " +
+      "How the live Coinglass context relates to this setup, in English. " +
         "Empty string if no relevant crypto context was provided.",
     ),
 });
@@ -141,7 +141,7 @@ Hard rules (these define the product — never break them):
 - Judge only against what was knowable AT THE TIME of the trade, from the screenshot.
 - Be specific and concrete. No generic platitudes. If something is not visible in the
   screenshot (e.g. no stop-loss shown), say so and score that dimension accordingly.
-- Write all human-facing text (labels, verdicts, lessons) in POLISH.
+- Write all human-facing text (labels, verdicts, lessons) in ENGLISH.
 
 Score each dimension 0-5:
 - thesis_clarity: was there a discernible, coherent setup/reason for the entry?
@@ -179,8 +179,8 @@ export async function reviewTrade(params: {
 
   const contextBlock = pulseSummary(pulse);
   const userText = [
-    "Przeanalizuj to zagranie ze screenshota. Oceń jakość DECYZJI, nie wynik.",
-    params.notes ? `\nNotatka tradera: ${params.notes}` : "",
+    "Review this trade from the screenshot. Grade the quality of the DECISION, not the outcome.",
+    params.notes ? `\nTrader's note: ${params.notes}` : "",
     contextBlock ? `\n\n${contextBlock}` : "",
   ]
     .filter(Boolean)
@@ -214,8 +214,8 @@ export async function reviewTrade(params: {
   if (!scorecard) {
     throw new Error(
       response.stop_reason === "refusal"
-        ? "Model odmówił analizy tego obrazu."
-        : "Nie udało się sparsować analizy zagrania.",
+        ? "The model declined to analyze this image."
+        : "Failed to parse the trade review.",
     );
   }
 

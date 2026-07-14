@@ -29,32 +29,32 @@ export async function POST(req: NextRequest) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "Nieprawidłowy JSON." }, { status: 400 });
+    return NextResponse.json({ error: "Invalid JSON." }, { status: 400 });
   }
 
   const { image_base64, media_type, notes } = body;
 
   if (!image_base64 || typeof image_base64 !== "string") {
     return NextResponse.json(
-      { error: "Brak obrazu (image_base64)." },
+      { error: "Missing image (image_base64)." },
       { status: 400 },
     );
   }
   if (image_base64.length > MAX_BASE64_LEN) {
     return NextResponse.json(
-      { error: "Obraz jest za duży (max ~6MB)." },
+      { error: "Image is too large (max ~6MB)." },
       { status: 413 },
     );
   }
   if (!ALLOWED.includes(media_type as SupportedMedia)) {
     return NextResponse.json(
-      { error: "Nieobsługiwany format. Użyj PNG, JPEG, GIF lub WebP." },
+      { error: "Unsupported format. Use PNG, JPEG, GIF or WebP." },
       { status: 400 },
     );
   }
   if (notes != null && (typeof notes !== "string" || notes.length > 2000)) {
     return NextResponse.json(
-      { error: "Notatka jest za długa (max 2000 znaków)." },
+      { error: "Note is too long (max 2000 characters)." },
       { status: 400 },
     );
   }
@@ -67,11 +67,11 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json(result);
   } catch (e) {
-    const message = e instanceof Error ? e.message : "Analiza nie powiodła się.";
+    const message = e instanceof Error ? e.message : "Analysis failed.";
     // Missing key / config issues shouldn't leak details to the client.
     const isConfig = message.includes("ANTHROPIC_API_KEY");
     return NextResponse.json(
-      { error: isConfig ? "Analiza jest chwilowo niedostępna." : message },
+      { error: isConfig ? "Analysis is temporarily unavailable." : message },
       { status: isConfig ? 503 : 500 },
     );
   }

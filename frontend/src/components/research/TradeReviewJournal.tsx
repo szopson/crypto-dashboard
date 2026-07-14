@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Dziennik zagrań — the persistence/accountability view under "analiza zagrania".
+ * Trade journal — the persistence/accountability view under the trade review.
  *
  * Lists a user's saved trade-review scorecards and charts their process score
  * over time. The point is the trend, not any single trade: is decision quality
@@ -38,7 +38,7 @@ function scoreColor(score: number | null): string {
 
 function fmtDate(iso: string): string {
   const d = new Date(iso);
-  return d.toLocaleDateString("pl-PL", { day: "2-digit", month: "short" });
+  return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
 }
 
 export function TradeReviewJournal({ refreshKey = 0 }: { refreshKey?: number }) {
@@ -55,7 +55,7 @@ export function TradeReviewJournal({ refreshKey = 0 }: { refreshKey?: number }) 
         setNotProvisioned(true);
         setReviews([]);
       } else {
-        setError(e instanceof Error ? e.message : "Nie udało się wczytać dziennika.");
+        setError(e instanceof Error ? e.message : "Failed to load the journal.");
         setReviews([]);
       }
     }
@@ -78,7 +78,7 @@ export function TradeReviewJournal({ refreshKey = 0 }: { refreshKey?: number }) 
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Twój dziennik zagrań</CardTitle>
+          <CardTitle className="text-base">Your trade journal</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
           <Skeleton className="h-4 w-1/2" />
@@ -92,15 +92,15 @@ export function TradeReviewJournal({ refreshKey = 0 }: { refreshKey?: number }) 
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Twój dziennik zagrań</CardTitle>
+          <CardTitle className="text-base">Your trade journal</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">
-            Dziennik nie jest jeszcze skonfigurowany. Zastosuj migrację{" "}
+            The journal is not set up yet. Apply the{" "}
             <code className="rounded bg-muted px-1.5 py-0.5 text-xs">
               supabase/migrations/0001_trade_reviews.sql
             </code>{" "}
-            w Supabase (SQL Editor), aby zapisywać analizy.
+            migration in Supabase (SQL Editor) to save reviews.
           </p>
         </CardContent>
       </Card>
@@ -122,11 +122,11 @@ export function TradeReviewJournal({ refreshKey = 0 }: { refreshKey?: number }) 
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between gap-3">
-          <CardTitle className="text-base">Twój dziennik zagrań</CardTitle>
+          <CardTitle className="text-base">Your trade journal</CardTitle>
           {avg != null && (
             <Badge variant="secondary" className="gap-1">
               <TrendingUp className="size-3.5" />
-              śr. proces {avg}/100
+              avg process {avg}/100
             </Badge>
           )}
         </div>
@@ -136,8 +136,8 @@ export function TradeReviewJournal({ refreshKey = 0 }: { refreshKey?: number }) 
 
         {reviews.length === 0 && !error && (
           <p className="text-sm text-muted-foreground">
-            Brak zapisanych analiz. Oceń zagranie powyżej i kliknij „Zapisz do
-            dziennika", żeby śledzić jakość decyzji w czasie.
+            No saved reviews yet. Review a trade above and click &ldquo;Save to
+            journal&rdquo; to track your decision quality over time.
           </p>
         )}
 
@@ -151,7 +151,7 @@ export function TradeReviewJournal({ refreshKey = 0 }: { refreshKey?: number }) 
                 <Tooltip
                   contentStyle={{ fontSize: 12 }}
                   labelFormatter={(_, p) => p?.[0]?.payload?.label ?? ""}
-                  formatter={(v) => [`${v}/100`, "proces"]}
+                  formatter={(v) => [`${v}/100`, "process"]}
                 />
                 <Line
                   type="monotone"
@@ -197,7 +197,7 @@ export function TradeReviewJournal({ refreshKey = 0 }: { refreshKey?: number }) 
                 <button
                   onClick={() => onDelete(r.id)}
                   className="shrink-0 text-muted-foreground hover:text-red-500"
-                  aria-label="Usuń wpis"
+                  aria-label="Delete entry"
                 >
                   <Trash2 className="size-4" />
                 </button>

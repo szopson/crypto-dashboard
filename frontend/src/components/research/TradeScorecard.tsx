@@ -3,7 +3,7 @@
 /**
  * Renders a trade-review scorecard. Deliberately foregrounds the process-vs-outcome
  * split: the big number is decision quality, the outcome is a small separate chip —
- * that's the whole "proces, nie pozowanie" point.
+ * that's the whole "process, not outcome" point.
  */
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -23,16 +23,16 @@ function dimBar(score: number): string {
 }
 
 const OUTCOME_LABEL: Record<Scorecard["outcome"], string> = {
-  win: "Wynik: zysk",
-  loss: "Wynik: strata",
-  open: "Wynik: pozycja otwarta",
-  unclear: "Wynik: nieznany",
+  win: "Outcome: win",
+  loss: "Outcome: loss",
+  open: "Outcome: open position",
+  unclear: "Outcome: unclear",
 };
 
 const DIRECTION_LABEL: Record<Scorecard["detected_direction"], string> = {
   long: "LONG",
   short: "SHORT",
-  unclear: "kierunek ?",
+  unclear: "direction ?",
 };
 
 export function TradeScorecard({ data }: { data: Scorecard }) {
@@ -74,7 +74,7 @@ export function TradeScorecard({ data }: { data: Scorecard }) {
               {data.process_score}
             </span>
             <span className="text-muted-foreground text-sm">
-              / 100 — jakość decyzji (niezależna od wyniku)
+              / 100 — decision quality (independent of outcome)
             </span>
           </div>
           {data.outcome_note && (
@@ -88,7 +88,7 @@ export function TradeScorecard({ data }: { data: Scorecard }) {
       {/* Dimensions */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Wymiary procesu</CardTitle>
+          <CardTitle className="text-base">Process dimensions</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           {data.dimensions.map((d) => (
@@ -118,7 +118,7 @@ export function TradeScorecard({ data }: { data: Scorecard }) {
           <Card>
             <CardHeader>
               <CardTitle className="text-base text-emerald-500">
-                Co było dobre
+                What went well
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -134,7 +134,7 @@ export function TradeScorecard({ data }: { data: Scorecard }) {
           <Card>
             <CardHeader>
               <CardTitle className="text-base text-amber-500">
-                Co poprawić
+                What to improve
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -152,7 +152,7 @@ export function TradeScorecard({ data }: { data: Scorecard }) {
       {data.market_context_note && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Kontekst rynkowy (Coinglass)</CardTitle>
+            <CardTitle className="text-base">Market context (Coinglass)</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
@@ -166,7 +166,7 @@ export function TradeScorecard({ data }: { data: Scorecard }) {
       {data.key_lesson && (
         <Card className="border-primary/30">
           <CardHeader>
-            <CardTitle className="text-base">Kluczowa lekcja</CardTitle>
+            <CardTitle className="text-base">Key lesson</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm">{data.key_lesson}</p>
@@ -175,8 +175,8 @@ export function TradeScorecard({ data }: { data: Scorecard }) {
       )}
 
       <p className="text-xs text-muted-foreground">
-        To retrospektywna analiza decyzji, nie sygnał ani rekomendacja
-        kupna/sprzedaży. Oceniamy proces, nie wynik.
+        This is a retrospective decision review, not a signal or a buy/sell
+        recommendation. We grade the process, not the outcome.
       </p>
     </div>
   );

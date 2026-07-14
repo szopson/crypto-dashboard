@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * /app/trade-review — "Analiza zagrania"
+ * /app/trade-review — Trade Review
  *
  * Upload a trade screenshot, get a decision-quality scorecard. Crypto-first: the
  * backend enriches the review with live Coinglass derivatives context.
@@ -51,11 +51,11 @@ export default function TradeReviewPage() {
     setResult(null);
     if (!f) return;
     if (!ALLOWED.includes(f.type)) {
-      setError("Nieobsługiwany format. Użyj PNG, JPEG, GIF lub WebP.");
+      setError("Unsupported format. Use PNG, JPEG, GIF or WebP.");
       return;
     }
     if (f.size > MAX_BYTES) {
-      setError("Obraz jest za duży (max 6MB).");
+      setError("Image is too large (max 6MB).");
       return;
     }
     setFile(f);
@@ -87,10 +87,10 @@ export default function TradeReviewPage() {
     } catch (e) {
       setSaveError(
         e instanceof JournalNotProvisionedError
-          ? "Dziennik nie jest skonfigurowany (migracja Supabase nie zastosowana)."
+          ? "The journal is not set up yet (Supabase migration not applied)."
           : e instanceof Error
             ? e.message
-            : "Nie udało się zapisać.",
+            : "Failed to save.",
       );
     } finally {
       setSaving(false);
@@ -106,7 +106,7 @@ export default function TradeReviewPage() {
       const dataUrl = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result as string);
-        reader.onerror = () => reject(new Error("Nie udało się odczytać pliku."));
+        reader.onerror = () => reject(new Error("Failed to read the file."));
         reader.readAsDataURL(file);
       });
       const base64 = dataUrl.split(",")[1];
@@ -120,12 +120,12 @@ export default function TradeReviewPage() {
         }),
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "Analiza nie powiodła się.");
+      if (!res.ok) throw new Error(json.error || "Analysis failed.");
       setResult(json as TradeReviewResult);
       setSaved(false);
       setSaveError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Analiza nie powiodła się.");
+      setError(e instanceof Error ? e.message : "Analysis failed.");
     } finally {
       setLoading(false);
     }
@@ -134,10 +134,11 @@ export default function TradeReviewPage() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-8 space-y-6">
       <header className="space-y-1">
-        <h1 className="text-2xl font-bold">Analiza zagrania</h1>
+        <h1 className="text-2xl font-bold">Trade Review</h1>
         <p className="text-sm text-muted-foreground">
-          Wrzuć screenshot zagrania — dostaniesz ocenę jakości decyzji, nie wyniku.
-          Bez sygnałów kup/sprzedaj. Krypto wzbogacane o kontekst Coinglass.
+          Upload a trade screenshot — get a decision-quality score, not an outcome
+          grade. No buy/sell signals. Crypto trades are enriched with live Coinglass
+          context.
         </p>
       </header>
 
@@ -161,7 +162,7 @@ export default function TradeReviewPage() {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={preview}
-                alt="Podgląd zagrania"
+                alt="Trade preview"
                 className="w-full rounded-md border"
               />
               <Button
@@ -169,7 +170,7 @@ export default function TradeReviewPage() {
                 variant="secondary"
                 className="absolute top-2 right-2"
                 onClick={reset}
-                aria-label="Usuń obraz"
+                aria-label="Remove image"
               >
                 <X className="size-4" />
               </Button>
@@ -182,9 +183,9 @@ export default function TradeReviewPage() {
             >
               <Upload className="size-6" />
               <span className="text-sm">
-                Przeciągnij screenshot albo kliknij, aby wybrać
+                Drag a screenshot here or click to choose
               </span>
-              <span className="text-xs">PNG, JPEG, GIF, WebP — do 6MB</span>
+              <span className="text-xs">PNG, JPEG, GIF, WebP — up to 6MB</span>
             </button>
           )}
           <input
@@ -198,7 +199,7 @@ export default function TradeReviewPage() {
       </Card>
 
       <Textarea
-        placeholder="Opcjonalnie: twoja teza, plan, emocje w trakcie zagrania…"
+        placeholder="Optional: your thesis, plan, emotions during the trade…"
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
         rows={3}
@@ -213,15 +214,15 @@ export default function TradeReviewPage() {
       >
         {loading ? (
           <>
-            <Loader2 className="size-4 animate-spin" /> Analizuję zagranie… {elapsed}s
+            <Loader2 className="size-4 animate-spin" /> Reviewing trade… {elapsed}s
           </>
         ) : (
-          "Oceń zagranie"
+          "Review trade"
         )}
       </Button>
       {loading && (
         <p className="-mt-2 text-center text-xs text-muted-foreground">
-          Opus 4.8 czyta wykres i dociąga kontekst Coinglass — zwykle 20–40s.
+          Opus 4.8 reads the chart and pulls Coinglass context — usually 20–40s.
         </p>
       )}
 
@@ -244,21 +245,21 @@ export default function TradeReviewPage() {
               >
                 {saving ? (
                   <>
-                    <Loader2 className="size-4 animate-spin" /> Zapisuję…
+                    <Loader2 className="size-4 animate-spin" /> Saving…
                   </>
                 ) : saved ? (
                   <>
-                    <Check className="size-4" /> Zapisano w dzienniku
+                    <Check className="size-4" /> Saved to journal
                   </>
                 ) : (
                   <>
-                    <Save className="size-4" /> Zapisz do dziennika
+                    <Save className="size-4" /> Save to journal
                   </>
                 )}
               </Button>
             ) : (
               <p className="text-sm text-muted-foreground">
-                Zaloguj się, aby zapisać analizę do dziennika.
+                Sign in to save this review to your journal.
               </p>
             )}
           </div>
