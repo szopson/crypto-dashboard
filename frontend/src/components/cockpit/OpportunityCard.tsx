@@ -31,7 +31,7 @@ const PRESSURE_DOT: Record<OpportunityCardData["direction_pressure"], string> = 
 function scoreChipClasses(score: number): string {
   if (score >= 70) return "bg-rose-500/15 text-rose-700 dark:text-rose-300";
   if (score >= 40) return "bg-amber-500/15 text-amber-700 dark:text-amber-300";
-  return "bg-zinc-500/15 text-zinc-600 dark:text-zinc-300";
+  return "bg-muted/400/15 text-muted-foreground";
 }
 
 export function OpportunityCard({
@@ -51,7 +51,7 @@ export function OpportunityCard({
   };
 
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900/40">
+    <div className="rounded-xl glass-card transition-[box-shadow,border-color] duration-300 hover:glow-ring-emerald">
       <button
         type="button"
         onClick={toggle}
@@ -62,7 +62,7 @@ export function OpportunityCard({
           <span
             className={`inline-block h-2 w-2 flex-shrink-0 rounded-full ${PRESSURE_DOT[card.direction_pressure]}`}
           />
-          <span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+          <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {card.symbol}
           </span>
           <span className="truncate text-sm font-semibold">{card.headline}</span>
@@ -74,19 +74,19 @@ export function OpportunityCard({
             {card.score}
           </span>
           {expanded ? (
-            <ChevronUp className="h-4 w-4 text-zinc-400" />
+            <ChevronUp className="h-4 w-4 text-muted-foreground/70" />
           ) : (
-            <ChevronDown className="h-4 w-4 text-zinc-400" />
+            <ChevronDown className="h-4 w-4 text-muted-foreground/70" />
           )}
         </div>
       </button>
 
       {expanded && (
-        <div className="space-y-3 border-t border-zinc-100 p-3 dark:border-zinc-800">
+        <div className="space-y-3 border-t border-(--glass-border) p-3">
           {card.why.length > 0 && (
             <ul className="space-y-1">
               {card.why.map((line, i) => (
-                <li key={i} className="flex gap-2 text-xs text-zinc-700 dark:text-zinc-300">
+                <li key={i} className="flex gap-2 text-xs text-foreground/80">
                   <span className="text-emerald-600 dark:text-emerald-400">✓</span>
                   <span>{line}</span>
                 </li>
@@ -96,7 +96,7 @@ export function OpportunityCard({
           {card.risks.length > 0 && (
             <ul className="space-y-1">
               {card.risks.map((line, i) => (
-                <li key={i} className="flex gap-2 text-xs text-zinc-500 dark:text-zinc-400">
+                <li key={i} className="flex gap-2 text-xs text-muted-foreground dark:text-muted-foreground/70">
                   <span className="text-rose-600 dark:text-rose-400">×</span>
                   <span>{line}</span>
                 </li>
@@ -104,7 +104,7 @@ export function OpportunityCard({
             </ul>
           )}
           <ExchangeCTA symbol={card.symbol} surface="opportunity_card" compact />
-          <p className="text-[10px] text-zinc-400 dark:text-zinc-500">
+          <p className="text-[10px] text-muted-foreground/70">
             Data snapshot, not investment advice.
           </p>
         </div>

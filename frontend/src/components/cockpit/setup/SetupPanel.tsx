@@ -27,15 +27,15 @@ interface GenerateResponse {
 function LoadingSkeleton() {
   return (
     <div className="animate-pulse space-y-4">
-      <div className="h-5 w-3/4 rounded bg-zinc-200 dark:bg-zinc-800" />
-      <div className="h-4 w-1/2 rounded bg-zinc-200 dark:bg-zinc-800" />
-      <div className="space-y-2 rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
+      <div className="h-5 w-3/4 rounded bg-muted" />
+      <div className="h-4 w-1/2 rounded bg-muted" />
+      <div className="space-y-2 rounded-lg border border-(--glass-border) p-3">
         {[0, 1, 2, 3].map((i) => (
-          <div key={i} className="h-4 rounded bg-zinc-200 dark:bg-zinc-800" />
+          <div key={i} className="h-4 rounded bg-muted" />
         ))}
       </div>
-      <div className="h-16 rounded bg-zinc-200 dark:bg-zinc-800" />
-      <p className="text-xs text-zinc-500">Reading funding, OI and the liquidation map…</p>
+      <div className="h-16 rounded bg-muted" />
+      <p className="text-xs text-muted-foreground">Reading funding, OI and the liquidation map…</p>
     </div>
   );
 }
@@ -99,21 +99,21 @@ export function SetupPanel() {
   };
 
   return (
-    <section className="mb-4 rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+    <section className="mb-4 rounded-xl glass-card p-4">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <span className="rounded-md bg-indigo-500/15 p-1.5 text-indigo-700 dark:text-indigo-300">
+          <span className="rounded-md bg-violet-500/15 p-1.5 text-violet-700 dark:text-violet-300">
             <Crosshair className="h-4 w-4" />
           </span>
-          <span className="text-xs font-semibold uppercase tracking-wide text-indigo-700 dark:text-indigo-300">
+          <span className="text-xs font-semibold uppercase tracking-wide text-violet-700 dark:text-violet-300">
             AI Trade Setup
           </span>
-          <span className="hidden text-xs text-zinc-500 sm:inline">
+          <span className="hidden text-xs text-muted-foreground sm:inline">
             Hyperliquid · est. liq map
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex rounded-lg border border-zinc-200 p-0.5 dark:border-zinc-800">
+          <div className="flex rounded-lg border border-(--glass-border) p-0.5">
             {SETUP_COINS.map((c) => (
               <button
                 key={c}
@@ -121,8 +121,8 @@ export function SetupPanel() {
                 onClick={() => selectCoin(c)}
                 className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
                   c === coin
-                    ? "bg-indigo-600 text-white"
-                    : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+                    ? "bg-violet-600 text-white"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {c}
@@ -134,7 +134,7 @@ export function SetupPanel() {
               type="button"
               onClick={generate}
               disabled={loading || remaining === 0}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white transition-colors enabled:hover:bg-indigo-500 disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-medium text-white transition-colors enabled:hover:bg-violet-500 disabled:opacity-50"
             >
               <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
               {setup ? "Regenerate" : "Generate setup"}
@@ -156,7 +156,7 @@ export function SetupPanel() {
           <SetupChat coin={coin} setup={setup} prefill={prefill} />
         </>
       ) : (
-        <p className="py-6 text-center text-sm text-zinc-500">
+        <p className="py-6 text-center text-sm text-muted-foreground">
           Generate a structured {coin} setup from live funding, open interest and the estimated
           liquidation map.
         </p>
@@ -169,7 +169,7 @@ export function SetupPanel() {
       )}
 
       {user && (generatedAt || remaining != null) && !loading && (
-        <p className="mt-3 text-[10px] text-zinc-400 dark:text-zinc-500">
+        <p className="mt-3 text-[10px] text-muted-foreground/70">
           {generatedAt && `Generated ${new Date(generatedAt).toLocaleTimeString()}`}
           {generatedAt && remaining != null && " · "}
           {remaining != null && `${remaining} generations left today`}

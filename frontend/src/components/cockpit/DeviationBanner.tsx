@@ -26,8 +26,8 @@ const SEVERITY_STYLES: Record<
     icon: <Eye className="h-4 w-4" />,
   },
   info: {
-    wrap: "border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900/40",
-    chip: "bg-zinc-500/15 text-zinc-600 dark:text-zinc-300",
+    wrap: "border-(--glass-border) bg-muted/40",
+    chip: "bg-muted/400/15 text-muted-foreground",
     icon: <Info className="h-4 w-4" />,
   },
 };
@@ -47,7 +47,7 @@ export function DeviationBanner({
 }) {
   if (!deviations.length) {
     return (
-      <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900/40">
+      <div className="rounded-xl border border-(--glass-border) bg-muted/40 p-4 text-sm text-muted-foreground">
         No standout deviations right now — funding, OI and positioning are near baseline.
       </div>
     );
@@ -67,10 +67,10 @@ export function DeviationBanner({
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <span className={`inline-block h-2 w-2 flex-shrink-0 rounded-full ${DIRECTION_DOT[d.direction]}`} />
-                  <span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">{d.symbol}</span>
+                  <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{d.symbol}</span>
                   <span className="text-sm font-semibold">{d.headline}</span>
                 </div>
-                <p className="mt-0.5 text-xs text-zinc-600 dark:text-zinc-400">{d.detail}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">{d.detail}</p>
               </div>
             </div>
             {ctaSlot && <div className="flex-shrink-0 pl-8 sm:pl-0">{ctaSlot(d)}</div>}

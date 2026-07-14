@@ -53,21 +53,21 @@ export function SetupDemo() {
         <SetupCard setup={DEMO_SETUP} />
       </div>
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="mx-4 flex max-w-sm flex-col items-center gap-3 rounded-xl border border-zinc-200 bg-white/95 p-5 text-center shadow-lg dark:border-zinc-800 dark:bg-zinc-950/95">
-          <span className="rounded-md bg-indigo-500/15 p-2 text-indigo-700 dark:text-indigo-300">
+        <div className="mx-4 flex max-w-sm flex-col items-center gap-3 rounded-xl border border-(--glass-border) bg-background/85 backdrop-blur-md p-5 text-center shadow-lg">
+          <span className="rounded-md bg-violet-500/15 p-2 text-violet-700 dark:text-violet-300">
             <Lock className="h-5 w-5" />
           </span>
-          <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+          <p className="text-sm font-medium text-foreground">
             Sign in to generate live setups
           </p>
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs text-muted-foreground">
             Structured trade setups from live Hyperliquid funding, OI and liquidation data —
             free, 10 per day.
           </p>
           <button
             type="button"
             onClick={() => signInWithGoogle("/cockpit")}
-            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-500"
+            className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-violet-500"
           >
             Continue with Google
           </button>

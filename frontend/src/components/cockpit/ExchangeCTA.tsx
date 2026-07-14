@@ -57,7 +57,7 @@ export function ExchangeCTA({
         target="_blank"
         rel="noopener noreferrer nofollow sponsored"
         onClick={onClick}
-        className="inline-flex items-center gap-1 rounded-md bg-primary px-2.5 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90"
+        className="inline-flex items-center gap-1 rounded-md bg-emerald-500 px-2.5 py-1.5 text-xs font-semibold text-emerald-950 shadow-[0_0_16px_-6px_var(--glow-emerald)] transition-all hover:bg-emerald-400 hover:shadow-[0_0_24px_-4px_var(--glow-emerald)]"
       >
         Trade {symbol} · {best.exchange.name}
         <ArrowUpRight className="h-3 w-3" />
@@ -72,7 +72,7 @@ export function ExchangeCTA({
         target="_blank"
         rel="noopener noreferrer nofollow sponsored"
         onClick={onClick}
-        className="flex items-center justify-between gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
+        className="flex items-center justify-between gap-2 rounded-lg bg-emerald-500 px-3 py-2 text-sm font-semibold text-emerald-950 shadow-[0_0_20px_-6px_var(--glow-emerald)] transition-all hover:bg-emerald-400 hover:shadow-[0_0_32px_-4px_var(--glow-emerald)]"
       >
         <span className="flex items-center gap-1.5">
           Execute {symbol} perp on {best.exchange.name}
@@ -89,7 +89,7 @@ export function ExchangeCTA({
           target="_blank"
           rel="noopener noreferrer nofollow sponsored"
           onClick={track(second)}
-          className="flex items-center justify-end gap-1 text-[11px] text-zinc-500 hover:text-zinc-300"
+          className="flex items-center justify-end gap-1 text-[11px] text-muted-foreground hover:text-foreground"
         >
           or {second.exchange.name} · net fee {second.effectiveFeePct.toFixed(3)}%
           <ArrowUpRight className="h-3 w-3" />

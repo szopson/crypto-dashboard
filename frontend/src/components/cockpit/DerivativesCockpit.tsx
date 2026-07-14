@@ -39,7 +39,7 @@ function fmtPct(n: number | null | undefined, decimals = 2): string {
 }
 
 const tone = (n: number | null | undefined) =>
-  n == null ? "text-zinc-500" : n >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400";
+  n == null ? "text-muted-foreground" : n >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400";
 
 export async function DerivativesCockpit() {
   let snap;
@@ -47,7 +47,7 @@ export async function DerivativesCockpit() {
     snap = await fetchCryptoPulse();
   } catch {
     return (
-      <div className="rounded-xl border border-zinc-200 p-6 text-sm text-zinc-500 dark:border-zinc-800">
+      <div className="rounded-xl glass-card p-6 text-sm text-muted-foreground">
         Derivatives feed is temporarily unavailable. Retry shortly.
       </div>
     );
@@ -66,7 +66,7 @@ export async function DerivativesCockpit() {
           <Activity className="h-5 w-5 text-primary" />
           <h1 className="text-lg font-semibold tracking-tight">Derivatives Cockpit</h1>
         </div>
-        <span className="flex items-center gap-1.5 text-xs text-zinc-500">
+        <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <RefreshCw className="h-3 w-3" />
           Coinglass · {time} · 60s
         </span>
@@ -91,12 +91,12 @@ export async function DerivativesCockpit() {
       </div>
 
       {/* Cross-exchange funding dispersion (BTC) */}
-      <section className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+      <section className="rounded-xl glass-card p-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             BTC funding by venue
           </h2>
-          <span className="text-xs text-zinc-500">
+          <span className="text-xs text-muted-foreground">
             avg <span className={tone(fa.btc_avg_pct)}>{fmtPct(fa.btc_avg_pct, 4)}</span>
             {fa.btc_spread_pct != null && (
               <> · spread {fa.btc_spread_pct.toFixed(4)}%</>
@@ -104,30 +104,30 @@ export async function DerivativesCockpit() {
           </span>
         </div>
         <div className="mt-3 flex flex-wrap gap-1.5">
-          {fa.btc_exchanges.length === 0 && <span className="text-xs text-zinc-500">—</span>}
+          {fa.btc_exchanges.length === 0 && <span className="text-xs text-muted-foreground">—</span>}
           {fa.btc_exchanges.map((e) => (
             <span
               key={e.exchange}
-              className="rounded-md border border-zinc-200 px-2 py-1 text-xs tabular-nums dark:border-zinc-800"
+              className="rounded-md border border-(--glass-border) px-2 py-1 text-xs tabular-nums"
             >
-              <span className="text-zinc-500">{e.exchange}</span>{" "}
+              <span className="text-muted-foreground">{e.exchange}</span>{" "}
               <span className={tone(e.rate_pct)}>{e.rate_pct.toFixed(4)}%</span>
             </span>
           ))}
         </div>
         {snap.velo_funding && snap.velo_funding.spread_pct_8h != null && (
-          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-zinc-100 pt-2.5 text-xs dark:border-zinc-800/60">
-            <span className="font-medium text-zinc-500">Binance ↔ Hyperliquid</span>
+          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-(--glass-border) pt-2.5 text-xs">
+            <span className="font-medium text-muted-foreground">Binance ↔ Hyperliquid</span>
             <span className="tabular-nums">
               <span className={tone(snap.velo_funding.binance_pct_8h)}>
                 {fmtPct(snap.velo_funding.binance_pct_8h, 4)}
               </span>
-              <span className="mx-1 text-zinc-400">vs</span>
+              <span className="mx-1 text-muted-foreground/70">vs</span>
               <span className={tone(snap.velo_funding.hyperliquid_pct_8h)}>
                 {fmtPct(snap.velo_funding.hyperliquid_pct_8h, 4)}
               </span>
             </span>
-            <span className="tabular-nums text-zinc-500">
+            <span className="tabular-nums text-muted-foreground">
               Δ {snap.velo_funding.spread_pct_8h.toFixed(4)}%
               {snap.velo_funding.spread_1h_ago_pct_8h != null && (
                 <> · 1h ago {snap.velo_funding.spread_1h_ago_pct_8h.toFixed(4)}%</>
@@ -136,15 +136,15 @@ export async function DerivativesCockpit() {
                 <> · 24h ago {snap.velo_funding.spread_24h_ago_pct_8h.toFixed(4)}%</>
               )}
             </span>
-            <span className="text-[10px] uppercase tracking-wide text-zinc-400">Velo</span>
+            <span className="text-[10px] uppercase tracking-wide text-muted-foreground/70">Velo</span>
           </div>
         )}
       </section>
 
       {/* Positioning + ETF */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <section className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+        <section className="rounded-xl glass-card p-4">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             Retail vs top traders (BTC)
           </h2>
           <div className="mt-2 text-lg font-semibold">
@@ -158,14 +158,14 @@ export async function DerivativesCockpit() {
               : "—"}
           </div>
         </section>
-        <section className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+        <section className="rounded-xl glass-card p-4">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             BTC ETF flow
           </h2>
           <div className={`mt-2 text-lg font-semibold ${tone(snap.etf.btc_24h_flow_usd)}`}>
-            {fmtUsdShort(snap.etf.btc_24h_flow_usd)} <span className="text-xs font-normal text-zinc-500">24h</span>
+            {fmtUsdShort(snap.etf.btc_24h_flow_usd)} <span className="text-xs font-normal text-muted-foreground">24h</span>
           </div>
-          <div className="mt-0.5 text-sm text-zinc-500">
+          <div className="mt-0.5 text-sm text-muted-foreground">
             7d <span className={tone(snap.etf.btc_7d_flow_usd)}>{fmtUsdShort(snap.etf.btc_7d_flow_usd)}</span>
           </div>
         </section>
@@ -175,12 +175,12 @@ export async function DerivativesCockpit() {
           same live derivatives regime shown above. */}
       <Link
         href="/app/trade-review"
-        className="flex items-center gap-3 rounded-xl border border-zinc-200 p-4 transition-colors hover:border-primary/40 hover:bg-primary/5 dark:border-zinc-800"
+        className="flex items-center gap-3 rounded-xl glass-card p-4 transition-colors hover:border-primary/40 hover:bg-primary/5"
       >
         <ScanSearch className="h-5 w-5 flex-shrink-0 text-primary" />
         <div className="min-w-0">
           <p className="text-sm font-medium">Grade your trade</p>
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs text-muted-foreground">
             Upload a screenshot — get a decision-quality scorecard judged against this exact funding &amp; OI regime.
           </p>
         </div>
@@ -188,7 +188,7 @@ export async function DerivativesCockpit() {
 
       <AffiliateDisclosure />
 
-      <p className="pt-1 text-center text-[11px] text-zinc-400">
+      <p className="pt-1 text-center text-[11px] text-muted-foreground/70">
         Read-only market data. Not financial advice, not a buy/sell signal.
       </p>
     </div>
@@ -199,13 +199,13 @@ function CoinCard({ c }: { c: CockpitCoin }) {
   const netLiqLong = c.long_liq_24h_usd; // longs liquidated
   const netLiqShort = c.short_liq_24h_usd;
   return (
-    <div className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+    <div className="rounded-xl glass-card p-4">
       <div className="flex items-baseline justify-between">
         <span className="text-sm font-semibold">{c.symbol}</span>
         <span className="text-base font-semibold tabular-nums">{fmtPrice(c.price)}</span>
       </div>
       <div className="mt-0.5 flex items-center justify-between text-xs">
-        <span className="text-zinc-500">funding</span>
+        <span className="text-muted-foreground">funding</span>
         <span className={tone(c.funding_rate_oi)}>{fmtPct(c.funding_rate_oi, 4)}/8h</span>
       </div>
 
@@ -215,7 +215,7 @@ function CoinCard({ c }: { c: CockpitCoin }) {
         <TfCell label="24h" price={c.price_change_24h_pct} oi={c.oi_change_24h_pct} />
       </div>
 
-      <div className="mt-3 space-y-1 border-t border-zinc-100 pt-2 text-xs dark:border-zinc-800/60">
+      <div className="mt-3 space-y-1 border-t border-(--glass-border) pt-2 text-xs">
         <Row label="Open interest" value={fmtUsdShort(c.oi_usd)} />
         <Row label="L/S ratio 24h" value={c.long_short_24h ? c.long_short_24h.toFixed(2) : "—"} />
         {c.basis_pct != null && (
@@ -225,7 +225,7 @@ function CoinCard({ c }: { c: CockpitCoin }) {
               <span>
                 <span className={tone(c.basis_pct)}>{fmtPct(c.basis_pct, 3)}</span>
                 {c.basis_24h_ago_pct != null && (
-                  <span className="ml-1 text-zinc-400">· 24h {fmtPct(c.basis_24h_ago_pct, 3)}</span>
+                  <span className="ml-1 text-muted-foreground/70">· 24h {fmtPct(c.basis_24h_ago_pct, 3)}</span>
                 )}
               </span>
             }
@@ -236,7 +236,7 @@ function CoinCard({ c }: { c: CockpitCoin }) {
           value={
             <span>
               <span className="text-rose-600 dark:text-rose-400">{fmtUsdShort(netLiqLong)}</span>
-              <span className="mx-1 text-zinc-400">/</span>
+              <span className="mx-1 text-muted-foreground/70">/</span>
               <span className="text-emerald-600 dark:text-emerald-400">{fmtUsdShort(netLiqShort)}</span>
             </span>
           }
@@ -252,10 +252,10 @@ function CoinCard({ c }: { c: CockpitCoin }) {
 
 function TfCell({ label, price, oi }: { label: string; price: number; oi: number }) {
   return (
-    <div className="rounded-md bg-zinc-50 py-1.5 dark:bg-zinc-900/50">
-      <div className="text-[10px] uppercase text-zinc-400">{label}</div>
+    <div className="rounded-md bg-muted/40 py-1.5">
+      <div className="text-[10px] uppercase text-muted-foreground/70">{label}</div>
       <div className={`tabular-nums ${tone(price)}`}>{fmtPct(price, 1)}</div>
-      <div className="text-[10px] text-zinc-500">
+      <div className="text-[10px] text-muted-foreground">
         OI <span className={tone(oi)}>{fmtPct(oi, 1)}</span>
       </div>
     </div>
@@ -265,7 +265,7 @@ function TfCell({ label, price, oi }: { label: string; price: number; oi: number
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between">
-      <span className="text-zinc-500">{label}</span>
+      <span className="text-muted-foreground">{label}</span>
       <span className="font-medium tabular-nums">{value}</span>
     </div>
   );

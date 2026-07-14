@@ -49,13 +49,13 @@ export async function TodaysWatch() {
   return (
     <section className="mb-4 space-y-2">
       <div className="flex items-center gap-2">
-        <span className="rounded-md bg-zinc-500/15 p-1.5 text-zinc-600 dark:text-zinc-300">
+        <span className="rounded-md bg-muted/400/15 p-1.5 text-muted-foreground">
           <Crosshair className="h-4 w-4" />
         </span>
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-600 dark:text-zinc-300">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           Today&apos;s watch
         </h2>
-        {data.date && <span className="text-xs text-zinc-500">{data.date}</span>}
+        {data.date && <span className="text-xs text-muted-foreground">{data.date}</span>}
       </div>
       <div className="space-y-2">
         {cards.map((card, i) => (

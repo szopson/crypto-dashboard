@@ -100,7 +100,7 @@ export function SetupChat({ coin, setup, prefill }: SetupChatProps) {
   };
 
   return (
-    <div className="mt-4 border-t border-zinc-200 pt-3 dark:border-zinc-800">
+    <div className="mt-4 border-t border-(--glass-border) pt-3">
       {messages.length > 0 && (
         <div className="mb-3 max-h-80 space-y-3 overflow-y-auto pr-1">
           {messages.map((msg, i) => (
@@ -111,8 +111,8 @@ export function SetupChat({ coin, setup, prefill }: SetupChatProps) {
               <div
                 className={`max-w-[85%] rounded-lg px-3 py-2 text-sm whitespace-pre-wrap ${
                   msg.role === "user"
-                    ? "bg-indigo-500/10 text-zinc-900 dark:text-zinc-100"
-                    : "bg-zinc-100 text-zinc-800 dark:bg-zinc-800/60 dark:text-zinc-200"
+                    ? "bg-violet-500/10 text-foreground"
+                    : "bg-muted text-foreground/90"
                 }`}
               >
                 {msg.content}
@@ -142,13 +142,13 @@ export function SetupChat({ coin, setup, prefill }: SetupChatProps) {
           placeholder={`Ask about the ${coin} setup — "funding flipped?", "what changed?"`}
           disabled={streaming}
           maxLength={2000}
-          className="flex-1 rounded-lg border border-zinc-200 bg-transparent px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-indigo-400 focus:outline-none disabled:opacity-50 dark:border-zinc-800 dark:text-zinc-100 dark:focus:border-indigo-600"
+          className="flex-1 rounded-lg border border-(--glass-border) bg-transparent px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-violet-400 focus:outline-none disabled:opacity-50 dark:focus:border-violet-600"
         />
         <button
           type="button"
           onClick={send}
           disabled={streaming || !input.trim()}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white transition-colors enabled:hover:bg-indigo-500 disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-violet-600 px-3 py-2 text-sm font-medium text-white transition-colors enabled:hover:bg-violet-500 disabled:opacity-50"
         >
           <SendHorizonal className="h-4 w-4" />
         </button>

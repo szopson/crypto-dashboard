@@ -41,19 +41,19 @@ export async function AiRead() {
   const lines = digest.body.split("\n").filter((l) => l.trim().length > 0);
 
   return (
-    <div className="mb-4 rounded-xl border border-indigo-200 bg-indigo-50/60 p-4 dark:border-indigo-900/60 dark:bg-indigo-950/20">
+    <div className="mb-4 rounded-xl glass-card glow-ring-violet p-4">
       <div className="mb-2 flex items-center gap-2">
-        <span className="rounded-md bg-indigo-500/15 p-1.5 text-indigo-700 dark:text-indigo-300">
+        <span className="rounded-md bg-violet-500/15 p-1.5 text-violet-700 dark:text-violet-300">
           <Sparkles className="h-4 w-4" />
         </span>
-        <span className="text-xs font-semibold uppercase tracking-wide text-indigo-700 dark:text-indigo-300">
+        <span className="text-xs font-semibold uppercase tracking-wide text-violet-700 dark:text-violet-300">
           AI read
         </span>
-        {digest.date && <span className="text-xs text-zinc-500">{digest.date}</span>}
+        {digest.date && <span className="text-xs text-muted-foreground">{digest.date}</span>}
       </div>
       <div className="space-y-1">
         {lines.map((line, i) => (
-          <p key={i} className="text-sm text-zinc-800 dark:text-zinc-200">
+          <p key={i} className="text-sm text-foreground/90">
             {line}
           </p>
         ))}

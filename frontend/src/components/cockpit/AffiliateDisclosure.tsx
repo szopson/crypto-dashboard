@@ -13,7 +13,7 @@ import { AFFILIATE_DISCLOSURE } from "@/config/exchanges";
 
 export function AffiliateDisclosure() {
   return (
-    <p className="flex items-start gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-[11px] leading-relaxed text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900/40">
+    <p className="flex items-start gap-2 rounded-lg border border-(--glass-border) bg-muted/40 px-3 py-2 text-[11px] leading-relaxed text-muted-foreground">
       <Info className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
       <span>{AFFILIATE_DISCLOSURE}</span>
     </p>
