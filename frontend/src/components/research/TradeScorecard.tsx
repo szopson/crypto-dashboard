@@ -11,9 +11,11 @@ import { Progress } from "@/components/ui/progress";
 import type { TradeScorecard as Scorecard } from "@/lib/trade-review";
 
 function scoreColor(score: number): string {
-  if (score >= 75) return "text-emerald-500";
-  if (score >= 50) return "text-amber-500";
-  return "text-red-500";
+  if (score >= 75)
+    return "text-emerald-500 drop-shadow-[0_0_14px_oklch(0.765_0.177_163_/_45%)]";
+  if (score >= 50)
+    return "text-amber-500 drop-shadow-[0_0_14px_oklch(0.769_0.188_70_/_45%)]";
+  return "text-red-500 drop-shadow-[0_0_14px_oklch(0.645_0.246_16_/_45%)]";
 }
 
 function dimBar(score: number): string {

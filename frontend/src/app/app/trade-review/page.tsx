@@ -144,7 +144,10 @@ export default function TradeReviewPage() {
   };
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8 space-y-6">
+    <div className="relative mx-auto max-w-2xl overflow-x-clip px-4 py-8 space-y-6">
+      {/* Decorative accent glows behind the content */}
+      <div aria-hidden className="glow-blob -z-10 -top-24 -right-24 h-72 w-72 bg-emerald-500/20 animate-pulse-glow" />
+      <div aria-hidden className="glow-blob -z-10 top-1/3 -left-32 h-80 w-80 bg-violet-500/15" />
       <header className="space-y-1">
         <h1 className="text-2xl font-bold">Trade Review</h1>
         <p className="text-sm text-muted-foreground">
@@ -195,7 +198,7 @@ export default function TradeReviewPage() {
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
-              className="flex w-full flex-col items-center gap-2 rounded-md border border-dashed py-10 text-muted-foreground hover:bg-muted/40 transition-colors"
+              className="flex w-full flex-col items-center gap-2 rounded-lg border border-dashed border-(--glass-border) py-10 text-muted-foreground transition-all hover:border-emerald-500/40 hover:bg-muted/30 hover:shadow-[0_0_28px_-10px_var(--glow-emerald)]"
             >
               <Upload className="size-6" />
               <span className="text-sm">
@@ -225,6 +228,7 @@ export default function TradeReviewPage() {
       <Button
         onClick={analyze}
         disabled={!file || loading}
+        variant="glow"
         className="w-full"
         size="lg"
       >
