@@ -19,13 +19,13 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://tradingcommandcenter.com";
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://follio.io";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "Trading Command Center | Professional Crypto Analysis",
-    template: "%s | Trading Command Center",
+    default: "Follio | Professional Crypto Analysis",
+    template: "%s | Follio",
   },
   description: "Professional-grade crypto analysis tools with AI-powered investment reports, RADAR analysis, and smart alerts. Your edge in crypto trading.",
   keywords: [
@@ -38,9 +38,9 @@ export const metadata: Metadata = {
     "cryptocurrency",
     "technical analysis",
   ],
-  authors: [{ name: "Trading Command Center" }],
-  creator: "Trading Command Center",
-  publisher: "Trading Command Center",
+  authors: [{ name: "Follio" }],
+  creator: "Follio",
+  publisher: "Follio",
   robots: {
     index: true,
     follow: true,
@@ -74,21 +74,21 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     url: siteUrl,
-    siteName: "Trading Command Center",
-    title: "Trading Command Center | Professional Crypto Analysis",
+    siteName: "Follio",
+    title: "Follio | Professional Crypto Analysis",
     description: "Professional-grade crypto analysis tools with AI-powered investment reports and smart alerts.",
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Trading Command Center",
+        alt: "Follio",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Trading Command Center",
+    title: "Follio",
     description: "Professional-grade crypto analysis tools with AI-powered investment reports.",
     images: ["/og-image.png"],
     creator: "@tradingcmdctr",

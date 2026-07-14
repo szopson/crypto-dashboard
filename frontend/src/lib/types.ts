@@ -1,5 +1,5 @@
 /**
- * TypeScript types for Trading Command Center
+ * TypeScript types for Follio
  */
 
 // Bias types

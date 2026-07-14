@@ -113,11 +113,10 @@ export default function Dashboard() {
       <FloatingActions onRefresh={refresh} onTabChange={setActiveTab} />
 
       {/* Header */}
-      <header className="border-b bg-card sticky top-0 z-50">
+      <header className="sticky top-0 z-50 border-b border-(--glass-border) bg-background/60 backdrop-blur-md">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <h1 className="text-lg sm:text-xl font-bold truncate hidden sm:block">Trading Command Center</h1>
-            <h1 className="text-lg font-bold sm:hidden">TCC</h1>
+            <h1 className="text-lg sm:text-xl font-bold text-gradient-brand">Follio</h1>
             <SymbolSelector />
           </div>
           <div className="flex items-center gap-2 sm:gap-4">
@@ -147,7 +146,7 @@ export default function Dashboard() {
       <main className="container mx-auto px-2 sm:px-4 py-4 sm:py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
           <div className="overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0 scrollbar-hide">
-            <TabsList className="inline-flex w-max sm:w-full h-10 p-1 gap-0.5">
+            <TabsList variant="glass" className="inline-flex w-max sm:w-full h-10 p-1 gap-0.5 rounded-xl">
               <TabsTrigger value="dashboard" className="text-xs sm:text-sm px-3 sm:px-4 whitespace-nowrap">Dashboard</TabsTrigger>
               <TabsTrigger value="sniper" className="text-xs sm:text-sm px-3 sm:px-4 whitespace-nowrap">SNIPER</TabsTrigger>
               <TabsTrigger value="journal" className="text-xs sm:text-sm px-3 sm:px-4 whitespace-nowrap">Journal</TabsTrigger>

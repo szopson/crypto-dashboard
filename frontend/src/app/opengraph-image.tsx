@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
 
-export const alt = "Trading Command Center - Professional Crypto Analysis Tools";
+export const alt = "Follio - Professional Crypto Analysis Tools";
 export const size = {
   width: 1200,
   height: 630,
@@ -98,7 +98,7 @@ export default async function Image() {
               letterSpacing: "-2px",
             }}
           >
-            Trading Command Center
+            Follio
           </h1>
 
           {/* Subtitle */}

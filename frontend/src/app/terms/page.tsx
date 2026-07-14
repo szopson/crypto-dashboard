@@ -2,8 +2,8 @@ import Link from "next/link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Terms of Service | Trading Command Center",
-  description: "Terms of service for Trading Command Center waitlist and services.",
+  title: "Terms of Service | Follio",
+  description: "Terms of service for Follio waitlist and services.",
 };
 
 export default function TermsPage() {
@@ -18,7 +18,7 @@ export default function TermsPage() {
       <header className="relative border-b border-white/[0.08] backdrop-blur-sm bg-black/20 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/" className="text-xl font-bold tracking-tight hover:text-zinc-300 transition-colors">
-            Trading Command Center
+            Follio
           </Link>
         </div>
       </header>
@@ -39,7 +39,7 @@ export default function TermsPage() {
               <section className="space-y-4">
                 <h2 className="text-xl font-semibold text-white">1. Acceptance of Terms</h2>
                 <p className="text-zinc-400 leading-relaxed">
-                  By signing up for the Trading Command Center waitlist, you agree to these Terms of Service.
+                  By signing up for the Follio waitlist, you agree to these Terms of Service.
                   If you do not agree to these terms, please do not sign up for our waitlist.
                 </p>
               </section>
@@ -47,7 +47,7 @@ export default function TermsPage() {
               <section className="space-y-4">
                 <h2 className="text-xl font-semibold text-white">2. Description of Service</h2>
                 <p className="text-zinc-400 leading-relaxed">
-                  Trading Command Center is a cryptocurrency analysis and portfolio management platform currently
+                  Follio is a cryptocurrency analysis and portfolio management platform currently
                   in development. By joining our waitlist, you are expressing interest in being notified when
                   the service becomes available.
                 </p>
@@ -75,7 +75,7 @@ export default function TermsPage() {
               <section className="space-y-4">
                 <h2 className="text-xl font-semibold text-white">4. Not Financial Advice</h2>
                 <p className="text-zinc-400 leading-relaxed">
-                  Any information, reports, or analysis provided by Trading Command Center is for
+                  Any information, reports, or analysis provided by Follio is for
                   informational purposes only and does not constitute financial, investment, tax, or
                   legal advice. You should consult with qualified professionals before making any
                   investment decisions.
@@ -97,7 +97,7 @@ export default function TermsPage() {
               <section className="space-y-4">
                 <h2 className="text-xl font-semibold text-white">6. Limitation of Liability</h2>
                 <p className="text-zinc-400 leading-relaxed">
-                  To the maximum extent permitted by law, Trading Command Center and its operators
+                  To the maximum extent permitted by law, Follio and its operators
                   shall not be liable for any indirect, incidental, special, consequential, or
                   punitive damages resulting from your use of or inability to use the service.
                 </p>
@@ -143,7 +143,7 @@ export default function TermsPage() {
       {/* Footer */}
       <footer className="relative py-8 border-t border-white/[0.08]">
         <div className="container mx-auto px-4 text-center text-sm text-zinc-500">
-          <p>Trading Command Center</p>
+          <p>Follio</p>
         </div>
       </footer>
     </div>

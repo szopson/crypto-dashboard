@@ -3,7 +3,7 @@ import { listAllReports, listSectorSlugs } from "@/lib/reports";
 import { listPosts } from "@/lib/blog";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://tradingcommandcenter.com";
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://follio.io";
 
   const staticRoutes: MetadataRoute.Sitemap = [
     {

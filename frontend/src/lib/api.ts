@@ -1,5 +1,5 @@
 /**
- * API client for Trading Command Center backend
+ * API client for Follio backend
  */
 import type {
   PriceData,

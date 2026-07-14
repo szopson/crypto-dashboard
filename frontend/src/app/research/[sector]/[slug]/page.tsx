@@ -29,7 +29,7 @@ export async function generateStaticParams() {
   return params;
 }
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://tradingcommandcenter.com";
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://follio.io";
 
 export async function generateMetadata({ params }: PageProps) {
   const { sector, slug } = await params;

@@ -4,18 +4,18 @@ import { WaitlistForm } from "@/components/WaitlistForm";
 import { WaitlistCounter } from "@/components/WaitlistCounter";
 
 export const metadata: Metadata = {
-  title: "Trading Command Center | Professional Crypto Analysis Tools",
+  title: "Follio | Professional Crypto Analysis Tools",
   description:
     "Professional-grade crypto analysis tools, AI-powered investment reports, and smart alerts. Join the waitlist for early access.",
   keywords: ["crypto", "trading", "bitcoin", "analysis", "AI", "investment", "alerts"],
   openGraph: {
-    title: "Trading Command Center",
+    title: "Follio",
     description: "Your edge in crypto trading. AI-powered analysis and reports.",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Trading Command Center",
+    title: "Follio",
     description: "Your edge in crypto trading. AI-powered analysis and reports.",
   },
 };
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
-  name: "Trading Command Center",
+  name: "Follio",
   applicationCategory: "FinanceApplication",
   operatingSystem: "Web",
   description:
@@ -157,7 +157,7 @@ export default function LandingPage() {
       {/* Header */}
       <header className="relative border-b border-white/[0.08] backdrop-blur-sm bg-black/20 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-xl font-bold tracking-tight">Trading Command Center</h1>
+          <h1 className="text-xl font-bold tracking-tight">Follio</h1>
           <div className="flex items-center gap-5">
             <Link
               href="/cockpit"
@@ -541,7 +541,7 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="relative py-8 border-t border-white/[0.08]">
         <div className="container mx-auto px-4 text-center text-sm text-zinc-500">
-          <p className="mb-2">Trading Command Center</p>
+          <p className="mb-2">Follio</p>
           <div className="flex items-center justify-center gap-4">
             <Link href="/terms" className="text-zinc-600 hover:text-zinc-400 transition-colors">
               Terms of Service

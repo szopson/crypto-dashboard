@@ -2,8 +2,8 @@ import Link from "next/link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy | Trading Command Center",
-  description: "Privacy policy for Trading Command Center waitlist and services.",
+  title: "Privacy Policy | Follio",
+  description: "Privacy policy for Follio waitlist and services.",
 };
 
 export default function PrivacyPage() {
@@ -18,7 +18,7 @@ export default function PrivacyPage() {
       <header className="relative border-b border-white/[0.08] backdrop-blur-sm bg-black/20 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/" className="text-xl font-bold tracking-tight hover:text-zinc-300 transition-colors">
-            Trading Command Center
+            Follio
           </Link>
         </div>
       </header>
@@ -132,7 +132,7 @@ export default function PrivacyPage() {
       {/* Footer */}
       <footer className="relative py-8 border-t border-white/[0.08]">
         <div className="container mx-auto px-4 text-center text-sm text-zinc-500">
-          <p>Trading Command Center</p>
+          <p>Follio</p>
         </div>
       </footer>
     </div>

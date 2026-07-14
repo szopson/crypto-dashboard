@@ -71,9 +71,10 @@ export default function SignupPage() {
   // Success message after signup
   if (signupSuccess) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/20 p-4">
+      <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-background p-4">
+        <div aria-hidden className="glow-blob -z-10 -top-24 right-1/4 h-80 w-80 bg-emerald-500/25" />
         <div className="w-full max-w-md text-center">
-          <div className="bg-card border border-border rounded-xl p-8 shadow-lg">
+          <div className="glass-card rounded-2xl p-8">
             <CheckCircle className="h-16 w-16 text-emerald-500 mx-auto mb-4" />
             <h2 className="text-2xl font-bold mb-2">Check your email</h2>
             <p className="text-muted-foreground mb-6">
@@ -92,20 +93,21 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/20 p-4">
+    <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-background p-4">
+      {/* Decorative accent glows */}
+      <div aria-hidden className="glow-blob -z-10 -top-24 right-1/4 h-80 w-80 bg-emerald-500/25 animate-pulse-glow" />
+      <div aria-hidden className="glow-blob -z-10 -bottom-32 left-1/4 h-96 w-96 bg-violet-500/20" />
       <div className="w-full max-w-md">
         {/* Logo/Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">
-            Create Account
-          </h1>
+          <h1 className="text-3xl font-bold text-gradient-brand">Create your Follio account</h1>
           <p className="text-muted-foreground mt-2">
-            Start tracking your wealth across all asset classes
+            AI trade reviews, live derivatives context and setup intelligence
           </p>
         </div>
 
         {/* Signup Card */}
-        <div className="bg-card border border-border rounded-xl p-6 shadow-lg">
+        <div className="glass-card rounded-2xl p-6">
           {/* Error Alert */}
           {error && (
             <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-lg flex items-start gap-2">
@@ -216,15 +218,10 @@ export default function SignupPage() {
           </form>
 
           {/* Divider */}
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-border"></div>
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">
-                Or continue with
-              </span>
-            </div>
+          <div className="my-6 flex items-center gap-3 text-xs uppercase text-muted-foreground">
+            <div className="h-px flex-1 bg-border" />
+            <span>Or continue with</span>
+            <div className="h-px flex-1 bg-border" />
           </div>
 
           {/* Google OAuth */}

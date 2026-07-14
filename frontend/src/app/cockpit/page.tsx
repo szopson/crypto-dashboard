@@ -15,7 +15,11 @@ export const revalidate = 60;
 
 export default function CockpitPage() {
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 py-6 sm:py-8">
+    <main className="relative mx-auto w-full max-w-3xl overflow-x-clip px-4 py-6 sm:py-8">
+      {/* Decorative accent glows behind the content */}
+      <div aria-hidden className="glow-blob -z-10 -top-32 -right-24 h-80 w-80 bg-emerald-500/25 animate-pulse-glow" />
+      <div aria-hidden className="glow-blob -z-10 top-1/2 -left-32 h-72 w-72 bg-cyan-500/20" />
+      <div aria-hidden className="glow-blob -z-10 -bottom-24 right-0 h-80 w-80 bg-violet-500/20" />
       <AiRead />
       <TodaysWatch />
       <SetupPanel />
