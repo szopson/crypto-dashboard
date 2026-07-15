@@ -91,8 +91,18 @@ jobs:
             # Post-deploy assertions for /api/region:
             # 1. The endpoint must answer (unresolved is a valid degraded
             #    answer; a 404/500 means the router or engine is broken).
+            #    --max-time is mandatory: a curl with no deadline hung the
+            #    2026-07-14 deploy for 26 minutes until command_timeout
+            #    killed the run (the engine was busy right after startup).
+            #    Retry a few times instead — warmup slowness is not a failure.
             sleep 5
-            docker compose exec -T backend curl -fsS http://localhost:8000/api/region | grep -q '"region"'
+            for i in $(seq 1 6); do
+              if docker compose exec -T backend curl -fsS --max-time 20 http://localhost:8000/api/region | grep -q '"region"'; then
+                echo "region endpoint OK"; break
+              fi
+              [ "$i" -eq 6 ] && { echo "region endpoint failed after 6 attempts"; exit 1; }
+              sleep 10
+            done
             # 2. When GeoIP creds are configured, the MMDB must actually land
             #    in the shared volume — otherwise the feature silently ships
             #    dead. Give the sidecar's first download up to ~60s.
