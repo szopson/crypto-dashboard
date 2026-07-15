@@ -11,10 +11,10 @@
 Status:
 
 - ✅ `0002_ai_setup_usage.sql` — zastosowana (quota AI Trade Setup).
-- ⬜ `0003_trade_review_quota.sql` — **do wklejenia** (poniżej). Dodaje limity:
-  5 analiz zagrań/dzień + 2 insighty/dzień.
-- ⬜ `0004_trade_review_insights.sql` — **do wklejenia** (poniżej). Tabela na
-  AI Insights (meta-review) z RLS.
+- ✅ `0003_trade_review_quota.sql` — zastosowana 2026-07-14 (limity: 5 analiz
+  zagrań/dzień + 2 insighty/dzień); zweryfikowana na prodzie.
+- ✅ `0004_trade_review_insights.sql` — zastosowana 2026-07-14 (tabela AI
+  Insights z RLS); zweryfikowana na prodzie.
 
 Po wykonaniu 0003: `follio.io/app/trade-review` wymaga logowania i ma limit
 5 analiz dziennie na użytkownika; smoke-test wszystkich 4 rodzajów quoty
@@ -111,47 +111,47 @@ commit;
 ## 0004 — tabela AI Insights (meta-review)
 
 ```sql
-begin;
-
-create extension if not exists "pgcrypto";
-
-create table if not exists public.trade_review_insights (
-  id          uuid primary key default gen_random_uuid(),
-  user_id     uuid not null default auth.uid() references auth.users (id) on delete cascade,
-  created_at  timestamptz not null default now(),
-  period_kind text not null check (period_kind in ('last_n', 'last_7d')),
-  period_n    int check (period_n in (3, 5, 10)),
-  review_ids  uuid[] not null check (array_length(review_ids, 1) >= 3),
-  insight     jsonb not null,  -- full TradeInsight payload
-  model       text not null
-);
-
-create index if not exists trade_review_insights_user_created_idx
-  on public.trade_review_insights (user_id, created_at desc);
-
-alter table public.trade_review_insights enable row level security;
-
--- Each user sees and mutates only their own rows.
-drop policy if exists "trade_review_insights_select_own" on public.trade_review_insights;
-create policy "trade_review_insights_select_own"
-  on public.trade_review_insights for select
-  using (auth.uid() = user_id);
-
-drop policy if exists "trade_review_insights_insert_own" on public.trade_review_insights;
-create policy "trade_review_insights_insert_own"
-  on public.trade_review_insights for insert
-  with check (auth.uid() = user_id);
-
-drop policy if exists "trade_review_insights_delete_own" on public.trade_review_insights;
-create policy "trade_review_insights_delete_own"
-  on public.trade_review_insights for delete
-  using (auth.uid() = user_id);
-
--- Explicit Data API grants (don't rely on project defaults): no anon access,
--- no updates — insights are immutable once written.
-revoke all on table public.trade_review_insights from anon;
-grant select, insert, delete on table public.trade_review_insights to authenticated;
-revoke update on table public.trade_review_insights from authenticated;
-
-commit;
+  begin;
+  
+  create extension if not exists "pgcrypto";
+  
+  create table if not exists public.trade_review_insights (
+    id          uuid primary key default gen_random_uuid(),
+    user_id     uuid not null default auth.uid() references auth.users (id) on delete cascade,
+    created_at  timestamptz not null default now(),
+    period_kind text not null check (period_kind in ('last_n', 'last_7d')),
+    period_n    int check (period_n in (3, 5, 10)),
+    review_ids  uuid[] not null check (array_length(review_ids, 1) >= 3),
+    insight     jsonb not null,  -- full TradeInsight payload
+    model       text not null
+  );
+  
+  create index if not exists trade_review_insights_user_created_idx
+    on public.trade_review_insights (user_id, created_at desc);
+  
+  alter table public.trade_review_insights enable row level security;
+  
+  -- Each user sees and mutates only their own rows.
+  drop policy if exists "trade_review_insights_select_own" on public.trade_review_insights;
+  create policy "trade_review_insights_select_own"
+    on public.trade_review_insights for select
+    using (auth.uid() = user_id);
+  
+  drop policy if exists "trade_review_insights_insert_own" on public.trade_review_insights;
+  create policy "trade_review_insights_insert_own"
+    on public.trade_review_insights for insert
+    with check (auth.uid() = user_id);
+  
+  drop policy if exists "trade_review_insights_delete_own" on public.trade_review_insights;
+  create policy "trade_review_insights_delete_own"
+    on public.trade_review_insights for delete
+    using (auth.uid() = user_id);
+  
+  -- Explicit Data API grants (don't rely on project defaults): no anon access,
+  -- no updates — insights are immutable once written.
+  revoke all on table public.trade_review_insights from anon;
+  grant select, insert, delete on table public.trade_review_insights to authenticated;
+  revoke update on table public.trade_review_insights from authenticated;
+  
+  commit;
 ```
