@@ -34,7 +34,7 @@ function fmtPct(n: number | null | undefined, decimals = 2): string {
 }
 
 const toneClass = (n: number | null | undefined) =>
-  n == null ? "text-zinc-500" : n >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400";
+  n == null ? "text-muted-foreground" : n >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400";
 
 export async function CryptoMacroPulse() {
   let snap;
@@ -48,8 +48,8 @@ export async function CryptoMacroPulse() {
   const totalLiq24h = snap.coins.reduce((s, c) => s + (c.liquidation_24h_usd ?? 0), 0);
 
   return (
-    <section className="not-prose mb-10 overflow-hidden rounded-2xl border border-zinc-200 bg-gradient-to-br from-zinc-50 to-white dark:border-zinc-800 dark:from-zinc-900/80 dark:to-zinc-950">
-      <header className="flex items-center justify-between border-b border-zinc-200 px-6 py-3 text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800">
+    <section className="not-prose mb-10 overflow-hidden rounded-2xl glass-card">
+      <header className="flex items-center justify-between border-b border-(--glass-border) px-6 py-3 text-xs uppercase tracking-wide text-muted-foreground">
         <span className="flex items-center gap-2">
           <Activity className="h-3.5 w-3.5" />
           Crypto Macro Pulse
@@ -57,7 +57,7 @@ export async function CryptoMacroPulse() {
         <span>Coinglass · {new Date(snap.generated_at).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })} UTC</span>
       </header>
 
-      <div className="grid grid-cols-2 gap-px bg-zinc-200 dark:bg-zinc-800 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-px bg-muted md:grid-cols-4">
         <PulseCard
           label="BTC"
           icon={<Coins className="h-4 w-4" />}
@@ -108,10 +108,10 @@ export async function CryptoMacroPulse() {
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-px bg-zinc-200 dark:bg-zinc-800 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-px bg-muted md:grid-cols-3">
         <SubBlock label="Liquidations 24h">
           <div className="text-base font-semibold">{fmtUsdShort(totalLiq24h)}</div>
-          <div className="mt-0.5 text-xs text-zinc-500">
+          <div className="mt-0.5 text-xs text-muted-foreground">
             <span className="text-rose-600">L {fmtUsdShort(btc?.long_liq_24h_usd)}</span>
             <span className="mx-1">·</span>
             <span className="text-emerald-600">S {fmtUsdShort(btc?.short_liq_24h_usd)}</span>
@@ -133,14 +133,14 @@ export async function CryptoMacroPulse() {
           <div className={`text-base font-semibold ${toneClass(btc?.oi_change_24h_pct)}`}>
             {fmtPct(btc?.oi_change_24h_pct)}
           </div>
-          <div className="mt-0.5 text-xs text-zinc-500">
+          <div className="mt-0.5 text-xs text-muted-foreground">
             Price 24h <span className={toneClass(btc?.price_change_24h_pct)}>{fmtPct(btc?.price_change_24h_pct)}</span>
           </div>
         </SubBlock>
       </div>
 
       {snap.signals.length > 0 && (
-        <ul className="space-y-1 border-t border-zinc-200 bg-amber-50/40 px-6 py-3 text-sm dark:border-zinc-800 dark:bg-amber-950/20">
+        <ul className="space-y-1 border-t border-(--glass-border) bg-amber-50/40 px-6 py-3 text-sm dark:bg-amber-950/20">
           {snap.signals.map((s, i) => (
             <li key={i} className="flex gap-2">
               <span className="mt-1.5 inline-block h-1.5 w-1.5 flex-shrink-0 rounded-full bg-amber-500" />
@@ -169,8 +169,8 @@ function PulseCard({
   extra?: string;
 }) {
   return (
-    <div className="bg-white p-4 dark:bg-zinc-950">
-      <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-zinc-500">
+    <div className="bg-card p-4">
+      <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
         {icon}
         {label}
       </div>
@@ -178,15 +178,15 @@ function PulseCard({
       {secondary && (
         <div className={`mt-0.5 text-xs ${toneClass(secondaryTone ?? null)}`}>{secondary}</div>
       )}
-      {extra && <div className="mt-1 text-xs text-zinc-500">{extra}</div>}
+      {extra && <div className="mt-1 text-xs text-muted-foreground">{extra}</div>}
     </div>
   );
 }
 
 function SubBlock({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="bg-white p-4 dark:bg-zinc-950">
-      <div className="text-xs uppercase tracking-wide text-zinc-500">{label}</div>
+    <div className="bg-card p-4">
+      <div className="text-xs uppercase tracking-wide text-muted-foreground">{label}</div>
       <div className="mt-1">{children}</div>
     </div>
   );

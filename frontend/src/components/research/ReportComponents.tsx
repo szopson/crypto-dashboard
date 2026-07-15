@@ -88,16 +88,16 @@ const verdictColor: Record<string, string> = {
   Fair: "text-amber-600 dark:text-amber-400",
   Expensive: "text-rose-600 dark:text-rose-400",
   Accretive: "text-emerald-600 dark:text-emerald-400",
-  Neutral: "text-zinc-600 dark:text-zinc-400",
+  Neutral: "text-muted-foreground",
   Dilutive: "text-rose-600 dark:text-rose-400",
 };
 
 function verdictClass(v: string | undefined): string {
-  if (!v) return "text-zinc-700 dark:text-zinc-300";
+  if (!v) return "text-foreground/80";
   for (const key of Object.keys(verdictColor)) {
     if (v.toLowerCase().startsWith(key.toLowerCase())) return verdictColor[key];
   }
-  return "text-zinc-700 dark:text-zinc-300";
+  return "text-foreground/80";
 }
 
 /* ──────────── ReportHeader ──────────── */
@@ -125,16 +125,16 @@ export function ReportHeader({
   const up = parseNum(upsidePct);
   const upsideUp = (up ?? 0) >= 0;
   return (
-    <div className="not-prose mb-8 rounded-2xl border border-zinc-200 bg-gradient-to-br from-zinc-50 to-zinc-100 p-6 shadow-sm dark:border-zinc-800 dark:from-zinc-900 dark:to-zinc-950">
-      <div className="flex flex-wrap items-center gap-3 text-sm text-zinc-500 dark:text-zinc-400">
+    <div className="not-prose mb-8 rounded-2xl glass-card p-6">
+      <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground dark:text-muted-foreground/70">
         <Building2 className="h-4 w-4" />
         <span>{sector}</span>
-        {industry && <span className="text-zinc-400">·</span>}
+        {industry && <span className="text-muted-foreground/70">·</span>}
         {industry && <span>{industry}</span>}
       </div>
       <div className="mt-2 flex flex-wrap items-baseline gap-3">
         <h1 className="text-3xl font-semibold tracking-tight">{ticker}</h1>
-        <span className="text-xl text-zinc-600 dark:text-zinc-400">{company}</span>
+        <span className="text-xl text-muted-foreground">{company}</span>
       </div>
       <div className="mt-5 grid grid-cols-2 gap-4 md:grid-cols-4">
         <Stat
@@ -142,7 +142,7 @@ export function ReportHeader({
           value={
             <span
               className={`inline-flex rounded-md border px-2 py-1 text-sm font-medium ${
-                ratingColor[rating] ?? "border-zinc-300 text-zinc-700 dark:text-zinc-300"
+                ratingColor[rating] ?? "border-(--glass-border) text-foreground/80"
               }`}
             >
               {rating}
@@ -167,7 +167,7 @@ export function ReportHeader({
 function Stat({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div>
-      <div className="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+      <div className="text-xs uppercase tracking-wide text-muted-foreground dark:text-muted-foreground/70">
         {label}
       </div>
       <div className="mt-1 text-lg font-medium">{value}</div>
@@ -221,8 +221,8 @@ function Card({
   small?: boolean;
 }) {
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-      <div className="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+    <div className="rounded-xl border border-(--glass-border) bg-card p-4">
+      <div className="text-xs uppercase tracking-wide text-muted-foreground dark:text-muted-foreground/70">
         {title}
       </div>
       <div className={`mt-1 font-semibold ${small ? "text-base" : "text-xl"}`}>{value}</div>
@@ -233,7 +233,7 @@ function Card({
               ? "text-emerald-600"
               : subTone === "neg"
                 ? "text-rose-600"
-                : "text-zinc-500"
+                : "text-muted-foreground"
           }`}
         >
           {sub}
@@ -257,12 +257,12 @@ export function QoQGrid({ items }: { items: QoQItem[] | string }) {
       {list.map((it, i) => (
         <div
           key={i}
-          className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900"
+          className="rounded-xl border border-(--glass-border) bg-card p-4"
         >
-          <div className="mb-1 text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+          <div className="mb-1 text-sm font-semibold text-foreground">
             {it.label}
           </div>
-          <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
+          <p className="text-sm leading-relaxed text-foreground/80">
             {it.text}
           </p>
         </div>
@@ -318,8 +318,8 @@ function Donut({
       ? "border-amber-500/40 text-amber-700 dark:text-amber-300"
       : "border-sky-500/40 text-sky-700 dark:text-sky-300";
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-      <div className="text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+    <div className="rounded-xl border border-(--glass-border) bg-card p-4">
+      <div className="text-xs uppercase tracking-wide text-muted-foreground dark:text-muted-foreground/70">
         {label}
       </div>
       <div className={`mt-2 inline-flex items-center rounded-full border-2 px-3 py-1 text-xl font-semibold ${ring}`}>
@@ -343,11 +343,11 @@ interface InsiderRow {
 export function InsiderTransactions({ rows }: { rows: InsiderRow[] | string }) {
   const list = parseProp<InsiderRow[]>(rows, []);
   if (!list || list.length === 0)
-    return <p className="text-sm text-zinc-500">No recent insider transactions on file.</p>;
+    return <p className="text-sm text-muted-foreground">No recent insider transactions on file.</p>;
   return (
-    <div className="not-prose overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
+    <div className="not-prose overflow-x-auto rounded-xl border border-(--glass-border)">
       <table className="w-full text-sm">
-        <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900/60 dark:text-zinc-400">
+        <thead className="bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground dark:text-muted-foreground/70">
           <tr>
             <th className="px-3 py-2">Date</th>
             <th className="px-3 py-2">Insider</th>
@@ -356,12 +356,12 @@ export function InsiderTransactions({ rows }: { rows: InsiderRow[] | string }) {
             <th className="px-3 py-2 text-right">Value</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+        <tbody className="divide-y divide-(--glass-border)">
           {list.map((r, i) => (
-            <tr key={i} className="hover:bg-zinc-50 dark:hover:bg-zinc-900/40">
-              <td className="px-3 py-2 text-zinc-500">{r.date?.slice(0, 10)}</td>
+            <tr key={i} className="hover:bg-muted/30">
+              <td className="px-3 py-2 text-muted-foreground">{r.date?.slice(0, 10)}</td>
               <td className="px-3 py-2 font-medium">{r.insider}</td>
-              <td className="px-3 py-2 text-zinc-600 dark:text-zinc-400">{r.position}</td>
+              <td className="px-3 py-2 text-muted-foreground">{r.position}</td>
               <td className="px-3 py-2 text-right tabular-nums">
                 {r.shares != null ? r.shares.toLocaleString() : "—"}
               </td>
@@ -402,16 +402,16 @@ export function SevenMetrics({ data }: { data: SevenMetricsData | string }) {
         return (
           <div
             key={k}
-            className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900"
+            className="rounded-xl border border-(--glass-border) bg-card p-4"
           >
-            <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+            <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground dark:text-muted-foreground/70">
               {meta.icon}
               {meta.label}
             </div>
             <div className={`mt-1 text-base font-semibold ${verdictClass(v.verdict)}`}>
               {v.verdict}
             </div>
-            <p className="mt-1 text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
               {v.notes}
             </p>
           </div>
@@ -436,9 +436,9 @@ interface PeerRow {
 export function PeerTable({ rows }: { rows: PeerRow[] | string }) {
   const list = parseProp<PeerRow[]>(rows, []);
   return (
-    <div className="not-prose overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
+    <div className="not-prose overflow-x-auto rounded-xl border border-(--glass-border)">
       <table className="w-full text-sm">
-        <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900/60 dark:text-zinc-400">
+        <thead className="bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground dark:text-muted-foreground/70">
           <tr>
             <th className="px-3 py-2">Company</th>
             <th className="px-3 py-2">EBITDA Margin</th>
@@ -448,12 +448,12 @@ export function PeerTable({ rows }: { rows: PeerRow[] | string }) {
             <th className="px-3 py-2">Fwd P/E</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+        <tbody className="divide-y divide-(--glass-border)">
           {list.map((r) => (
-            <tr key={r.ticker} className="hover:bg-zinc-50 dark:hover:bg-zinc-900/40">
+            <tr key={r.ticker} className="hover:bg-muted/30">
               <td className="px-3 py-2">
                 <div className="font-medium">{r.ticker}</div>
-                <div className="text-xs text-zinc-500">{r.name}</div>
+                <div className="text-xs text-muted-foreground">{r.name}</div>
               </td>
               <td className="px-3 py-2 tabular-nums">{r.ebitda_margin}</td>
               <td className="px-3 py-2 tabular-nums">{r.revenue_cagr_3y}</td>
@@ -492,12 +492,12 @@ export function BusinessFlash({ data }: { data: BusinessFlashData | string }) {
         it.text ? (
           <div
             key={it.label}
-            className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900"
+            className="rounded-xl border border-(--glass-border) bg-card p-4"
           >
-            <div className="mb-1 text-xs uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+            <div className="mb-1 text-xs uppercase tracking-wide text-muted-foreground dark:text-muted-foreground/70">
               {it.label}
             </div>
-            <p className="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
+            <p className="text-sm leading-relaxed text-foreground/80">
               {it.text}
             </p>
           </div>
@@ -519,14 +519,14 @@ interface RateScenarioData {
 export function RateScenario({ data }: { data: RateScenarioData | string }) {
   const d = parseProp<RateScenarioData>(data, {} as RateScenarioData);
   return (
-    <div className="not-prose rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+    <div className="not-prose rounded-xl border border-(--glass-border) bg-card p-5">
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         <div>
-          <div className="text-xs uppercase tracking-wide text-zinc-500">Scenario</div>
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">Scenario</div>
           <div className="mt-1 text-2xl font-semibold">{d.scenario ?? "n/a"}</div>
         </div>
         <div>
-          <div className="text-xs uppercase tracking-wide text-zinc-500">
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">
             Estimated intrinsic-value uplift
           </div>
           <div className="mt-1 text-2xl font-semibold text-emerald-600 dark:text-emerald-400">
@@ -534,7 +534,7 @@ export function RateScenario({ data }: { data: RateScenarioData | string }) {
           </div>
         </div>
         <div className="md:col-span-1">
-          <div className="text-xs uppercase tracking-wide text-zinc-500">Drivers</div>
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">Drivers</div>
           <ul className="mt-2 space-y-1 text-sm">
             {(d.drivers ?? []).map((drv, i) => (
               <li key={i} className="flex gap-2">
@@ -613,14 +613,14 @@ export function CatalystsTimeline({ items }: { items: CatalystItem[] | string })
         const title = c.title ?? c.event ?? "";
         const desc = c.description ?? c.implication ?? "";
         return (
-          <li key={i} className="flex gap-4 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-            <div className="flex flex-shrink-0 items-center justify-center rounded-lg bg-zinc-100 px-3 py-2 text-xs font-medium text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+          <li key={i} className="flex gap-4 rounded-xl border border-(--glass-border) bg-card p-4">
+            <div className="flex flex-shrink-0 items-center justify-center rounded-lg bg-muted px-3 py-2 text-xs font-medium text-foreground/80">
               <Calendar className="mr-1.5 h-3.5 w-3.5" />
               {when}
             </div>
             <div>
               <div className="font-semibold">{title}</div>
-              <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{desc}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{desc}</p>
             </div>
           </li>
         );
@@ -655,29 +655,29 @@ export function PriceChart({
   const min = Math.min(...data.map((p) => p.close));
   const max = Math.max(...data.map((p) => p.close));
   return (
-    <div className="not-prose rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+    <div className="not-prose rounded-xl border border-(--glass-border) bg-card p-4">
       <div className="mb-3 flex items-baseline justify-between">
         <div>
-          <div className="text-xs uppercase tracking-wide text-zinc-500">52-Week Price Action</div>
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">52-Week Price Action</div>
           {m?.trend && (
             <div className="mt-0.5 text-sm font-medium">{m.trend}</div>
           )}
         </div>
-        <div className="flex gap-4 text-xs text-zinc-500">
+        <div className="flex gap-4 text-xs text-muted-foreground">
           {m?.support != null && (
             <span>
-              Support: <span className="font-medium text-zinc-700 dark:text-zinc-300">{fmtMoney(m.support)}</span>
+              Support: <span className="font-medium text-foreground/80">{fmtMoney(m.support)}</span>
             </span>
           )}
           {m?.resistance != null && (
             <span>
-              Resistance: <span className="font-medium text-zinc-700 dark:text-zinc-300">{fmtMoney(m.resistance)}</span>
+              Resistance: <span className="font-medium text-foreground/80">{fmtMoney(m.resistance)}</span>
             </span>
           )}
         </div>
       </div>
       <Sparkline series={data} min={min} max={max} markers={m} />
-      <div className="mt-2 flex justify-between text-xs text-zinc-500">
+      <div className="mt-2 flex justify-between text-xs text-muted-foreground">
         <span>{data[0]?.date}</span>
         <span>Low {fmtMoney(min)}</span>
         <span>High {fmtMoney(max)}</span>
@@ -744,7 +744,7 @@ function Sparkline({
 
 export function DataNote({ source, fetched }: { source: string; fetched?: string }) {
   return (
-    <p className="not-prose text-xs text-zinc-500">
+    <p className="not-prose text-xs text-muted-foreground">
       <Database className="mr-1 inline h-3 w-3" />
       Data source: {source}
       {fetched && <> · fetched {new Date(fetched).toLocaleString()}</>}
@@ -793,9 +793,9 @@ export function EarningsHistory({
         <Card title="Beats" value={s.beat_count != null ? String(s.beat_count) : "—"} />
         <Card title="Misses" value={s.miss_count != null ? String(s.miss_count) : "—"} />
       </div>
-      <div className="overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
+      <div className="overflow-x-auto rounded-xl border border-(--glass-border)">
         <table className="w-full text-sm">
-          <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900/60">
+          <thead className="bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
             <tr>
               <th className="px-3 py-2">Period</th>
               <th className="px-3 py-2 text-right">Actual EPS</th>
@@ -804,15 +804,15 @@ export function EarningsHistory({
               <th className="px-3 py-2 text-right">Surprise %</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+          <tbody className="divide-y divide-(--glass-border)">
             {ordered.map((r, i) => {
               const surprise = r.surprise ?? 0;
               const beat = surprise > 0;
               return (
-                <tr key={i} className="hover:bg-zinc-50 dark:hover:bg-zinc-900/40">
-                  <td className="px-3 py-2 font-medium">{r.period} <span className="text-xs text-zinc-500">Q{r.quarter}</span></td>
+                <tr key={i} className="hover:bg-muted/30">
+                  <td className="px-3 py-2 font-medium">{r.period} <span className="text-xs text-muted-foreground">Q{r.quarter}</span></td>
                   <td className="px-3 py-2 text-right tabular-nums">{r.actual_eps != null ? `$${r.actual_eps.toFixed(2)}` : "—"}</td>
-                  <td className="px-3 py-2 text-right tabular-nums text-zinc-500">{r.estimate_eps != null ? `$${r.estimate_eps.toFixed(2)}` : "—"}</td>
+                  <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">{r.estimate_eps != null ? `$${r.estimate_eps.toFixed(2)}` : "—"}</td>
                   <td className={`px-3 py-2 text-right tabular-nums ${beat ? "text-emerald-600" : surprise < 0 ? "text-rose-600" : ""}`}>
                     {r.surprise != null ? `${beat ? "+" : ""}$${r.surprise.toFixed(2)}` : "—"}
                   </td>
@@ -845,9 +845,9 @@ export function AnalystRatings({ rows }: { rows: AnalystRow[] | string }) {
   if (!list || list.length === 0) return null;
   const ordered = [...list].sort((a, b) => (b.period ?? "").localeCompare(a.period ?? ""));
   return (
-    <div className="not-prose overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
+    <div className="not-prose overflow-x-auto rounded-xl border border-(--glass-border)">
       <table className="w-full text-sm">
-        <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900/60">
+        <thead className="bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
           <tr>
             <th className="px-3 py-2">Month</th>
             <th className="px-3 py-2">Distribution</th>
@@ -858,7 +858,7 @@ export function AnalystRatings({ rows }: { rows: AnalystRow[] | string }) {
             <th className="px-3 py-2 text-right">Strong Sell</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+        <tbody className="divide-y divide-(--glass-border)">
           {ordered.map((r, i) => {
             const sb = r.strong_buy ?? 0;
             const b = r.buy ?? 0;
@@ -867,7 +867,7 @@ export function AnalystRatings({ rows }: { rows: AnalystRow[] | string }) {
             const ss = r.strong_sell ?? 0;
             const total = sb + b + h + s + ss || 1;
             return (
-              <tr key={i} className="hover:bg-zinc-50 dark:hover:bg-zinc-900/40">
+              <tr key={i} className="hover:bg-muted/30">
                 <td className="px-3 py-2 font-medium">{r.period?.slice(0, 7)}</td>
                 <td className="px-3 py-2">
                   <div className="flex h-4 min-w-[180px] overflow-hidden rounded">
@@ -896,7 +896,7 @@ export function AnalystRatings({ rows }: { rows: AnalystRow[] | string }) {
 
 const stanceColor: Record<string, string> = {
   BULLISH: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
-  NEUTRAL: "bg-zinc-500/15 text-zinc-700 dark:text-zinc-300 border-zinc-500/30",
+  NEUTRAL: "bg-muted/400/15 text-foreground/80 border-zinc-500/30",
   BEARISH: "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30",
   MIXED: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30",
 };
@@ -914,18 +914,18 @@ export function SectorBriefHeader({
 }) {
   const mc = parseNum(memberCount) ?? 0;
   return (
-    <div className="not-prose mb-8 rounded-2xl border border-zinc-200 bg-gradient-to-br from-zinc-50 to-zinc-100 p-6 dark:border-zinc-800 dark:from-zinc-900 dark:to-zinc-950">
-      <div className="flex flex-wrap items-center gap-3 text-sm text-zinc-500">
+    <div className="not-prose mb-8 rounded-2xl glass-card p-6">
+      <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
         <span className="uppercase tracking-wide">Sector Brief</span>
         <span>·</span>
         <span>{mc} report{mc !== 1 ? "s" : ""} in coverage</span>
       </div>
       <h2 className="mt-2 text-2xl font-semibold tracking-tight md:text-3xl">{sectorName}</h2>
-      <p className="mt-3 max-w-3xl text-lg text-zinc-700 dark:text-zinc-300">{headline}</p>
+      <p className="mt-3 max-w-3xl text-lg text-foreground/80">{headline}</p>
       <div className="mt-4">
         <span
           className={`inline-flex rounded-md border px-3 py-1 text-sm font-medium ${
-            stanceColor[stance] ?? "border-zinc-300 text-zinc-700 dark:text-zinc-300"
+            stanceColor[stance] ?? "border-(--glass-border) text-foreground/80"
           }`}
         >
           Stance · {stance}
@@ -982,7 +982,7 @@ export function SectorRankings({ members }: { members: SectorMember[] | string }
   const list = parseProp<SectorMember[]>(members, []);
   if (!list || list.length === 0) {
     return (
-      <p className="text-sm text-zinc-500">
+      <p className="text-sm text-muted-foreground">
         No individual reports in this sector yet. Briefs run from general sector knowledge until coverage is populated.
       </p>
     );
@@ -996,9 +996,9 @@ export function SectorRankings({ members }: { members: SectorMember[] | string }
     return (b.upside_pct ?? 0) - (a.upside_pct ?? 0);
   });
   return (
-    <div className="not-prose overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
+    <div className="not-prose overflow-x-auto rounded-xl border border-(--glass-border)">
       <table className="w-full text-sm">
-        <thead className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500 dark:bg-zinc-900/60">
+        <thead className="bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
           <tr>
             <th className="px-3 py-2">Ticker</th>
             <th className="px-3 py-2">Company</th>
@@ -1007,18 +1007,18 @@ export function SectorRankings({ members }: { members: SectorMember[] | string }
             <th className="px-3 py-2 text-right">Upside</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+        <tbody className="divide-y divide-(--glass-border)">
           {sorted.map((r) => (
-            <tr key={r.ticker} className="hover:bg-zinc-50 dark:hover:bg-zinc-900/40">
+            <tr key={r.ticker} className="hover:bg-muted/30">
               <td className="px-3 py-2 font-mono font-medium">{r.ticker}</td>
               <td className="px-3 py-2">
                 <div className="truncate">{r.company}</div>
-                {r.one_liner && <div className="mt-0.5 text-xs text-zinc-500">{r.one_liner}</div>}
+                {r.one_liner && <div className="mt-0.5 text-xs text-muted-foreground">{r.one_liner}</div>}
               </td>
               <td className="px-3 py-2">
                 <span
                   className={`inline-flex rounded-md px-2 py-0.5 text-xs font-medium ${
-                    ratingColor[r.rating ?? ""] ?? "bg-zinc-200 text-zinc-700 dark:bg-zinc-800"
+                    ratingColor[r.rating ?? ""] ?? "bg-muted text-foreground/80"
                   }`}
                 >
                   {r.rating ?? "—"}
@@ -1121,7 +1121,7 @@ export function CryptoMarketContext({ data }: { data: CryptoMarketData | string 
         />
       </div>
       {signals.length > 0 && (
-        <ul className="space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
+        <ul className="space-y-1 text-sm text-muted-foreground">
           {signals.map((s, i) => (
             <li key={i} className="flex items-start gap-2">
               <Activity className="mt-0.5 h-3.5 w-3.5 shrink-0 text-orange-500" />

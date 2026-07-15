@@ -84,21 +84,21 @@ export default async function ReportPage({ params }: PageProps) {
           __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c"),
         }}
       />
-      <nav className="mb-6 flex items-center gap-2 text-sm text-zinc-500">
-        <Link href="/research" className="hover:text-zinc-900 dark:hover:text-zinc-100">
+      <nav className="mb-6 flex items-center gap-2 text-sm text-muted-foreground">
+        <Link href="/research" className="hover:text-foreground">
           Research
         </Link>
         <span>/</span>
-        <Link href={`/research/${sector}`} className="hover:text-zinc-900 dark:hover:text-zinc-100">
+        <Link href={`/research/${sector}`} className="hover:text-foreground">
           {sectorName}
         </Link>
         <span>/</span>
-        <span className="text-zinc-700 dark:text-zinc-300">{report.ticker}</span>
+        <span className="text-foreground/80">{report.ticker}</span>
       </nav>
 
       <Link
         href={`/research/${sector}`}
-        className="mb-2 inline-flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+        className="mb-2 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
       >
         <ChevronLeft className="h-3.5 w-3.5" /> Back to {sectorName}
       </Link>

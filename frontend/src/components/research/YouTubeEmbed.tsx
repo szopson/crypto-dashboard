@@ -44,7 +44,7 @@ export function YouTubeEmbed({
   const startParam = start ? `?start=${Number(start) || 0}` : "";
   return (
     <div
-      className={`relative aspect-video w-full overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-800 ${
+      className={`relative aspect-video w-full overflow-hidden rounded-lg border border-(--glass-border) ${
         className ?? ""
       }`}
     >

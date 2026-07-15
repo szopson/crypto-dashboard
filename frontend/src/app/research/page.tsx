@@ -33,10 +33,13 @@ export default async function ResearchHome() {
   const latest = sorted.slice(0, 8);
 
   return (
-    <div className="mx-auto max-w-6xl px-6 py-12">
+    <div className="relative mx-auto max-w-6xl overflow-x-clip px-6 py-12">
+      {/* Decorative accent glows behind the content */}
+      <div aria-hidden className="glow-blob -z-10 -top-32 -right-24 h-80 w-80 bg-emerald-500/25 animate-pulse-glow" />
+      <div aria-hidden className="glow-blob -z-10 top-1/3 -left-32 h-80 w-80 bg-cyan-500/20" />
       <header className="mb-8">
         <h1 className="text-4xl font-semibold tracking-tight">Equity Research</h1>
-        <p className="mt-3 max-w-2xl text-zinc-600 dark:text-zinc-400">
+        <p className="mt-3 max-w-2xl text-muted-foreground">
           Bloomberg-style deep dives across {sectors.length} sectors. Every report is grounded in
           fundamentals, peer comps, ownership signals, and a clear price target with horizon.
         </p>
@@ -54,13 +57,13 @@ export default async function ResearchHome() {
               <Link
                 key={slug}
                 href={`/research/${slug}`}
-                className="group block rounded-xl border border-zinc-200 bg-white p-5 transition hover:border-zinc-300 hover:shadow-sm dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700"
+                className="group block rounded-xl border border-(--glass-border) bg-card p-5 transition hover:glow-ring-emerald"
               >
                 <div className="flex items-baseline justify-between">
                   <h3 className="font-semibold">{meta.name}</h3>
-                  <span className="text-xs text-zinc-500">{count} report{count !== 1 ? "s" : ""}</span>
+                  <span className="text-xs text-muted-foreground">{count} report{count !== 1 ? "s" : ""}</span>
                 </div>
-                <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+                <p className="mt-1 text-sm text-muted-foreground">
                   {meta.description}
                 </p>
                 <div className="mt-3 flex items-center gap-1 text-xs font-medium text-emerald-600 group-hover:gap-2 dark:text-emerald-400">
@@ -75,15 +78,15 @@ export default async function ResearchHome() {
       <section>
         <h2 className="mb-4 text-xl font-semibold">Latest Reports</h2>
         {latest.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-zinc-300 p-6 text-sm text-zinc-500 dark:border-zinc-700">
+          <p className="rounded-xl border border-dashed border-(--glass-border) p-6 text-sm text-muted-foreground">
             No reports published yet. Generate the first batch via{" "}
-            <code className="rounded bg-zinc-100 px-1.5 py-0.5 dark:bg-zinc-800">
+            <code className="rounded bg-muted px-1.5 py-0.5">
               python -m engine.report.equity.cli --all
             </code>
             .
           </p>
         ) : (
-          <ul className="divide-y divide-zinc-200 rounded-xl border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
+          <ul className="divide-y divide-(--glass-border) rounded-xl border border-(--glass-border)">
             {latest.map((r) => (
               <li key={`${r.sector_slug}-${r.slug}`}>
                 <ReportRow report={r} />
@@ -102,21 +105,21 @@ function ReportRow({ report }: { report: ReportSummary }) {
   return (
     <Link
       href={`/research/${report.sector_slug}/${report.slug}`}
-      className="flex items-center gap-4 p-4 transition hover:bg-zinc-50 dark:hover:bg-zinc-900/40"
+      className="flex items-center gap-4 p-4 transition hover:bg-muted/30"
     >
-      <div className="flex h-10 w-16 flex-shrink-0 items-center justify-center rounded-md bg-zinc-100 font-mono text-sm font-medium dark:bg-zinc-800">
+      <div className="flex h-10 w-16 flex-shrink-0 items-center justify-center rounded-md bg-muted font-mono text-sm font-medium">
         {report.ticker}
       </div>
       <div className="min-w-0 flex-1">
         <div className="truncate font-medium">{report.company}</div>
-        <div className="mt-0.5 text-xs text-zinc-500">
+        <div className="mt-0.5 text-xs text-muted-foreground">
           {sectorName} · {report.date}
         </div>
       </div>
       <div className="flex flex-shrink-0 items-center gap-4 text-sm">
         <RatingBadge rating={report.rating} />
         <div className="hidden text-right sm:block">
-          <div className="text-xs text-zinc-500">Target</div>
+          <div className="text-xs text-muted-foreground">Target</div>
           <div className="font-medium tabular-nums">
             ${report.target_price?.toFixed(0) ?? "n/a"}
           </div>
@@ -147,7 +150,7 @@ function RatingBadge({ rating }: { rating: string }) {
   return (
     <span
       className={`inline-flex rounded-md px-2 py-0.5 text-xs font-medium ${
-        color[rating] ?? "bg-zinc-200 text-zinc-700 dark:bg-zinc-800"
+        color[rating] ?? "bg-muted text-foreground/80"
       }`}
     >
       {rating}

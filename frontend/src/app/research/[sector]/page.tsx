@@ -43,14 +43,14 @@ export default async function SectorPage({ params }: PageProps) {
     <div className="mx-auto max-w-6xl px-6 py-12">
       <Link
         href="/research"
-        className="mb-6 inline-flex items-center gap-1 text-sm text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+        className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
       >
         <ChevronLeft className="h-4 w-4" /> All sectors
       </Link>
       <header className="mb-10">
         <h1 className="text-3xl font-semibold tracking-tight">{meta.name}</h1>
-        <p className="mt-2 max-w-2xl text-zinc-600 dark:text-zinc-400">{meta.description}</p>
-        <p className="mt-1 text-sm text-zinc-500">
+        <p className="mt-2 max-w-2xl text-muted-foreground">{meta.description}</p>
+        <p className="mt-1 text-sm text-muted-foreground">
           {reports.length} report{reports.length !== 1 ? "s" : ""} in coverage
         </p>
       </header>
@@ -64,7 +64,7 @@ export default async function SectorPage({ params }: PageProps) {
       <h2 className="mb-4 text-xl font-semibold">Reports in coverage</h2>
 
       {reports.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-zinc-300 p-8 text-center text-sm text-zinc-500 dark:border-zinc-700">
+        <div className="rounded-xl border border-dashed border-(--glass-border) p-8 text-center text-sm text-muted-foreground">
           No reports yet for this sector.
         </div>
       ) : (
@@ -73,19 +73,19 @@ export default async function SectorPage({ params }: PageProps) {
             <Link
               key={r.slug}
               href={`/research/${sector}/${r.slug}`}
-              className="group block rounded-xl border border-zinc-200 bg-white p-5 transition hover:border-zinc-300 hover:shadow-sm dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700"
+              className="group block rounded-xl border border-(--glass-border) bg-card p-5 transition hover:glow-ring-emerald"
             >
               <div className="flex items-baseline justify-between">
                 <div className="font-mono text-lg font-semibold">{r.ticker}</div>
                 <RatingBadge rating={r.rating} />
               </div>
-              <div className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{r.company}</div>
+              <div className="mt-1 text-sm text-muted-foreground">{r.company}</div>
               {r.one_liner && (
-                <p className="mt-3 text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
+                <p className="mt-3 text-sm leading-relaxed text-foreground/80">
                   {r.one_liner}
                 </p>
               )}
-              <div className="mt-4 flex items-center justify-between text-xs text-zinc-500">
+              <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
                 <span>{r.date}</span>
                 <span>
                   Target ${r.target_price?.toFixed(0) ?? "n/a"} ·{" "}
@@ -115,7 +115,7 @@ function RatingBadge({ rating }: { rating: string }) {
   return (
     <span
       className={`inline-flex rounded-md px-2 py-0.5 text-xs font-medium ${
-        color[rating] ?? "bg-zinc-200 text-zinc-700 dark:bg-zinc-800"
+        color[rating] ?? "bg-muted text-foreground/80"
       }`}
     >
       {rating}
