@@ -87,17 +87,24 @@ jobs:
             df -h / | tail -1
             docker compose build --no-cache
             docker compose up -d
-            docker compose logs --tail 10
+            # HANG HARDENING: the 2026-07-14 and 2026-07-15 deploys both went
+            # silent right after the containers came up and sat there until
+            # command_timeout (30m) failed a deploy that had actually
+            # succeeded. The last output both times was `docker compose logs
+            # --tail 10` — compose logs (and compose exec at the dockerd
+            # level) can hang on a just-recreated container, and an in-curl
+            # --max-time cannot save a wedged exec. So: every docker command
+            # from here on runs under coreutils `timeout`, with a bisect echo
+            # between steps so the next hang points at its exact line.
+            timeout 30 docker compose logs --tail 10 || echo "compose logs timed out (non-fatal)"
+            echo "post-deploy assertions starting"
             # Post-deploy assertions for /api/region:
             # 1. The endpoint must answer (unresolved is a valid degraded
             #    answer; a 404/500 means the router or engine is broken).
-            #    --max-time is mandatory: a curl with no deadline hung the
-            #    2026-07-14 deploy for 26 minutes until command_timeout
-            #    killed the run (the engine was busy right after startup).
-            #    Retry a few times instead — warmup slowness is not a failure.
+            #    Retries: warmup slowness is not a failure.
             sleep 5
             for i in $(seq 1 6); do
-              if docker compose exec -T backend curl -fsS --max-time 20 http://localhost:8000/api/region | grep -q '"region"'; then
+              if timeout 30 docker compose exec -T backend curl -fsS --max-time 20 http://localhost:8000/api/region | grep -q '"region"'; then
                 echo "region endpoint OK"; break
               fi
               [ "$i" -eq 6 ] && { echo "region endpoint failed after 6 attempts"; exit 1; }
@@ -108,7 +115,7 @@ jobs:
             #    dead. Give the sidecar's first download up to ~60s.
             if [ -n "$GEOIPUPDATE_ACCOUNT_ID" ] && [ -n "$GEOIPUPDATE_LICENSE_KEY" ]; then
               for i in $(seq 1 12); do
-                if docker compose exec -T backend sh -c 'test -s /geoip/GeoLite2-Country.mmdb'; then
+                if timeout 30 docker compose exec -T backend sh -c 'test -s /geoip/GeoLite2-Country.mmdb'; then
                   echo "GeoIP MMDB present"; break
                 fi
                 [ "$i" -eq 12 ] && { echo "GeoIP MMDB missing after 60s"; exit 1; }
@@ -117,6 +124,7 @@ jobs:
             else
               echo "GeoIP creds not set — skipping MMDB assertion (region gating degrades fail-closed)"
             fi
+            echo "deploy script finished"
         env:
           NEXT_PUBLIC_POSTHOG_KEY: ${{ secrets.NEXT_PUBLIC_POSTHOG_KEY }}
           COINGLASS_API_KEY: ${{ secrets.COINGLASS_API_KEY }}
