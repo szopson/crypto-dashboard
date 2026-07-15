@@ -9,7 +9,7 @@
  * Velo cross-exchange funding spread and basis/perp premium slot in later.
  */
 import Link from "next/link";
-import { Activity, RefreshCw, ScanSearch } from "lucide-react";
+import { Activity, RefreshCw, ScanSearch, BookOpenText } from "lucide-react";
 import { fetchCryptoPulse, type CockpitCoin } from "@/lib/coinglass";
 import { DeviationBanner } from "./DeviationBanner";
 import { ExchangeCTA } from "./ExchangeCTA";
@@ -182,6 +182,21 @@ export async function DerivativesCockpit() {
           <p className="text-sm font-medium">Grade your trade</p>
           <p className="text-xs text-muted-foreground">
             Upload a screenshot — get a decision-quality scorecard judged against this exact funding &amp; OI regime.
+          </p>
+        </div>
+      </Link>
+
+      {/* Cross-surface discovery: the equity research library was previously
+          unreachable from the cockpit. */}
+      <Link
+        href="/research"
+        className="flex items-center gap-3 rounded-xl glass-card p-4 transition-colors hover:border-primary/40 hover:bg-primary/5"
+      >
+        <BookOpenText className="h-5 w-5 flex-shrink-0 text-primary" />
+        <div className="min-w-0">
+          <p className="text-sm font-medium">Equity research</p>
+          <p className="text-xs text-muted-foreground">
+            Deep-dive reports across 13 sectors — semis, AI, crypto infrastructure and more.
           </p>
         </div>
       </Link>

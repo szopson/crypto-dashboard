@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ScanSearch } from "lucide-react";
+import { BookOpenText, ScanSearch } from "lucide-react";
 import { useMarketData } from "@/hooks/useMarketData";
 import { useSymbol, formatSymbolShort, formatSymbol } from "@/contexts/SymbolContext";
 import { BiasGrid } from "@/components/BiasGrid";
@@ -350,6 +350,18 @@ export default function Dashboard() {
           </TabsContent>
 
           <TabsContent value="research" className="space-y-4 sm:space-y-6">
+            <Link
+              href="/research"
+              className="flex items-center gap-3 rounded-lg border border-primary/30 bg-primary/5 p-4 hover:bg-primary/10 transition-colors"
+            >
+              <BookOpenText className="size-5 text-primary shrink-0" />
+              <div className="min-w-0">
+                <p className="text-sm font-medium">Equity research library</p>
+                <p className="text-xs text-muted-foreground">
+                  Deep-dive reports across 13 sectors — semis, AI, crypto infrastructure and more.
+                </p>
+              </div>
+            </Link>
             <ProjectAnalyzer />
           </TabsContent>
 

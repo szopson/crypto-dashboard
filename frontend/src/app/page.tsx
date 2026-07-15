@@ -170,6 +170,12 @@ export default function LandingPage() {
               Cockpit
             </Link>
             <Link
+              href="/research"
+              className="text-sm text-zinc-400 hover:text-white transition-colors"
+            >
+              Research
+            </Link>
+            <Link
               href="/app"
               className="text-sm text-zinc-400 hover:text-white transition-colors"
             >
