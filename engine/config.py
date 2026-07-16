@@ -100,6 +100,11 @@ class Settings(BaseSettings):
     supabase_service_role_key: str = ""
     supabase_jwt_secret: str = ""
 
+    # Static bearer token for operational control routes (/telegram/*,
+    # /scheduler/*, /alerts/monitor/*). Empty = those routes always 401
+    # (fail closed). Set in engine/.env on the VPS.
+    admin_api_token: str = ""
+
     # Resend (Email)
     resend_api_key: str = ""
     resend_from_email: str = "noreply@yourdomain.com"

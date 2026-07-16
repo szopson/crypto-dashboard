@@ -4,10 +4,12 @@ Supabase JWT Authentication Middleware.
 Validates JWT tokens from Supabase Auth and extracts user information.
 Supports both HS256 (symmetric) and ES256 (asymmetric) algorithms.
 """
-import httpx
+import secrets
+import time
 from typing import Optional
 from dataclasses import dataclass
 
+import httpx
 from fastapi import Request, HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import jwt, JWTError, ExpiredSignatureError, jwk
@@ -19,8 +21,14 @@ from config import settings
 # Security scheme for Swagger UI
 security = HTTPBearer(auto_error=False)
 
-# Cache for JWKS public keys
+# Cache for JWKS public keys (bounded TTL — key rotation must not require a
+# restart; see _fetch_jwks refresh-on-unknown-kid).
 _jwks_cache: dict = {}
+_jwks_fetched_at: float = 0.0
+JWKS_TTL_SECONDS = 3600
+
+# Clock-skew tolerance for exp/nbf validation.
+JWT_LEEWAY_SECONDS = 30
 
 
 @dataclass
@@ -36,11 +44,18 @@ class AuthenticatedUser:
         return self.id
 
 
-async def _fetch_jwks() -> dict:
-    """Fetch JWKS from Supabase for ES256 verification."""
-    global _jwks_cache
+async def _fetch_jwks(force: bool = False) -> dict:
+    """Fetch JWKS from Supabase for ES256 verification.
 
-    if _jwks_cache:
+    Cached with a bounded TTL; `force=True` bypasses the cache (used once when
+    a token carries an unknown kid, so Supabase key rotation doesn't lock every
+    user out until a restart). Fails closed: on fetch error the stale cache is
+    NOT extended — an empty result means 401 upstream.
+    """
+    global _jwks_cache, _jwks_fetched_at
+
+    fresh = _jwks_cache and (time.monotonic() - _jwks_fetched_at) < JWKS_TTL_SECONDS
+    if fresh and not force:
         return _jwks_cache
 
     if not settings.supabase_url:
@@ -53,11 +68,14 @@ async def _fetch_jwks() -> dict:
             response = await client.get(jwks_url, timeout=10.0)
             response.raise_for_status()
             _jwks_cache = response.json()
+            _jwks_fetched_at = time.monotonic()
             logger.info(f"Fetched JWKS from Supabase: {len(_jwks_cache.get('keys', []))} keys")
             return _jwks_cache
     except Exception as e:
         logger.warning(f"Failed to fetch JWKS: {e}")
-        return {}
+        # Serve the stale cache if we have one (better than a hard outage);
+        # empty cache stays empty → caller 401s.
+        return _jwks_cache or {}
 
 
 def _get_signing_key(jwks: dict, kid: str) -> Optional[dict]:
@@ -115,12 +133,20 @@ async def get_current_user(
         alg = header.get("alg", "HS256")
         kid = header.get("kid")
 
+        # Verify audience, issuer and expiry (with clock-skew leeway) for BOTH
+        # algorithms. Previously verify_aud was disabled and the issuer never
+        # checked — any Supabase-signed JWT (any project, anon tokens) passed.
+        decode_kwargs = {
+            "audience": "authenticated",
+            "issuer": f"{settings.supabase_url}/auth/v1" if settings.supabase_url else None,
+            "options": {"leeway": JWT_LEEWAY_SECONDS},
+        }
+
         if alg == "ES256":
             # ES256 (asymmetric) - fetch public key from JWKS
             jwks = await _fetch_jwks()
 
-            if not jwks or not kid:
-                logger.warning(f"JWKS not available or no kid in token (kid={kid})")
+            if not kid:
                 raise HTTPException(
                     status_code=401,
                     detail="Unable to verify token signature",
@@ -128,6 +154,10 @@ async def get_current_user(
                 )
 
             signing_key = _get_signing_key(jwks, kid)
+            if not signing_key:
+                # Key rotation: refresh JWKS once before rejecting.
+                jwks = await _fetch_jwks(force=True)
+                signing_key = _get_signing_key(jwks, kid)
             if not signing_key:
                 logger.warning(f"Signing key not found for kid: {kid}")
                 raise HTTPException(
@@ -143,7 +173,7 @@ async def get_current_user(
                 token,
                 public_key,
                 algorithms=["ES256"],
-                options={"verify_aud": False},
+                **decode_kwargs,
             )
         else:
             # HS256 (symmetric) - use JWT secret
@@ -158,7 +188,7 @@ async def get_current_user(
                 token,
                 settings.supabase_jwt_secret,
                 algorithms=["HS256"],
-                options={"verify_aud": False},
+                **decode_kwargs,
             )
 
         user_id = payload.get("sub")
@@ -169,10 +199,20 @@ async def get_current_user(
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
+        role = payload.get("role", "")
+        if role != "authenticated":
+            # Rejects anon-key tokens (role "anon") and service tokens — user
+            # endpoints are for signed-in users only.
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid token role",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
         return AuthenticatedUser(
             id=user_id,
             email=payload.get("email"),
-            role=payload.get("role", "authenticated"),
+            role=role,
         )
 
     except ExpiredSignatureError:
@@ -216,6 +256,27 @@ async def get_optional_user(
         return await get_current_user(credentials)
     except HTTPException:
         return None
+
+
+async def require_admin(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+) -> None:
+    """
+    Service/admin authorization for operational control routes (Telegram
+    sends, scheduler control, alert-monitor control). These are NOT user
+    features — they were publicly callable before this guard.
+
+    Checks the bearer token against the static ADMIN_API_TOKEN from
+    engine/.env. Fails closed: with no token configured, every call is 401.
+    """
+    supplied = credentials.credentials if credentials else ""
+    expected = settings.admin_api_token
+    if not expected or not supplied or not secrets.compare_digest(supplied, expected):
+        raise HTTPException(
+            status_code=401,
+            detail="Admin authorization required",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
 
 def require_role(allowed_roles: list[str]):

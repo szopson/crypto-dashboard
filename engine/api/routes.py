@@ -12,6 +12,7 @@ from loguru import logger
 
 from config import settings, TIMEFRAME_MAP, TIMEFRAME_MAP_REVERSE
 from database import get_session
+from middleware.auth import require_admin
 from sqlalchemy import select, desc
 from schemas import (
     HealthResponse, PriceResponse, RadarResponse,
@@ -1143,7 +1144,7 @@ async def get_daily_briefing(
 
 # === Telegram Endpoints ===
 
-@router.post("/telegram/send", response_model=TelegramResponse)
+@router.post("/telegram/send", response_model=TelegramResponse, dependencies=[Depends(require_admin)])
 async def send_telegram_message(request: TelegramMessageRequest):
     """
     Send a message to Telegram.
@@ -1176,7 +1177,7 @@ async def send_telegram_message(request: TelegramMessageRequest):
         )
 
 
-@router.post("/telegram/alert", response_model=TelegramResponse)
+@router.post("/telegram/alert", response_model=TelegramResponse, dependencies=[Depends(require_admin)])
 async def send_telegram_alert(
     request: TelegramAlertRequest,
     exchange: ExchangeClient = Depends(get_exchange)
@@ -1224,7 +1225,7 @@ async def send_telegram_alert(
         )
 
 
-@router.post("/telegram/briefing", response_model=TelegramResponse)
+@router.post("/telegram/briefing", response_model=TelegramResponse, dependencies=[Depends(require_admin)])
 async def send_telegram_briefing(
     exchange: ExchangeClient = Depends(get_exchange)
 ):
@@ -1305,7 +1306,7 @@ async def send_telegram_briefing(
         )
 
 
-@router.post("/telegram/sniper-setup", response_model=TelegramResponse)
+@router.post("/telegram/sniper-setup", response_model=TelegramResponse, dependencies=[Depends(require_admin)])
 async def send_sniper_setup_telegram(
     exchange: ExchangeClient = Depends(get_exchange)
 ):
@@ -2197,7 +2198,7 @@ async def delete_trade(
 
 # === Alert Monitor Endpoints ===
 
-@router.post("/alerts/monitor/start")
+@router.post("/alerts/monitor/start", dependencies=[Depends(require_admin)])
 async def start_alert_monitor():
     """
     Start the background alert monitor.
@@ -2219,7 +2220,7 @@ async def start_alert_monitor():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/alerts/monitor/stop")
+@router.post("/alerts/monitor/stop", dependencies=[Depends(require_admin)])
 async def stop_alert_monitor():
     """
     Stop the background alert monitor.
@@ -2239,7 +2240,7 @@ async def stop_alert_monitor():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/alerts/monitor/status")
+@router.get("/alerts/monitor/status", dependencies=[Depends(require_admin)])
 async def get_alert_monitor_status():
     """
     Get alert monitor status.
@@ -2265,7 +2266,7 @@ async def get_alert_monitor_status():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/alerts/monitor/check")
+@router.post("/alerts/monitor/check", dependencies=[Depends(require_admin)])
 async def force_alert_check():
     """
     Force an immediate alert check (for testing).
@@ -2293,7 +2294,7 @@ async def force_alert_check():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/alerts/monitor/config")
+@router.post("/alerts/monitor/config", dependencies=[Depends(require_admin)])
 async def configure_alert_monitor(
     check_interval: int = None,
     radar_enabled: bool = None,
@@ -2334,7 +2335,7 @@ async def configure_alert_monitor(
 
 # === Scheduler Endpoints ===
 
-@router.get("/scheduler/status")
+@router.get("/scheduler/status", dependencies=[Depends(require_admin)])
 async def get_scheduler_status():
     """
     Get scheduler status and scheduled jobs.
@@ -2353,7 +2354,7 @@ async def get_scheduler_status():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/scheduler/briefing/schedule")
+@router.post("/scheduler/briefing/schedule", dependencies=[Depends(require_admin)])
 async def schedule_daily_briefing(
     hour: int = 8,
     minute: int = 0,
@@ -2390,7 +2391,7 @@ async def schedule_daily_briefing(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.delete("/scheduler/briefing")
+@router.delete("/scheduler/briefing", dependencies=[Depends(require_admin)])
 async def remove_daily_briefing():
     """
     Remove scheduled daily briefing.
@@ -2410,7 +2411,7 @@ async def remove_daily_briefing():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/scheduler/briefing/send-now")
+@router.post("/scheduler/briefing/send-now", dependencies=[Depends(require_admin)])
 async def send_briefing_now():
     """
     Send daily briefing immediately (for testing).
