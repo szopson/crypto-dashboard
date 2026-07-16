@@ -198,13 +198,13 @@ export default function Dashboard() {
                     <h3 className="font-semibold mb-1 sm:mb-2">RADAR Guide</h3>
                     <ul className="space-y-0.5 sm:space-y-1 text-muted-foreground">
                       <li>
-                        <span className="text-green-500">5-6:</span> ACCUMULATE
+                        <span className="text-green-500">5-6:</span> Accumulation regime
                       </li>
                       <li>
-                        <span className="text-yellow-500">3-4:</span> NEUTRAL
+                        <span className="text-yellow-500">3-4:</span> Neutral regime
                       </li>
                       <li>
-                        <span className="text-red-500">0-2:</span> SELL RALLY
+                        <span className="text-red-500">0-2:</span> Distribution regime
                       </li>
                     </ul>
                   </div>

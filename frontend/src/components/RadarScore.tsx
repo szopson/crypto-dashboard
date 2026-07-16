@@ -9,6 +9,15 @@ interface RadarScoreProps {
   showDetails?: boolean;
 }
 
+// UI relabel of the engine's internal regime enums: the raw names read as
+// trade instructions ("ACCUMULATE", "SELL_THE_RALLY") — MiCA/KNF requires
+// descriptive market-condition language. Engine values stay unchanged.
+const CLASSIFICATION_LABEL: Record<string, string> = {
+  ACCUMULATE: "Accumulation regime",
+  NEUTRAL: "Neutral regime",
+  SELL_THE_RALLY: "Distribution regime",
+};
+
 export function RadarScore({ radar, showDetails = false }: RadarScoreProps) {
   const colorMap: Record<string, string> = {
     green: "bg-green-500",
@@ -31,7 +40,7 @@ export function RadarScore({ radar, showDetails = false }: RadarScoreProps) {
         <CardTitle className="text-sm font-medium flex items-center justify-between">
           <span>RADAR {radar.timeframe}</span>
           <Badge variant="outline" className={textColor}>
-            {radar.classification}
+            {CLASSIFICATION_LABEL[radar.classification] ?? radar.classification}
           </Badge>
         </CardTitle>
       </CardHeader>

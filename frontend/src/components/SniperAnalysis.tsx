@@ -179,10 +179,9 @@ ${setup.notes.length > 0 ? `Notes: ${setup.notes.join(", ")}` : ""}`;
             <Progress value={confluencePercent} className="h-3" />
           </div>
 
-          {/* Recommendation */}
-          <p className="text-sm text-muted-foreground">
-            {data.confluence.recommendation}
-          </p>
+          {/* Engine `recommendation` deliberately not rendered: it contains
+              sizing advice ("consider full size") — MiCA/KNF. The full
+              Confluence Check reframe replaces this component next. */}
 
           {/* Components breakdown */}
           <Accordion type="single" collapsible>

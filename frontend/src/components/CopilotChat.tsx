@@ -14,13 +14,15 @@ interface Message {
   timestamp: string;
 }
 
+// Process/context questions only — never "give me a trade" prompts (MiCA/KNF:
+// the copilot describes conditions, the user decides).
 const SUGGESTED_PROMPTS = [
-  { label: "Market Bias", prompt: "What's the current market bias for BTC?" },
-  { label: "Entry Setup", prompt: "Is there a good entry setup right now?" },
+  { label: "Market Context", prompt: "What's the current market context for BTC?" },
+  { label: "Funding Read", prompt: "What does the current funding regime imply about positioning?" },
   { label: "Risk Analysis", prompt: "What are the key risks to watch?" },
   { label: "RADAR Explain", prompt: "Explain the current RADAR score" },
   { label: "Support/Resistance", prompt: "What are the key support and resistance levels?" },
-  { label: "Trade Idea", prompt: "Generate a trade idea based on current conditions" },
+  { label: "Conflicts", prompt: "Which signals are conflicting right now and why?" },
 ];
 
 export function CopilotChat() {
