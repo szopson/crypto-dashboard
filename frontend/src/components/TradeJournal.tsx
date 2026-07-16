@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -82,9 +83,18 @@ interface TradeStats {
   short_win_rate?: number;
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+// Same-origin: Traefik routes /api to the engine in prod; next.config rewrites
+// cover dev. The old NEXT_PUBLIC_API_URL fallback bypassed both.
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 
 export default function TradeJournal() {
+  const { session } = useAuth();
+  const authHeaders = useCallback(
+    (): Record<string, string> =>
+      session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {},
+    [session?.access_token],
+  );
+  const [authError, setAuthError] = useState(false);
   const [trades, setTrades] = useState<Trade[]>([]);
   const [stats, setStats] = useState<TradeStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -111,7 +121,14 @@ export default function TradeJournal() {
   const fetchTrades = async () => {
     try {
       const statusParam = filter !== "ALL" ? `?status=${filter}` : "";
-      const res = await fetch(`${API_BASE}/api/trades${statusParam}`);
+      const res = await fetch(`${API_BASE}/api/trades${statusParam}`, {
+        headers: authHeaders(),
+      });
+      if (res.status === 401) {
+        setAuthError(true);
+        return;
+      }
+      setAuthError(false);
       const data = await res.json();
       setTrades(data.trades || []);
     } catch (error) {
@@ -121,7 +138,10 @@ export default function TradeJournal() {
 
   const fetchStats = async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/trades/stats/summary`);
+      const res = await fetch(`${API_BASE}/api/trades/stats/summary`, {
+        headers: authHeaders(),
+      });
+      if (res.status === 401) return;
       const data = await res.json();
       setStats(data);
     } catch (error) {
@@ -136,13 +156,14 @@ export default function TradeJournal() {
       setLoading(false);
     };
     loadData();
-  }, [filter]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filter, session?.access_token]);
 
   const handleCreateTrade = async () => {
     try {
       const res = await fetch(`${API_BASE}/api/trades`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeaders() },
         body: JSON.stringify({
           direction: newTrade.direction,
           entry_price: parseFloat(newTrade.entry_price),
@@ -183,7 +204,7 @@ export default function TradeJournal() {
     try {
       const res = await fetch(
         `${API_BASE}/api/trades/${selectedTrade.id}/close?exit_price=${exitPrice}&exit_reason=${exitReason}`,
-        { method: "POST" }
+        { method: "POST", headers: authHeaders() }
       );
 
       if (res.ok) {
@@ -282,6 +303,11 @@ export default function TradeJournal() {
 
   return (
     <div className="space-y-6">
+      {authError && (
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-600 dark:text-amber-400">
+          Session expired — sign in again to load your journal.
+        </div>
+      )}
       {/* Stats Cards */}
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">

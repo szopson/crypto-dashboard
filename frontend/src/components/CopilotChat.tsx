@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Message {
   role: "user" | "assistant";
@@ -23,6 +24,9 @@ const SUGGESTED_PROMPTS = [
 ];
 
 export function CopilotChat() {
+  const { session } = useAuth();
+  const authHeaders = (): Record<string, string> =>
+    session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {};
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -53,13 +57,17 @@ export function CopilotChat() {
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeaders() },
         body: JSON.stringify({
           message: userMessage.content,
           include_market_data: true,
         }),
       });
 
+      if (response.status === 401) {
+        setError("Sign in to use the copilot.");
+        return;
+      }
       const data = await response.json();
 
       if (data.success && data.response) {
@@ -91,7 +99,11 @@ export function CopilotChat() {
     setError(null);
 
     try {
-      const response = await fetch("/api/analysis");
+      const response = await fetch("/api/analysis", { headers: authHeaders() });
+      if (response.status === 401) {
+        setError("Sign in to use the copilot.");
+        return;
+      }
       const data = await response.json();
 
       if (data.success && data.analysis) {
@@ -116,7 +128,11 @@ export function CopilotChat() {
     setError(null);
 
     try {
-      const response = await fetch("/api/briefing");
+      const response = await fetch("/api/briefing", { headers: authHeaders() });
+      if (response.status === 401) {
+        setError("Sign in to use the copilot.");
+        return;
+      }
       const data = await response.json();
 
       if (data.success && data.briefing) {
@@ -172,7 +188,7 @@ export function CopilotChat() {
             variant="outline"
             size="sm"
             onClick={getAnalysis}
-            disabled={loading}
+            disabled={loading || !session}
           >
             Market Analysis
           </Button>
@@ -180,7 +196,7 @@ export function CopilotChat() {
             variant="outline"
             size="sm"
             onClick={getBriefing}
-            disabled={loading}
+            disabled={loading || !session}
           >
             Daily Briefing
           </Button>
@@ -262,7 +278,7 @@ export function CopilotChat() {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Ask about the market..."
-            disabled={loading}
+            disabled={loading || !session}
           />
           <Button onClick={sendMessage} disabled={loading || !input.trim()}>
             Send

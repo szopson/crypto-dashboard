@@ -12,7 +12,7 @@ from loguru import logger
 
 from config import settings, TIMEFRAME_MAP, TIMEFRAME_MAP_REVERSE
 from database import get_session
-from middleware.auth import require_admin
+from middleware.auth import require_admin, get_current_user, AuthenticatedUser
 from sqlalchemy import select, desc
 from schemas import (
     HealthResponse, PriceResponse, RadarResponse,
@@ -909,7 +909,8 @@ async def delete_alert(
 @router.post("/chat", response_model=ChatResponse)
 async def chat_with_copilot(
     request: ChatRequest,
-    exchange: ExchangeClient = Depends(get_exchange)
+    exchange: ExchangeClient = Depends(get_exchange),
+    user: AuthenticatedUser = Depends(get_current_user),
 ):
     """
     Chat with the trading copilot (Claude).
@@ -997,7 +998,8 @@ async def chat_with_copilot(
 @router.get("/analysis", response_model=AnalysisResponse)
 async def get_market_analysis(
     question: str = None,
-    exchange: ExchangeClient = Depends(get_exchange)
+    exchange: ExchangeClient = Depends(get_exchange),
+    user: AuthenticatedUser = Depends(get_current_user),
 ):
     """
     Get AI-powered market analysis.
@@ -1075,7 +1077,8 @@ async def get_market_analysis(
 
 @router.get("/briefing", response_model=BriefingResponse)
 async def get_daily_briefing(
-    exchange: ExchangeClient = Depends(get_exchange)
+    exchange: ExchangeClient = Depends(get_exchange),
+    user: AuthenticatedUser = Depends(get_current_user),
 ):
     """
     Generate daily market briefing using Claude.
@@ -1365,7 +1368,8 @@ async def send_sniper_setup_telegram(
 async def create_trade(
     trade: TradeCreate,
     session: AsyncSession = Depends(get_session),
-    exchange: ExchangeClient = Depends(get_exchange)
+    exchange: ExchangeClient = Depends(get_exchange),
+    user: AuthenticatedUser = Depends(get_current_user),
 ):
     """
     Create a new trade entry.
@@ -1414,6 +1418,7 @@ async def create_trade(
 
         # Create trade record
         new_trade = Trade(
+            user_id=user.id,
             symbol=trade.symbol,
             direction=trade.direction,
             status="OPEN",
@@ -1490,14 +1495,15 @@ async def get_trades(
     direction: str = None,
     limit: int = 50,
     offset: int = 0,
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
+    user: AuthenticatedUser = Depends(get_current_user),
 ):
     """
     Get trade journal entries.
     Filter by status (OPEN, CLOSED, CANCELLED) or direction (LONG, SHORT).
     """
     try:
-        query = select(Trade).order_by(desc(Trade.entry_time))
+        query = select(Trade).where(Trade.user_id == user.id).order_by(desc(Trade.entry_time))
 
         if status:
             query = query.where(Trade.status == status.upper())
@@ -1562,7 +1568,8 @@ async def get_trades(
 @router.get("/trades/stats/summary", response_model=TradeStatsResponse)
 async def get_trade_stats(
     period: str = "ALL",
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
+    user: AuthenticatedUser = Depends(get_current_user),
 ):
     """
     Get aggregated trade statistics.
@@ -1570,7 +1577,7 @@ async def get_trade_stats(
     """
     try:
         # Get all closed trades for calculation
-        query = select(Trade).where(Trade.status == "CLOSED")
+        query = select(Trade).where(Trade.user_id == user.id, Trade.status == "CLOSED")
 
         # Apply period filter
         now = datetime.utcnow()
@@ -1689,13 +1696,14 @@ async def get_trade_stats(
 async def export_trades(
     format: str = "json",
     status: str = None,
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
+    user: AuthenticatedUser = Depends(get_current_user),
 ):
     """
     Export trades to CSV or JSON.
     """
     try:
-        query = select(Trade).order_by(desc(Trade.entry_time))
+        query = select(Trade).where(Trade.user_id == user.id).order_by(desc(Trade.entry_time))
 
         if status:
             query = query.where(Trade.status == status.upper())
@@ -1783,7 +1791,8 @@ async def export_trades(
 @router.post("/trades/import")
 async def import_trades(
     request: TradeImportRequest,
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
+    user: AuthenticatedUser = Depends(get_current_user),
 ):
     """
     Import trades from JSON.
@@ -1800,6 +1809,7 @@ async def import_trades(
 
                 # Create trade
                 trade = Trade(
+                    user_id=user.id,
                     direction=trade_data.direction,
                     status=trade_data.status,
                     entry_price=trade_data.entry_price,
@@ -1840,7 +1850,8 @@ async def import_trades(
 @router.get("/trades/equity-curve", response_model=EquityCurveResponse)
 async def get_equity_curve(
     starting_equity: float = 10000,
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
+    user: AuthenticatedUser = Depends(get_current_user),
 ):
     """
     Calculate equity curve from closed trades.
@@ -1849,7 +1860,7 @@ async def get_equity_curve(
         # Get closed trades ordered by exit time
         result = await session.execute(
             select(Trade)
-            .where(Trade.status == "CLOSED")
+            .where(Trade.user_id == user.id, Trade.status == "CLOSED")
             .order_by(Trade.exit_time)
         )
         trades = result.scalars().all()
@@ -1924,14 +1935,15 @@ async def get_equity_curve(
 
 @router.get("/trades/performance/by-tag", response_model=PerformanceByTagResponse)
 async def get_performance_by_tag(
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
+    user: AuthenticatedUser = Depends(get_current_user),
 ):
     """
     Get performance breakdown by tag.
     """
     try:
         result = await session.execute(
-            select(Trade).where(Trade.status == "CLOSED")
+            select(Trade).where(Trade.user_id == user.id, Trade.status == "CLOSED")
         )
         trades = result.scalars().all()
 
@@ -1990,14 +2002,15 @@ async def get_performance_by_tag(
 @router.get("/trades/{trade_id}", response_model=TradeResponse)
 async def get_trade(
     trade_id: int,
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
+    user: AuthenticatedUser = Depends(get_current_user),
 ):
     """
     Get a specific trade by ID.
     """
     try:
         result = await session.execute(
-            select(Trade).where(Trade.id == trade_id)
+            select(Trade).where(Trade.id == trade_id, Trade.user_id == user.id)
         )
         trade = result.scalar_one_or_none()
 
@@ -2050,7 +2063,8 @@ async def get_trade(
 async def update_trade(
     trade_id: int,
     update: TradeUpdate,
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
+    user: AuthenticatedUser = Depends(get_current_user),
 ):
     """
     Update a trade entry.
@@ -2058,7 +2072,7 @@ async def update_trade(
     """
     try:
         result = await session.execute(
-            select(Trade).where(Trade.id == trade_id)
+            select(Trade).where(Trade.id == trade_id, Trade.user_id == user.id)
         )
         trade = result.scalar_one_or_none()
 
@@ -2150,7 +2164,8 @@ async def close_trade(
     trade_id: int,
     exit_price: float,
     exit_reason: str = "MANUAL",
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
+    user: AuthenticatedUser = Depends(get_current_user),
 ):
     """
     Close a trade with given exit price.
@@ -2161,20 +2176,21 @@ async def close_trade(
         exit_price=exit_price,
         exit_reason=exit_reason,
     )
-    return await update_trade(trade_id, update, session)
+    return await update_trade(trade_id, update, session, user)
 
 
 @router.delete("/trades/{trade_id}")
 async def delete_trade(
     trade_id: int,
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
+    user: AuthenticatedUser = Depends(get_current_user),
 ):
     """
     Delete a trade entry.
     """
     try:
         result = await session.execute(
-            select(Trade).where(Trade.id == trade_id)
+            select(Trade).where(Trade.id == trade_id, Trade.user_id == user.id)
         )
         trade = result.scalar_one_or_none()
 
