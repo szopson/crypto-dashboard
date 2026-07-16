@@ -10,7 +10,13 @@ services:
     env_file:
       - ./engine/.env
     environment:
-      - DATABASE_URL=${DATABASE_URL}
+      # Default onto the tcc-backend-data volume: with `${DATABASE_URL}`
+      # unset/empty the engine used its in-container default ./trading.db,
+      # OUTSIDE the volume — the trade journal was wiped on every deploy.
+      # `:-` keeps any explicitly configured URL (e.g. Supabase Postgres)
+      # working; database.migrate_sqlite_location() adopts the legacy sqlite
+      # file on first boot after this switch.
+      - DATABASE_URL=${DATABASE_URL:-sqlite+aiosqlite:////app/data/trading.db}
       - RESEND_API_KEY=${RESEND_API_KEY}
       - RESEND_FROM_EMAIL=${RESEND_FROM_EMAIL}
       # Daily cockpit digest: draft post to the Telegram admin chat at 09:00

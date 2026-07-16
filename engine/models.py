@@ -140,6 +140,11 @@ class Trade(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
 
+    # Owner (Supabase auth user id). Nullable: rows created before multi-user
+    # scoping have no owner and stay hidden until an audited manual backfill
+    # (fail-closed — see database._ensure_trade_user_id for the column guard).
+    user_id: Mapped[str] = mapped_column(String(64), nullable=True, index=True)
+
     # Trade identification
     symbol: Mapped[str] = mapped_column(String(50), default="BTC/USDT:USDT")
     direction: Mapped[str] = mapped_column(String(10), nullable=False)  # LONG, SHORT
