@@ -9,9 +9,14 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-type ConnectionState = "connected" | "disconnected" | "checking";
+type ConnectionState = "connected" | "degraded" | "disconnected" | "checking";
 
-export function ConnectionStatus() {
+interface ConnectionStatusProps {
+  /** Health endpoint answers but data fetches are failing (stale/partial data). */
+  degraded?: boolean;
+}
+
+export function ConnectionStatus({ degraded = false }: ConnectionStatusProps) {
   const [status, setStatus] = useState<ConnectionState>("checking");
   const [lastCheck, setLastCheck] = useState<Date | null>(null);
   const [latency, setLatency] = useState<number | null>(null);
@@ -50,6 +55,11 @@ export function ConnectionStatus() {
       text: "Connected",
       pulse: false,
     },
+    degraded: {
+      color: "bg-amber-500",
+      text: "Degraded",
+      pulse: true,
+    },
     disconnected: {
       color: "bg-red-500",
       text: "Disconnected",
@@ -62,7 +72,11 @@ export function ConnectionStatus() {
     },
   };
 
-  const config = statusConfig[status];
+  // Degraded overrides a green health check: /api/health may answer while
+  // the data endpoints error. It clears automatically when fetches recover.
+  const effectiveStatus: ConnectionState =
+    status === "connected" && degraded ? "degraded" : status;
+  const config = statusConfig[effectiveStatus];
 
   return (
     <TooltipProvider>

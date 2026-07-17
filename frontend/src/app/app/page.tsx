@@ -34,7 +34,7 @@ import {
 
 export default function Dashboard() {
   const { symbol } = useSymbol();
-  const { price, radar, bias, loading, error, lastUpdate, refresh } =
+  const { price, radar, bias, loading, error, lastUpdate, stale, lastGoodAt, refresh } =
     useMarketData(60000, symbol); // Refresh every 60 seconds
   const [activeTab, setActiveTab] = useState("overview");
   const [chartOpen, setChartOpen] = useState(false);
@@ -94,22 +94,6 @@ export default function Dashboard() {
     );
   }
 
-  if (error && !price) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Card className="max-w-md">
-          <CardContent className="pt-6 text-center">
-            <p className="text-destructive mb-4">Error: {error}</p>
-            <p className="text-sm text-muted-foreground mb-4">
-              Make sure the backend API is running on port 8000
-            </p>
-            <Button onClick={refresh}>Retry</Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <ErrorBoundary>
     <div className="min-h-screen bg-background">
@@ -133,7 +117,7 @@ export default function Dashboard() {
             >
               Research
             </Link>
-            <ConnectionStatus />
+            <ConnectionStatus degraded={!!error} />
             {lastUpdate && (
               <span className="text-xs sm:text-sm text-muted-foreground hidden md:inline">
                 {lastUpdate.toLocaleTimeString()}
@@ -147,6 +131,30 @@ export default function Dashboard() {
           </div>
         </div>
       </header>
+
+      {/* Degraded-mode banner: the engine is erroring but the workspace keeps
+          rendering — from a cached snapshot when one exists. */}
+      {error && (
+        <div className="border-b border-amber-500/30 bg-amber-500/10">
+          <div className="container mx-auto px-4 py-2 flex items-center justify-between gap-3 text-sm text-amber-600 dark:text-amber-400">
+            <span>
+              Live engine unreachable
+              {stale && lastGoodAt
+                ? ` — snapshot from ${lastGoodAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+                : ""}
+              {" · retrying"}
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={refresh}
+              className="h-7 px-2 text-amber-600 dark:text-amber-400 hover:text-amber-500"
+            >
+              Retry now
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Sentiment Bar */}
       <div className="border-b">
