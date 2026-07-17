@@ -18,10 +18,20 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Post-login destination from ?next= (set by the /app middleware gate).
+  // Same-origin paths only ("/..." but not "//...") — open-redirect guard.
+  // Read from window (not useSearchParams) to avoid a Suspense boundary.
+  const getNextPath = () => {
+    const rawNext = new URLSearchParams(window.location.search).get("next");
+    return rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//")
+      ? rawNext
+      : "/app";
+  };
+
   // Redirect if already logged in
   useEffect(() => {
     if (user && !loading) {
-      router.push("/app/wealth");
+      router.push(getNextPath());
     }
   }, [user, loading, router]);
 
@@ -32,7 +42,7 @@ export default function LoginPage() {
 
     try {
       await signIn(email, password);
-      router.push("/app/wealth");
+      router.push(getNextPath());
     } catch {
       // Error is handled by AuthContext
     } finally {
@@ -43,7 +53,7 @@ export default function LoginPage() {
   const handleGoogleSignIn = async () => {
     clearError();
     try {
-      await signInWithGoogle();
+      await signInWithGoogle(getNextPath());
     } catch {
       // Error is handled by AuthContext
     }

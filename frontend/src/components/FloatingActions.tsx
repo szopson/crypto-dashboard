@@ -12,9 +12,9 @@ export function FloatingActions({ onRefresh, onTabChange }: FloatingActionsProps
   const [isOpen, setIsOpen] = useState(false);
 
   const actions = [
-    { label: "Dashboard", icon: "H", action: () => onTabChange("dashboard") },
-    { label: "SNIPER", icon: "S", action: () => onTabChange("sniper") },
-    { label: "Copilot", icon: "C", action: () => onTabChange("copilot") },
+    { label: "Overview", icon: "O", action: () => onTabChange("overview") },
+    { label: "Confluence", icon: "C", action: () => onTabChange("confluence") },
+    { label: "Journal", icon: "J", action: () => onTabChange("journal") },
     { label: "Refresh", icon: "R", action: onRefresh },
   ];
 

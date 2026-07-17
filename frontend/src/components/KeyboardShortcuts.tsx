@@ -10,14 +10,11 @@ import {
 import { Badge } from "@/components/ui/badge";
 
 const SHORTCUTS = [
-  { keys: ["Alt", "1"], description: "Dashboard tab" },
-  { keys: ["Alt", "2"], description: "SNIPER tab" },
+  { keys: ["Alt", "1"], description: "Overview tab" },
+  { keys: ["Alt", "2"], description: "Confluence tab" },
   { keys: ["Alt", "3"], description: "Journal tab" },
   { keys: ["Alt", "4"], description: "Copilot tab" },
-  { keys: ["Alt", "5"], description: "Research tab" },
-  { keys: ["Alt", "6"], description: "Chart tab" },
-  { keys: ["Alt", "7"], description: "Backtest tab" },
-  { keys: ["Alt", "8"], description: "Alerts tab" },
+  { keys: ["Alt", "5"], description: "Alerts tab" },
   { keys: ["Alt", "R"], description: "Refresh market data" },
   { keys: ["Esc"], description: "Close dialogs" },
   { keys: ["?"], description: "Show this help" },
@@ -55,12 +52,13 @@ export function KeyboardShortcuts({ onRefresh, onTabChange }: KeyboardShortcutsP
         return;
       }
 
-      // Alt + number for tabs
+      // Alt + number for tabs. Backtest (?labs=1) deliberately has no hotkey
+      // so a stale shortcut can't open a hidden tab.
       if (event.altKey && !event.ctrlKey && !event.shiftKey) {
-        const tabs = ["dashboard", "sniper", "journal", "copilot", "research", "chart", "backtest", "alerts"];
+        const tabs = ["overview", "confluence", "journal", "copilot", "alerts"];
         const num = parseInt(event.key);
 
-        if (num >= 1 && num <= 8) {
+        if (num >= 1 && num <= tabs.length) {
           event.preventDefault();
           onTabChange?.(tabs[num - 1]);
           return;

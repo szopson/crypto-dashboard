@@ -143,7 +143,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   // Sign in with Google OAuth. `next` is a same-origin path to return to
-  // after the callback (e.g. "/cockpit"); defaults to the wealth dashboard.
+  // after the callback (e.g. "/cockpit"); defaults to the trader's workspace.
   const signInWithGoogle = useCallback(async (next?: string) => {
     setError(null);
 

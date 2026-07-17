@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { BookOpenText, ScanSearch } from "lucide-react";
+import { ChevronDown, ScanSearch } from "lucide-react";
 import { useMarketData } from "@/hooks/useMarketData";
 import { useSymbol, formatSymbolShort, formatSymbol } from "@/contexts/SymbolContext";
 import { BiasGrid } from "@/components/BiasGrid";
@@ -17,7 +17,6 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { SentimentBar } from "@/components/SentimentBar";
 import { SymbolSelector } from "@/components/SymbolSelector";
 import { BacktestPanel } from "@/components/BacktestPanel";
-import { ProjectAnalyzer } from "@/components/ProjectAnalyzer";
 import { KeyboardShortcuts } from "@/components/KeyboardShortcuts";
 import { InstallPWA } from "@/components/InstallPWA";
 import { ConnectionStatus } from "@/components/ConnectionStatus";
@@ -37,7 +36,15 @@ export default function Dashboard() {
   const { symbol } = useSymbol();
   const { price, radar, bias, loading, error, lastUpdate, refresh } =
     useMarketData(60000, symbol); // Refresh every 60 seconds
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const [activeTab, setActiveTab] = useState("overview");
+  const [chartOpen, setChartOpen] = useState(false);
+  // Backtest is RADAR-only with no fee model — not honest enough to headline.
+  // Kept reachable for power users behind ?labs=1 (read post-mount: this is a
+  // client page and useSearchParams would force a Suspense boundary).
+  const [showLabs, setShowLabs] = useState(false);
+  useEffect(() => {
+    setShowLabs(new URLSearchParams(window.location.search).get("labs") === "1");
+  }, []);
 
   if (loading && !price) {
     return (
@@ -120,6 +127,12 @@ export default function Dashboard() {
             <SymbolSelector />
           </div>
           <div className="flex items-center gap-2 sm:gap-4">
+            <Link
+              href="/research"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors hidden sm:inline"
+            >
+              Research
+            </Link>
             <ConnectionStatus />
             {lastUpdate && (
               <span className="text-xs sm:text-sm text-muted-foreground hidden md:inline">
@@ -147,18 +160,18 @@ export default function Dashboard() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
           <div className="overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0 scrollbar-hide">
             <TabsList variant="glass" className="inline-flex w-max sm:w-full h-10 p-1 gap-0.5 rounded-xl">
-              <TabsTrigger value="dashboard" className="text-xs sm:text-sm px-3 sm:px-4 whitespace-nowrap">Dashboard</TabsTrigger>
-              <TabsTrigger value="sniper" className="text-xs sm:text-sm px-3 sm:px-4 whitespace-nowrap">SNIPER</TabsTrigger>
+              <TabsTrigger value="overview" className="text-xs sm:text-sm px-3 sm:px-4 whitespace-nowrap">Overview</TabsTrigger>
+              <TabsTrigger value="confluence" className="text-xs sm:text-sm px-3 sm:px-4 whitespace-nowrap">Confluence</TabsTrigger>
               <TabsTrigger value="journal" className="text-xs sm:text-sm px-3 sm:px-4 whitespace-nowrap">Journal</TabsTrigger>
               <TabsTrigger value="copilot" className="text-xs sm:text-sm px-3 sm:px-4 whitespace-nowrap">Copilot</TabsTrigger>
-              <TabsTrigger value="research" className="text-xs sm:text-sm px-3 sm:px-4 whitespace-nowrap">Research</TabsTrigger>
-              <TabsTrigger value="chart" className="text-xs sm:text-sm px-3 sm:px-4 whitespace-nowrap">Chart</TabsTrigger>
-              <TabsTrigger value="backtest" className="text-xs sm:text-sm px-3 sm:px-4 whitespace-nowrap">Backtest</TabsTrigger>
               <TabsTrigger value="alerts" className="text-xs sm:text-sm px-3 sm:px-4 whitespace-nowrap">Alerts</TabsTrigger>
+              {showLabs && (
+                <TabsTrigger value="backtest" className="text-xs sm:text-sm px-3 sm:px-4 whitespace-nowrap">Backtest</TabsTrigger>
+              )}
             </TabsList>
           </div>
 
-          <TabsContent value="dashboard" className="space-y-4 sm:space-y-6">
+          <TabsContent value="overview" className="space-y-4 sm:space-y-6">
             {/* Top row: Price and RADAR scores */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
               {/* Price */}
@@ -189,6 +202,25 @@ export default function Dashboard() {
                 keyLevels={bias.key_levels as Array<{ price: number; type: string; timeframe: string; description: string }>}
               />
             )}
+
+            {/* Chart (folded in from the former Chart tab) */}
+            <div className="rounded-xl border border-(--glass-border)">
+              <button
+                type="button"
+                onClick={() => setChartOpen((v) => !v)}
+                className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium hover:bg-muted/40 transition-colors rounded-xl"
+              >
+                <span>Price chart — {formatSymbolShort(symbol)}</span>
+                <ChevronDown
+                  className={`size-4 text-muted-foreground transition-transform ${chartOpen ? "rotate-180" : ""}`}
+                />
+              </button>
+              {chartOpen && (
+                <div className="px-2 pb-2 sm:px-4 sm:pb-4">
+                  <TradingViewChart height={400} />
+                </div>
+              )}
+            </div>
 
             {/* Info section */}
             <Card>
@@ -237,7 +269,7 @@ export default function Dashboard() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="sniper" className="space-y-4 sm:space-y-6">
+          <TabsContent value="confluence" className="space-y-4 sm:space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
               <div className="lg:col-span-2 order-2 lg:order-1">
                 <SniperAnalysis />
@@ -349,90 +381,11 @@ export default function Dashboard() {
             </div>
           </TabsContent>
 
-          <TabsContent value="research" className="space-y-4 sm:space-y-6">
-            <Link
-              href="/research"
-              className="flex items-center gap-3 rounded-lg border border-primary/30 bg-primary/5 p-4 hover:bg-primary/10 transition-colors"
-            >
-              <BookOpenText className="size-5 text-primary shrink-0" />
-              <div className="min-w-0">
-                <p className="text-sm font-medium">Equity research library</p>
-                <p className="text-xs text-muted-foreground">
-                  Deep-dive reports across 13 sectors — semis, AI, crypto infrastructure and more.
-                </p>
-              </div>
-            </Link>
-            <ProjectAnalyzer />
-          </TabsContent>
-
-          <TabsContent value="chart" className="space-y-4 sm:space-y-6">
-            {/* TradingView Chart */}
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 sm:gap-4">
-              <div className="lg:col-span-3 order-2 lg:order-1">
-                <TradingViewChart height={400} />
-              </div>
-              <div className="space-y-3 sm:space-y-4 order-1 lg:order-2">
-                {/* Side panel with bias info */}
-                {price && <PriceDisplay price={price} />}
-                {bias && (
-                  <Card>
-                    <CardContent className="pt-4">
-                      <h3 className="font-semibold mb-2">Quick Bias</h3>
-                      <div className="space-y-2 text-sm">
-                        {["1H", "4H", "1D", "1W"].map((tf) => {
-                          const b = bias.biases[tf as keyof typeof bias.biases];
-                          if (!b) return null;
-                          return (
-                            <div key={tf} className="flex justify-between">
-                              <span className="text-muted-foreground">{tf}</span>
-                              <span
-                                className={
-                                  b.structural_bias === "BULLISH"
-                                    ? "text-green-500"
-                                    : b.structural_bias === "BEARISH"
-                                    ? "text-red-500"
-                                    : "text-yellow-500"
-                                }
-                              >
-                                {b.structural_bias}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-                {radar?.radars["1D"] && (
-                  <Card>
-                    <CardContent className="pt-4">
-                      <h3 className="font-semibold mb-2">RADAR 1D</h3>
-                      <div className="text-2xl font-bold">
-                        <span
-                          className={
-                            radar.radars["1D"].classification === "ACCUMULATE"
-                              ? "text-green-500"
-                              : radar.radars["1D"].classification === "SELL_THE_RALLY"
-                              ? "text-red-500"
-                              : "text-yellow-500"
-                          }
-                        >
-                          {radar.radars["1D"].score.toFixed(1)}/6
-                        </span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {radar.radars["1D"].classification.replace("_", " ")}
-                      </p>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="backtest" className="space-y-4 sm:space-y-6">
-            <BacktestPanel />
-          </TabsContent>
+          {showLabs && (
+            <TabsContent value="backtest" className="space-y-4 sm:space-y-6">
+              <BacktestPanel />
+            </TabsContent>
+          )}
 
           <TabsContent value="alerts" className="space-y-4 sm:space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">

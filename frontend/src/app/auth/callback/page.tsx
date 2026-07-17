@@ -31,12 +31,12 @@ export default function AuthCallbackPage() {
         }
 
         // Where to land after sign-in. Same-origin paths only ("/..." but not
-        // "//...") to rule out open redirects; default: wealth dashboard.
+        // "//...") to rule out open redirects; default: trader's workspace.
         const rawNext = params.get("next");
         const nextPath =
           rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//")
             ? rawNext
-            : "/app/wealth";
+            : "/app";
 
         // Handle the OAuth callback
         const {
@@ -50,7 +50,7 @@ export default function AuthCallbackPage() {
 
         if (session) {
           setStatus("success");
-          // Redirect to wealth dashboard after short delay
+          // Redirect after short delay
           setTimeout(() => {
             router.push(nextPath);
           }, 1500);

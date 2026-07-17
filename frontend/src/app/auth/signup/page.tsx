@@ -24,7 +24,7 @@ export default function SignupPage() {
   // Redirect if already logged in
   useEffect(() => {
     if (user && !loading) {
-      router.push("/app/wealth");
+      router.push("/app");
     }
   }, [user, loading, router]);
 
