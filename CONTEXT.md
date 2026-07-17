@@ -35,7 +35,8 @@ No SSH to prod from dev machines — prod operations go through
 | Term | Meaning | Where |
 |---|---|---|
 | **RADAR** | Macro-bias score 0–6 per timeframe from BBWP, Gaussian Channel, WVF, funding. Classifies `ACCUMULATE` (5–6), `NEUTRAL` (3–4), `SELL_THE_RALLY` (0–2). | `engine/calculations/radar.py`, `frontend/src/components/RadarScore.tsx` |
-| **SNIPER** | Confluence scoring engine (0–5) for trade-entry detection: RADAR alignment + MTF bias + zone proximity + structure quality. One best setup per tick (anti-spam). | `engine/calculations/sniper.py` |
+| **SNIPER** | Engine-side confluence scoring (0–5): RADAR alignment + MTF bias + zone proximity + structure quality. One best setup per tick (anti-spam). Internal name only — surfaced in the UI as the **Confluence Check**; its `signal`/`recommendation`/`position_size_pct` fields are deliberately NOT rendered (MiCA). | `engine/calculations/sniper.py` |
+| **Confluence Check** | The /app UI reframe of SNIPER output: conditions checklist (met/partial/not met binned on the engine's discrete point tiers), "Levels in play" (zone, SS invalidation, R-multiple levels as market description) and a **RiskSizer** (qty/notional/margin from the user's own account size + risk %; linear USDT-perps only). No signals, no directional language. | `frontend/src/components/ConfluenceCheck.tsx`, `frontend/src/components/RiskSizer.tsx` |
 | **BiasGrid** | Multi-timeframe structural bias display (1H…1M): BULLISH/BEARISH/NEUTRAL per frame with Secondary Swing levels. | `frontend/src/components/BiasGrid.tsx` |
 | **Secondary Swing (SS)** | Swing level used for stop-loss placement and bias-flip detection, tracked per timeframe. | `engine/calculations/structure.py` |
 | **Confluence** | The 0–5 SNIPER score itself; ranks setup quality. | `engine/calculations/sniper.py` |
@@ -106,7 +107,6 @@ No SSH to prod from dev machines — prod operations go through
 
 ## Known debt / gotchas
 
-- **Paper trading module** — half-built, broken imports; decide finish-or-delete before touching.
 - **Wealth module** (portfolio chat) — status unclear.
 - Two unrelated `trading.db` SQLite files exist; engine state may move to a named volume or DB table.
 - Prod domain is **follio.io** — `tradingcommandcenter.com` references are legacy.

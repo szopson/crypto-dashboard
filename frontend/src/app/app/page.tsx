@@ -10,7 +10,7 @@ import { RadarScore } from "@/components/RadarScore";
 import { PriceDisplay } from "@/components/PriceDisplay";
 import { TradingViewChart } from "@/components/TradingViewChart";
 import { AlertsList } from "@/components/AlertsList";
-import { SniperAnalysis } from "@/components/SniperAnalysis";
+import { ConfluenceCheck } from "@/components/ConfluenceCheck";
 import { CopilotChat } from "@/components/CopilotChat";
 import TradeJournal from "@/components/TradeJournal";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -280,7 +280,7 @@ export default function Dashboard() {
           <TabsContent value="confluence" className="space-y-4 sm:space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
               <div className="lg:col-span-2 order-2 lg:order-1">
-                <SniperAnalysis />
+                <ConfluenceCheck />
               </div>
               <div className="space-y-3 sm:space-y-4 order-1 lg:order-2">
                 {price && <PriceDisplay price={price} />}
