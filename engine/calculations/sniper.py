@@ -93,26 +93,29 @@ def calculate_confluence(
 
     # 1. RADAR Score
     radar_class = radar_result.get("classification", "NEUTRAL")
+    # Note copy is descriptive regime language, not trade instructions — these
+    # strings render verbatim in the Confluence Check UI and Telegram alerts
+    # (MiCA/KNF).
     if is_bullish_bias:
         if radar_class == "ACCUMULATE":
             radar_points = 1.5
-            radar_note = "RADAR favors longs (ACCUMULATE)"
+            radar_note = "Accumulation regime — aligned with bullish structure"
         elif radar_class == "NEUTRAL":
             radar_points = 0.5
             radar_note = "RADAR neutral"
         else:
             radar_points = 0.0
-            radar_note = "RADAR bearish (SELL_THE_RALLY) - reduces long confluence"
+            radar_note = "Distribution regime — conflicts with bullish structure"
     else:
         if radar_class == "SELL_THE_RALLY":
             radar_points = 1.5
-            radar_note = "RADAR favors shorts (SELL_THE_RALLY)"
+            radar_note = "Distribution regime — aligned with bearish structure"
         elif radar_class == "NEUTRAL":
             radar_points = 0.5
             radar_note = "RADAR neutral"
         else:
             radar_points = 0.0
-            radar_note = "RADAR bullish (ACCUMULATE) - reduces short confluence"
+            radar_note = "Accumulation regime — conflicts with bearish structure"
 
     total += radar_points
     components.append({

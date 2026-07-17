@@ -283,9 +283,11 @@ Confluence: ${setup.confluence_score.toFixed(1)}/${maxScore.toFixed(1)}`;
                     size="sm"
                     className="mt-3 h-7 text-xs"
                     onClick={() =>
+                      // Round to cents — engine floats carry precision noise
+                      // ("63629.100000000006") that would land in the inputs.
                       setPrefill({
-                        entry: setup.entry_price,
-                        stopLoss: setup.stop_loss,
+                        entry: Number(setup.entry_price.toFixed(2)),
+                        stopLoss: Number(setup.stop_loss.toFixed(2)),
                       })
                     }
                   >
