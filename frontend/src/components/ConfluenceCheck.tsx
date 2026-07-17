@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { useSymbol, formatSymbol } from "@/contexts/SymbolContext";
 import { RiskSizer, type RiskSizerPrefill } from "@/components/RiskSizer";
+import { ExchangeCTA } from "@/components/cockpit/ExchangeCTA";
+import { formatSymbolShort } from "@/contexts/SymbolContext";
 import { CheckCircle2, CircleDashed, XCircle } from "lucide-react";
 
 // Honest reframe of the SNIPER engine output (MiCA/KNF): the same payload
@@ -306,6 +308,15 @@ Confluence: ${setup.confluence_score.toFixed(1)}/${maxScore.toFixed(1)}`;
 
       {/* User-risk-based sizing */}
       <RiskSizer prefill={prefill} />
+
+      {/* Execution bridge — region-gated, renders nothing when no venue */}
+      <div className="flex justify-end">
+        <ExchangeCTA
+          symbol={formatSymbolShort(symbol)}
+          surface="app-confluence"
+          compact
+        />
+      </div>
     </div>
   );
 }

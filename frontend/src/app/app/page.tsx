@@ -20,6 +20,7 @@ import { BacktestPanel } from "@/components/BacktestPanel";
 import { KeyboardShortcuts } from "@/components/KeyboardShortcuts";
 import { InstallPWA } from "@/components/InstallPWA";
 import { ConnectionStatus } from "@/components/ConnectionStatus";
+import { QuotaPopover } from "@/components/QuotaPopover";
 import { FloatingActions } from "@/components/FloatingActions";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Card, CardContent } from "@/components/ui/card";
@@ -126,6 +127,7 @@ export default function Dashboard() {
             <Button variant="outline" size="sm" onClick={refresh} className="h-9 hidden sm:flex">
               Refresh
             </Button>
+            <QuotaPopover />
             <InstallPWA />
             <ThemeToggle />
           </div>

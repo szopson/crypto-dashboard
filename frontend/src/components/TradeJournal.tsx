@@ -36,6 +36,7 @@ import { Plus, TrendingUp, TrendingDown, Target, Download, ScanSearch, X } from 
 import { EquityCurveChart } from "./EquityCurveChart";
 import { PerformanceByTag } from "./PerformanceByTag";
 import { RecentReviewsStrip } from "./RecentReviewsStrip";
+import { ExchangeCTA } from "./cockpit/ExchangeCTA";
 
 interface Trade {
   id: number;
@@ -653,8 +654,11 @@ export default function TradeJournal() {
             <TableBody>
               {trades.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
-                    No trades logged yet. Click "New Trade" to start.
+                  <TableCell colSpan={10} className="text-center py-8">
+                    <p className="text-muted-foreground mb-3">
+                      No trades logged yet. Click &quot;New Trade&quot; to start.
+                    </p>
+                    <ExchangeCTA symbol="BTC" surface="app-journal-empty" compact />
                   </TableCell>
                 </TableRow>
               ) : (
