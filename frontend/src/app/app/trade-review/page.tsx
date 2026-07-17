@@ -22,6 +22,37 @@ import type { TradeReviewResult } from "@/lib/trade-review";
 const ALLOWED = ["image/png", "image/jpeg", "image/gif", "image/webp"];
 const MAX_BYTES = 6 * 1024 * 1024;
 
+// Context handoff from the journal's "Grade this trade" CTA (sessionStorage,
+// not query params — trade numbers must not leak into URLs/history/analytics).
+// Read once and cleared on mount so a reload shows no stale banner.
+const PENDING_REVIEW_KEY = "follio-pending-review";
+
+interface PendingReview {
+  symbol: string;
+  direction: string;
+  entry: number;
+  exit: number;
+  pnl: number | null;
+}
+
+function readPendingReview(): PendingReview | null {
+  try {
+    const raw = sessionStorage.getItem(PENDING_REVIEW_KEY);
+    sessionStorage.removeItem(PENDING_REVIEW_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<PendingReview>;
+    if (
+      typeof parsed.symbol !== "string" ||
+      typeof parsed.entry !== "number" ||
+      typeof parsed.exit !== "number"
+    )
+      return null;
+    return parsed as PendingReview;
+  } catch {
+    return null;
+  }
+}
+
 export default function TradeReviewPage() {
   const [preview, setPreview] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -34,6 +65,11 @@ export default function TradeReviewPage() {
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const { user, session } = useAuth();
+  const [pending, setPending] = useState<PendingReview | null>(null);
+
+  useEffect(() => {
+    setPending(readPendingReview());
+  }, []);
 
   // Tick an elapsed-seconds counter while analyzing so the wait feels bounded
   // (Opus 4.8 vision is ~20-40s; a silent spinner reads as "hung").
@@ -161,6 +197,22 @@ export default function TradeReviewPage() {
         <TradeReviewDemo />
       ) : (
         <>
+      {/* Context from the journal's "Grade this trade" handoff */}
+      {pending && (
+        <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm">
+          <p className="font-medium">
+            Grading: {pending.symbol} {pending.direction?.toLowerCase()}
+          </p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Entry ${pending.entry.toLocaleString()} → exit ${pending.exit.toLocaleString()}
+            {typeof pending.pnl === "number" &&
+              ` · P&L ${pending.pnl >= 0 ? "+" : ""}$${pending.pnl.toFixed(2)}`}
+            . Upload the screenshot of this trade below — the score grades the
+            decision, not the outcome.
+          </p>
+        </div>
+      )}
+
       {/* Dropzone */}
       <Card
         className={dragOver ? "border-primary ring-1 ring-primary" : undefined}

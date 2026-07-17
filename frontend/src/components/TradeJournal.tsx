@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,8 +32,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, TrendingUp, TrendingDown, Target, Download } from "lucide-react";
+import { Plus, TrendingUp, TrendingDown, Target, Download, ScanSearch, X } from "lucide-react";
 import { EquityCurveChart } from "./EquityCurveChart";
+import { PerformanceByTag } from "./PerformanceByTag";
+import { RecentReviewsStrip } from "./RecentReviewsStrip";
 
 interface Trade {
   id: number;
@@ -87,6 +90,19 @@ interface TradeStats {
 // cover dev. The old NEXT_PUBLIC_API_URL fallback bypassed both.
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 
+// Handoff to /app/trade-review via sessionStorage, NOT query params — trade
+// numbers are personal data and query strings leak into history/analytics.
+// The review page reads and clears this key on mount.
+const PENDING_REVIEW_KEY = "follio-pending-review";
+
+interface JustClosedTrade {
+  symbol: string;
+  direction: string;
+  entry: number;
+  exit: number;
+  pnl: number | null;
+}
+
 export default function TradeJournal() {
   const { session } = useAuth();
   const authHeaders = useCallback(
@@ -104,6 +120,9 @@ export default function TradeJournal() {
   const [exitPrice, setExitPrice] = useState("");
   const [exitReason, setExitReason] = useState("MANUAL");
   const [filter, setFilter] = useState<"ALL" | "OPEN" | "CLOSED">("ALL");
+  const [justClosed, setJustClosed] = useState<JustClosedTrade | null>(null);
+  const [analyticsKey, setAnalyticsKey] = useState(0);
+  const router = useRouter();
 
   // Form state for new trade
   const [newTrade, setNewTrade] = useState({
@@ -208,15 +227,40 @@ export default function TradeJournal() {
       );
 
       if (res.ok) {
+        // Offer the review handoff only on a CONFIRMED close — a failed close
+        // must never leave a pending-review object behind.
+        let pnl: number | null = null;
+        try {
+          const closed = await res.json();
+          if (typeof closed?.realized_pnl === "number") pnl = closed.realized_pnl;
+        } catch {}
+        setJustClosed({
+          symbol: selectedTrade.symbol,
+          direction: selectedTrade.direction,
+          entry: selectedTrade.entry_price,
+          exit: parseFloat(exitPrice),
+          pnl,
+        });
         setCloseDialogOpen(false);
         setSelectedTrade(null);
         setExitPrice("");
+        setAnalyticsKey((k) => k + 1);
         await fetchTrades();
         await fetchStats();
       }
     } catch (error) {
       console.error("Error closing trade:", error);
     }
+  };
+
+  const gradeThisTrade = () => {
+    if (!justClosed) return;
+    try {
+      sessionStorage.setItem(PENDING_REVIEW_KEY, JSON.stringify(justClosed));
+    } catch {
+      // Storage unavailable — the review page just opens without context.
+    }
+    router.push("/app/trade-review");
   };
 
   const formatPrice = (price?: number) => {
@@ -308,6 +352,31 @@ export default function TradeJournal() {
           Session expired — sign in again to load your journal.
         </div>
       )}
+
+      {/* Post-close handoff into the decision loop */}
+      {justClosed && (
+        <div className="flex items-center justify-between gap-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3">
+          <p className="text-sm">
+            Trade closed. Grade the decision while it&apos;s fresh — process, not
+            outcome.
+          </p>
+          <div className="flex items-center gap-1 shrink-0">
+            <Button size="sm" onClick={gradeThisTrade}>
+              <ScanSearch className="w-4 h-4 mr-1" /> Grade this trade →
+            </Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-8 w-8"
+              onClick={() => setJustClosed(null)}
+              aria-label="Dismiss"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Stats Cards */}
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
@@ -414,6 +483,12 @@ export default function TradeJournal() {
           </Card>
         </div>
       )}
+
+      {/* Per-setup analytics + recent decision-quality scores */}
+      {stats && stats.total_trades > 0 && (
+        <PerformanceByTag refreshKey={analyticsKey} />
+      )}
+      <RecentReviewsStrip />
 
       {/* Trade List */}
       <Card>
