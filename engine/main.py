@@ -74,6 +74,9 @@ async def lifespan(app: FastAPI):
                     timezone=settings.cockpit_digest_timezone,
                 )
 
+            # Hourly RADAR/bias history snapshots (feeds /api/radar/history)
+            scheduler.add_periodic_snapshot(interval_hours=1)
+
             logger.info("Scheduler started")
         except Exception as e:
             logger.warning(f"Could not start scheduler: {e}")

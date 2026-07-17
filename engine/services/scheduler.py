@@ -154,13 +154,12 @@ class SchedulerService:
 
     def add_periodic_snapshot(
         self,
-        interval_hours: int = 4,
+        interval_hours: int = 1,
     ):
         """
-        Schedule periodic market snapshots.
-
-        Args:
-            interval_hours: Hours between snapshots
+        Schedule hourly RADAR/bias history snapshots (RadarSnapshot +
+        BiasRecord rows for every configured symbol; dedup + retention live
+        in services/snapshots.py).
         """
         job_id = "periodic_snapshot"
 
@@ -172,11 +171,14 @@ class SchedulerService:
             self._take_market_snapshot,
             trigger=IntervalTrigger(hours=interval_hours),
             id=job_id,
-            name="Periodic Market Snapshot",
+            name="RADAR/Bias History Snapshot",
             replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+            misfire_grace_time=600,
         )
 
-        logger.info(f"Periodic snapshot scheduled every {interval_hours} hours")
+        logger.info(f"History snapshot scheduled every {interval_hours}h")
 
     async def _send_daily_briefing(self):
         """Generate and send daily briefing."""
@@ -285,19 +287,13 @@ _Auto-generated briefing_
             logger.info("Basic daily briefing sent")
 
     async def _take_market_snapshot(self):
-        """Take and optionally store market snapshot."""
-        logger.debug("Taking market snapshot...")
-
+        """Write RADAR/bias history rows (import here avoids a startup cycle)."""
         try:
-            price_data = self.exchange.get_current_price()
-            funding_data = self.exchange.fetch_funding_rate()
+            from services.snapshots import take_history_snapshots
 
-            # Could store to database here if needed
-            logger.debug(f"Snapshot: BTC ${price_data.get('price', 0):,.0f}, "
-                        f"Funding: {funding_data.get('funding_rate', 0):.4f}%")
-
+            await take_history_snapshots()
         except Exception as e:
-            logger.error(f"Error taking snapshot: {e}")
+            logger.error(f"Error taking history snapshot: {e}")
 
     async def send_briefing_now(self):
         """Send briefing immediately (for testing)."""

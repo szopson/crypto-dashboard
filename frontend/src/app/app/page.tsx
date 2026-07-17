@@ -7,6 +7,7 @@ import { useMarketData } from "@/hooks/useMarketData";
 import { useSymbol, formatSymbolShort, formatSymbol } from "@/contexts/SymbolContext";
 import { BiasGrid } from "@/components/BiasGrid";
 import { RadarScore } from "@/components/RadarScore";
+import { RadarSparkline } from "@/components/RadarSparkline";
 import { PriceDisplay } from "@/components/PriceDisplay";
 import { TradingViewChart } from "@/components/TradingViewChart";
 import { AlertsList } from "@/components/AlertsList";
@@ -201,6 +202,9 @@ export default function Dashboard() {
                 </div>
               </div>
             </div>
+
+            {/* RADAR history (hourly snapshots, 30d) */}
+            <RadarSparkline timeframe="1D" />
 
             {/* Bias Grid */}
             {bias && (

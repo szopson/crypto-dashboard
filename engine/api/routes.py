@@ -4,7 +4,7 @@ FastAPI routes for Trading Command Center API.
 import csv
 import io
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -29,7 +29,7 @@ from schemas import (
     AlertConfigCreate, AlertConfigUpdate, AlertConfigResponse, AlertConfigListResponse,
     ProjectAnalysisRequest, ProjectReportResponse,
 )
-from models import TradingViewAlert, Trade, TradeStats, AlertConfig
+from models import TradingViewAlert, Trade, TradeStats, AlertConfig, RadarSnapshot
 from data.exchange import get_exchange_client, ExchangeClient
 from calculations.radar import calculate_full_radar
 from calculations.structure import analyze_structure, get_lookback_for_timeframe
@@ -144,6 +144,54 @@ async def get_current_radar(
 
     except Exception as e:
         logger.error(f"Error calculating RADAR: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# NOTE: must be declared BEFORE /radar/{timeframe} or the path param
+# swallows "history".
+@router.get("/radar/history")
+async def get_radar_history(
+    symbol: str = None,
+    timeframe: str = "1D",
+    days: int = 30,
+    session: AsyncSession = Depends(get_session),
+):
+    """
+    Historical RADAR scores from the hourly snapshot job. Public read-only
+    market data (like the other market GETs); `days` is clamped server-side
+    so there is no unbounded public query.
+    """
+    days = max(1, min(days, 90))
+    asset = symbol or settings.default_symbol
+    since = datetime.utcnow() - timedelta(days=days)
+
+    try:
+        result = await session.execute(
+            select(RadarSnapshot)
+            .where(
+                RadarSnapshot.asset == asset,
+                RadarSnapshot.timeframe == timeframe.upper(),
+                RadarSnapshot.timestamp >= since,
+            )
+            .order_by(RadarSnapshot.timestamp)
+        )
+        rows = result.scalars().all()
+        return {
+            "symbol": asset,
+            "timeframe": timeframe.upper(),
+            "days": days,
+            "count": len(rows),
+            "points": [
+                {
+                    "timestamp": r.timestamp.isoformat(),
+                    "score": r.radar_score,
+                    "classification": r.classification,
+                }
+                for r in rows
+            ],
+        }
+    except Exception as e:
+        logger.error(f"Error reading RADAR history: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
