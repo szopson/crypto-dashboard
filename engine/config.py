@@ -30,6 +30,9 @@ class Settings(BaseSettings):
     # Database
     database_url: str = "sqlite+aiosqlite:///./trading.db"
 
+    # Copilot (chat/analysis/briefing) — Claude calls per user per UTC day
+    copilot_daily_limit: int = 30
+
     # Exchange (CCXT)
     exchange_id: str = "bybit"
     default_symbol: str = "BTC/USDT:USDT"  # Bybit perpetual

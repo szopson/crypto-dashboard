@@ -70,6 +70,10 @@ export function CopilotChat() {
         setError("Sign in to use the copilot.");
         return;
       }
+      if (response.status === 429) {
+        setError("Daily copilot limit reached — resets at 00:00 UTC.");
+        return;
+      }
       const data = await response.json();
 
       if (data.success && data.response) {
@@ -106,6 +110,10 @@ export function CopilotChat() {
         setError("Sign in to use the copilot.");
         return;
       }
+      if (response.status === 429) {
+        setError("Daily copilot limit reached — resets at 00:00 UTC.");
+        return;
+      }
       const data = await response.json();
 
       if (data.success && data.analysis) {
@@ -133,6 +141,10 @@ export function CopilotChat() {
       const response = await fetch("/api/briefing", { headers: authHeaders() });
       if (response.status === 401) {
         setError("Sign in to use the copilot.");
+        return;
+      }
+      if (response.status === 429) {
+        setError("Daily copilot limit reached — resets at 00:00 UTC.");
         return;
       }
       const data = await response.json();

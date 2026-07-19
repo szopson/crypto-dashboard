@@ -43,6 +43,7 @@ from services.sentiment import get_sentiment_service
 from services.backtest import get_backtest_service
 from services.project_analysis import get_project_analysis_service
 from services.pdf_report import generate_pdf_report
+from services.copilot_quota import consume_copilot_quota
 
 
 router = APIRouter()
@@ -959,11 +960,17 @@ async def chat_with_copilot(
     request: ChatRequest,
     exchange: ExchangeClient = Depends(get_exchange),
     user: AuthenticatedUser = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
 ):
     """
     Chat with the trading copilot (Claude).
     Optionally includes current market data for context.
     """
+    if await consume_copilot_quota(session, user.id, settings.copilot_daily_limit) is None:
+        raise HTTPException(
+            status_code=429,
+            detail="Daily copilot limit reached — resets at 00:00 UTC.",
+        )
     try:
         llm = get_llm_service()
 
@@ -1048,11 +1055,17 @@ async def get_market_analysis(
     question: str = None,
     exchange: ExchangeClient = Depends(get_exchange),
     user: AuthenticatedUser = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
 ):
     """
     Get AI-powered market analysis.
     Optional question parameter for specific queries.
     """
+    if await consume_copilot_quota(session, user.id, settings.copilot_daily_limit) is None:
+        raise HTTPException(
+            status_code=429,
+            detail="Daily copilot limit reached — resets at 00:00 UTC.",
+        )
     try:
         llm = get_llm_service()
 
@@ -1127,10 +1140,16 @@ async def get_market_analysis(
 async def get_daily_briefing(
     exchange: ExchangeClient = Depends(get_exchange),
     user: AuthenticatedUser = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
 ):
     """
     Generate daily market briefing using Claude.
     """
+    if await consume_copilot_quota(session, user.id, settings.copilot_daily_limit) is None:
+        raise HTTPException(
+            status_code=429,
+            detail="Daily copilot limit reached — resets at 00:00 UTC.",
+        )
     try:
         llm = get_llm_service()
 

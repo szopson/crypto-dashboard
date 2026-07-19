@@ -131,6 +131,22 @@ class TradingViewAlert(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
+class CopilotUsage(Base):
+    """
+    Per-user daily copilot message counter (chat/analysis/briefing).
+
+    Local (engine SQLite) rather than the Supabase ai_setup_usage table:
+    the engine has no Supabase key by design, and the copilot is a separate
+    surface from the cockpit AI-setup quotas. Day is the UTC date, matching
+    the 00:00 UTC reset copy everywhere else.
+    """
+    __tablename__ = "copilot_usage"
+
+    user_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    day: Mapped[str] = mapped_column(String(10), primary_key=True)  # UTC YYYY-MM-DD
+    count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
+
 class Trade(Base):
     """
     Trade journal entries.

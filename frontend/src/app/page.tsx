@@ -170,6 +170,12 @@ export default function LandingPage() {
               Cockpit
             </Link>
             <Link
+              href="/app/trade-review"
+              className="text-sm text-zinc-400 hover:text-white transition-colors"
+            >
+              Trade Review
+            </Link>
+            <Link
               href="/research"
               className="text-sm text-zinc-400 hover:text-white transition-colors"
             >
@@ -225,6 +231,20 @@ export default function LandingPage() {
                   <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
                 </span>
                 Or open the live <span className="font-semibold text-zinc-200 group-hover:text-emerald-300">Derivatives Cockpit</span> — free, no signup
+                <span aria-hidden>→</span>
+              </Link>
+            </div>
+
+            {/* Trade-review wedge CTA — the acquisition hook */}
+            <div className="pt-1">
+              <Link
+                href="/app/trade-review"
+                className="group inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-emerald-400 transition-colors"
+              >
+                Upload a trade —{" "}
+                <span className="font-semibold text-zinc-200 group-hover:text-emerald-300">
+                  AI grades your decision, not your PnL
+                </span>
                 <span aria-hidden>→</span>
               </Link>
             </div>
