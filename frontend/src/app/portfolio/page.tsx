@@ -10,7 +10,7 @@
  * noise (~100.1%) can't overflow the track.
  */
 import Link from "next/link";
-import { AlertTriangle, ArrowRight } from "lucide-react";
+import { AlertTriangle, ArrowRight, ChevronDown } from "lucide-react";
 import {
   PORTFOLIO_TIERS,
   PORTFOLIO_SNAPSHOT_DATE,
@@ -232,6 +232,53 @@ export default function PortfolioPage() {
                       {token.theme}
                     </span>
                   </p>
+
+                  {/* Native <details> — expandable without client JS, keeps
+                      the page a static server component. */}
+                  {token.research && (
+                    <details className="group mt-3 rounded-lg border border-(--glass-border) bg-muted/20">
+                      <summary className="flex cursor-pointer items-center gap-2 px-3 py-2 text-sm font-medium list-none [&::-webkit-details-marker]:hidden">
+                        <ChevronDown className="size-4 text-muted-foreground transition-transform group-open:rotate-180" />
+                        Research notes
+                      </summary>
+                      <div className="px-3 pb-3 space-y-3 text-sm">
+                        <p className="text-muted-foreground">
+                          {token.research.thesis}
+                        </p>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <div>
+                            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-emerald-500">
+                              Strengths
+                            </p>
+                            <ul className="space-y-1 text-muted-foreground">
+                              {token.research.strengths.map((s, i) => (
+                                <li key={i} className="flex gap-2">
+                                  <span aria-hidden className="text-emerald-500">+</span>
+                                  {s}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                          <div>
+                            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-red-400">
+                              Risks
+                            </p>
+                            <ul className="space-y-1 text-muted-foreground">
+                              {token.research.risks.map((r, i) => (
+                                <li key={i} className="flex gap-2">
+                                  <span aria-hidden className="text-red-400">−</span>
+                                  {r}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground/70">
+                          Descriptive project notes, not investment advice.
+                        </p>
+                      </div>
+                    </details>
+                  )}
                 </div>
               ))}
             </div>
