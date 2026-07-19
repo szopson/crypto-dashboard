@@ -23,6 +23,7 @@ export type PortfolioTheme =
   | "Identity"
   | "AgriTech"
   | "Commerce"
+  | "Oracles"
   | "Early stage";
 
 /**
@@ -345,34 +346,76 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
     label: "Moonshots",
     riskLabel: "Extreme risk",
     description:
-      "Development-phase microcaps — pre-product, no track record, launchpad-origin. Lottery-ticket sizing; assume total loss is the base case.",
+      "Sub-$1M microcaps — live or early products, but negligible liquidity, thin holder bases and no market validation. Lottery-ticket sizing; assume total loss is the base case.",
     tokens: [
       {
         symbol: "NRL",
-        theme: "Early stage",
-        name: "NRL",
+        theme: "Payments",
+        name: "NodeRails",
         allocationPct: 5.3,
         chain: "Solana",
         description:
-          "Development-phase microcap on Solana — project is just getting started.",
+          "Multi-chain crypto payments gateway — hosted checkouts, payment links, subscriptions and dispute protection across EVM, Solana and Sui.",
+        research: {
+          thesis:
+            "NodeRails is checkout infrastructure for web3 commerce: hosted checkouts, payment links, subscriptions, invoices and dispute protection, built on a full payment-intent lifecycle (created \u2192 authorized \u2192 captured \u2192 settled, plus refunds and disputes) with webhooks and on-chain refunds. NRL is the brand's Solana SPL token with ~1B fully circulating supply \u2014 no unlock overhang.",
+          strengths: [
+            "Developer-friendly stack: APIs, webhooks and a coherent payment-intent model",
+            "Live product in a real vertical (e-commerce payments), not just a whitepaper",
+            "Fully circulating supply \u2014 a clean spot market with no vesting cliffs ahead",
+          ],
+          risks: [
+            "No explicit value-capture from business revenue to the token yet \u2014 stablecoins sit at the center of the payment flow, not NRL",
+            "Extremely thin liquidity, few holders, top-10 addresses hold ~40% of supply",
+            "No major exchange listings \u2014 price is easy to move",
+          ],
+        },
       },
       {
         symbol: "OCCA",
-        theme: "Early stage",
-        name: "OCCA",
+        theme: "AI",
+        name: "OCCA AI",
         allocationPct: 1.6,
         chain: "Solana",
         description:
-          "Development-phase microcap on Solana — project is just getting started.",
+          "Operating layer for agent-run companies — on-chain identity, treasury and a verifiable trace of every AI agent's actions.",
+        research: {
+          thesis:
+            "OCCA AI is building the operating layer for companies run by autonomous AI agents: every agent, task and transaction lands on-chain, state is deterministic, and models are called only where a step actually needs inference \u2014 the goal is an agent-run company that is fully auditable on-chain rather than a black-box LLM SaaS.",
+          strengths: [
+            "Pure exposure to the autonomous-agents narrative \u2014 agent identity, treasury and audit trail as the product",
+            "Verifiable-on-chain stats by design, not dashboard claims",
+            "Integrates with existing agent runtimes rather than reinventing them",
+          ],
+          risks: [
+            "No published tokenomics \u2014 supply breakdown, vesting and value accrual are unknown",
+            "Concept stage: no disclosed revenue or mature product",
+            "Extreme microcap liquidity \u2014 exits from any meaningful size are narrow",
+          ],
+        },
       },
       {
         symbol: "SWCH",
-        theme: "Early stage",
-        name: "SWCH",
+        theme: "Oracles",
+        name: "Switchboard",
         allocationPct: 0.6,
         chain: "Solana",
         description:
-          "Development-phase microcap on Solana — project is just getting started.",
+          "Permissionless oracle network — low-latency price feeds, verifiable randomness and a cross-provider aggregator, extending into AI inference.",
+        research: {
+          thesis:
+            "Switchboard is a permissionless oracle network: sub-100ms streaming price feeds, verifiable randomness and an aggregator that combines providers like Chainlink and Pyth into one feed, extended with TEE-secured custom data and an AI inference exchange. Staked tokens (svSWTCH) carry governance and a share of oracle fees, and operators need delegated stake as economic security.",
+          strengths: [
+            "Fundamental use case \u2014 oracles and VRF are needed in every market regime",
+            "Explicit value capture: staking rewards paid from real oracle fees",
+            "Working product with cross-chain integrations at a very small market cap",
+          ],
+          risks: [
+            "Entrenched competition (Chainlink, Pyth, RedStone) with far larger network effects",
+            "Conflicting circulating-supply data across trackers and extreme volatility since listing",
+            "The AI inference exchange is new and unproven as a demand source",
+          ],
+        },
       },
     ],
   },

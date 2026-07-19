@@ -55,6 +55,7 @@ const THEME_COLOR: Record<PortfolioTheme, { bar: string; dot: string; chip: stri
   Identity: { bar: "bg-pink-500", dot: "bg-pink-500", chip: "bg-pink-500/15 text-pink-400" },
   AgriTech: { bar: "bg-lime-500", dot: "bg-lime-500", chip: "bg-lime-500/15 text-lime-400" },
   Commerce: { bar: "bg-orange-400", dot: "bg-orange-400", chip: "bg-orange-400/15 text-orange-300" },
+  Oracles: { bar: "bg-sky-500", dot: "bg-sky-500", chip: "bg-sky-500/15 text-sky-400" },
   // Lifecycle bucket, not a utility theme — deliberately muted.
   "Early stage": { bar: "bg-zinc-600", dot: "bg-zinc-600", chip: "bg-zinc-500/15 text-zinc-400" },
 };
