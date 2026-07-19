@@ -212,14 +212,34 @@ function fetchBtcFundingByVenue(): Promise<BtcFundingRow[] | null> {
   if (fundingMemo && now - fundingMemo.at < FUNDING_TTL_MS) return fundingMemo.promise;
 
   const promise = cgGet<
-    { symbol: string; stablecoin_margin_list?: { exchange: string; funding_rate: number }[] }[]
+    {
+      symbol: string;
+      stablecoin_margin_list?: {
+        exchange: string;
+        funding_rate: number;
+        funding_rate_interval?: number | null;
+      }[];
+    }[]
   >("/api/futures/funding-rate/exchange-list?symbol=BTC")
     .then((rows) => {
       const list =
         rows
           ?.find((r) => r.symbol === "BTC")
-          ?.stablecoin_margin_list?.slice(0, 8)
-          .map((e) => ({ exchange: e.exchange, rate_pct: e.funding_rate })) ?? null;
+          ?.stablecoin_margin_list
+          // Dead-feed guard: some venues (CoinEx) report a literal 0.0 that
+          // never moves — a live funding rate is practically never exactly
+          // zero. Including them made "widest spread" always point at the
+          // dead venue.
+          ?.filter((e) => typeof e.funding_rate === "number" && e.funding_rate !== 0)
+          // Interval normalization: rates are per funding_rate_interval hours
+          // (Kraken = 1h, most = 8h, some report null → assume the standard
+          // 8h). Everything downstream is labelled %/8h, so normalize here —
+          // comparing a 1h rate against 8h rates overstated the spread.
+          .map((e) => ({
+            exchange: e.exchange,
+            rate_pct: e.funding_rate * (8 / (e.funding_rate_interval || 8)),
+          }))
+          .slice(0, 8) ?? null;
       // Don't memoize failures — let the next render retry immediately.
       if (!list) fundingMemo = null;
       return list;
