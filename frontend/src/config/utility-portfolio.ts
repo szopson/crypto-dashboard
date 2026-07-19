@@ -14,12 +14,29 @@
 
 export type RiskTierId = "core" | "frontier" | "moonshot";
 
+export type PortfolioTheme =
+  | "AI"
+  | "DePIN"
+  | "Spatial computing"
+  | "Privacy"
+  | "Payments"
+  | "Identity"
+  | "AgriTech"
+  | "Commerce"
+  | "Early stage";
+
 export interface PortfolioToken {
   symbol: string;
   name: string;
   /** Percent of the whole altcoin sleeve (all tiers sum to ~100). */
   allocationPct: number;
   description: string;
+  /**
+   * Canonical utility theme — single source of truth for the theme
+   * breakdown on the page. "Early stage" is a lifecycle bucket (thesis not
+   * yet classifiable), deliberately distinct from utility themes.
+   */
+  theme: PortfolioTheme;
   chain?: string;
 }
 
@@ -43,6 +60,7 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
     tokens: [
       {
         symbol: "TAO",
+        theme: "AI",
         name: "Bittensor",
         allocationPct: 28.1,
         description:
@@ -50,6 +68,7 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
       },
       {
         symbol: "PEAQ",
+        theme: "DePIN",
         name: "peaq",
         allocationPct: 10.4,
         description:
@@ -57,6 +76,7 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
       },
       {
         symbol: "ZBCN",
+        theme: "Payments",
         name: "Zebec Network",
         allocationPct: 8.0,
         description:
@@ -64,6 +84,7 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
       },
       {
         symbol: "LYX",
+        theme: "Identity",
         name: "LUKSO",
         allocationPct: 7.8,
         description:
@@ -71,6 +92,7 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
       },
       {
         symbol: "AZERO",
+        theme: "Privacy",
         name: "Aleph Zero",
         allocationPct: 7.4,
         description:
@@ -78,6 +100,7 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
       },
       {
         symbol: "FET",
+        theme: "AI",
         name: "Artificial Superintelligence Alliance",
         allocationPct: 6.4,
         description:
@@ -85,6 +108,7 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
       },
       {
         symbol: "DMTR",
+        theme: "AgriTech",
         name: "Dimitra",
         allocationPct: 3.7,
         description:
@@ -92,6 +116,7 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
       },
       {
         symbol: "AVICI",
+        theme: "Early stage",
         name: "Avici",
         allocationPct: 3.5,
         description:
@@ -99,6 +124,7 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
       },
       {
         symbol: "BOSON",
+        theme: "Commerce",
         name: "Boson Protocol",
         allocationPct: 2.5,
         description:
@@ -106,6 +132,7 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
       },
       {
         symbol: "ORAI",
+        theme: "AI",
         name: "Oraichain",
         allocationPct: 2.3,
         description:
@@ -113,6 +140,7 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
       },
       {
         symbol: "OPENX",
+        theme: "AI",
         name: "OpenxAI Network",
         allocationPct: 1.4,
         description:
@@ -120,6 +148,7 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
       },
       {
         symbol: "MPC",
+        theme: "Privacy",
         name: "Partisia Blockchain",
         allocationPct: 1.0,
         description:
@@ -136,6 +165,7 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
     tokens: [
       {
         symbol: "AUKI",
+        theme: "Spatial computing",
         name: "Auki Labs (posemesh)",
         allocationPct: 10.1,
         description:
@@ -152,6 +182,7 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
     tokens: [
       {
         symbol: "NRL",
+        theme: "Early stage",
         name: "NRL",
         allocationPct: 5.3,
         chain: "Solana",
@@ -160,6 +191,7 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
       },
       {
         symbol: "OCCA",
+        theme: "Early stage",
         name: "OCCA",
         allocationPct: 1.6,
         chain: "Solana",
@@ -168,6 +200,7 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
       },
       {
         symbol: "SWCH",
+        theme: "Early stage",
         name: "SWCH",
         allocationPct: 0.6,
         chain: "Solana",
@@ -180,4 +213,37 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
 
 export function tierTotalPct(tier: RiskTier): number {
   return tier.tokens.reduce((s, t) => s + t.allocationPct, 0);
+}
+
+// Sleeve invariant: allocations must sum to ~100 (rounding tolerance ±1.5).
+// The page is statically prerendered, so a bad edit fails the BUILD, not the
+// visitor.
+const SLEEVE_SUM = PORTFOLIO_TIERS.reduce((s, t) => s + tierTotalPct(t), 0);
+if (Math.abs(SLEEVE_SUM - 100) > 1.5) {
+  throw new Error(
+    `utility-portfolio: allocations sum to ${SLEEVE_SUM.toFixed(1)}% — expected ~100%. Fix the percentages.`,
+  );
+}
+
+export interface ThemeSlice {
+  theme: PortfolioTheme;
+  pct: number;
+}
+
+/** Theme totals derived from the canonical per-token theme field, desc. */
+export function themeBreakdown(): ThemeSlice[] {
+  const totals = new Map<PortfolioTheme, number>();
+  for (const tier of PORTFOLIO_TIERS) {
+    for (const t of tier.tokens) {
+      totals.set(t.theme, (totals.get(t.theme) ?? 0) + t.allocationPct);
+    }
+  }
+  return [...totals.entries()]
+    .map(([theme, pct]) => ({ theme, pct }))
+    .sort((a, b) => {
+      // "Early stage" is a lifecycle bucket — always last, regardless of size.
+      if (a.theme === "Early stage") return 1;
+      if (b.theme === "Early stage") return -1;
+      return b.pct - a.pct;
+    });
 }

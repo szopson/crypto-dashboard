@@ -242,6 +242,43 @@
   animation: shimmer 1.8s linear infinite;
 }
 
+/* Entrance reveal for allocation bars: scaleX (not width — no layout thrash,
+   Server-Component safe) growing from the left. */
+@keyframes bar-grow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@utility animate-bar-grow {
+  transform-origin: left;
+  animation: bar-grow 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@utility animate-fade-up {
+  animation: fade-up 0.6s ease-out both;
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
 /* Research report body styling — applies only to plain markdown between custom components.
    Plain CSS (no @apply) to ensure Tailwind 4 picks it up regardless of layer ordering. */
 .report-body h2 {
