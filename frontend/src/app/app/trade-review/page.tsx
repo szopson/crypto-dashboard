@@ -17,6 +17,7 @@ import { TradeInsightsPanel } from "@/components/research/TradeInsightsPanel";
 import { TradeReviewDemo } from "@/components/research/TradeReviewDemo";
 import { useAuth } from "@/contexts/AuthContext";
 import { saveTradeReview, JournalNotProvisionedError } from "@/lib/trade-journal";
+import { ShareScorecardButton } from "@/components/ShareScorecardButton";
 import type { TradeReviewResult } from "@/lib/trade-review";
 
 const ALLOWED = ["image/png", "image/jpeg", "image/gif", "image/webp"];
@@ -313,7 +314,7 @@ export default function TradeReviewPage() {
         <div className="space-y-4">
           <TradeScorecard data={result.scorecard} />
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <Button
               variant={saved ? "secondary" : "default"}
               onClick={save}
@@ -333,6 +334,10 @@ export default function TradeReviewPage() {
                 </>
               )}
             </Button>
+            <ShareScorecardButton
+              scorecard={result.scorecard}
+              surface="trade-review-result"
+            />
           </div>
           {saveError && (
             <p className="text-sm text-red-500" role="alert">

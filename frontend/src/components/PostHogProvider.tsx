@@ -200,6 +200,20 @@ export const analytics = {
   },
 
   /**
+   * Track a scorecard share (the trade-review viral loop). `method` is
+   * native | copy | download; `surface` is where the share started.
+   */
+  trackScorecardShare: (method: string, processScore: number, surface: string) => {
+    if (POSTHOG_KEY) {
+      posthog.capture("scorecard_share", {
+        method,
+        process_score: processScore,
+        surface,
+      });
+    }
+  },
+
+  /**
    * Track an opportunity watch-card expand — the attention step of the
    * card → context → affiliate_click funnel (docs/research/OPPORTUNITY_ENGINE.md).
    */
