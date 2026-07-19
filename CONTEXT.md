@@ -75,6 +75,7 @@ No SSH to prod from dev machines — prod operations go through
 | **ExchangeCTA** | CTA component that deep-links the cheapest venue for the user. | `frontend/src/components/cockpit/ExchangeCTA.tsx` |
 | **MiCA / KNF** | EU/PL regulatory constraints on crypto promotion — affiliate copy and venue availability need legal sign-off. | header notes in `exchanges.ts` |
 | **Waitlist** | Landing page email capture (Supabase + Resend); lead magnet = free AAVE equity report PDF. | `frontend/src/components/WaitlistForm.tsx`, `engine/api/waitlist.py` |
+| **Utility portfolio** | `/portfolio` — Jakub's personal "Altcoin Utility Season Portfolio" published as a transparency signpost. Percentages of the altcoin sleeve ONLY (never absolute sizes/entries), three risk tiers (Utility Core / Frontier / Moonshots), hard not-investment-advice banner. Data lives in a static config with the MiCA rules in its header. | `frontend/src/config/utility-portfolio.ts`, `frontend/src/app/portfolio/page.tsx` |
 
 ### Research (Follio)
 

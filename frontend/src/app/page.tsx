@@ -182,6 +182,12 @@ export default function LandingPage() {
               Research
             </Link>
             <Link
+              href="/portfolio"
+              className="text-sm text-zinc-400 hover:text-white transition-colors"
+            >
+              Portfolio
+            </Link>
+            <Link
               href="/app"
               className="text-sm text-zinc-400 hover:text-white transition-colors"
             >
