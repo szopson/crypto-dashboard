@@ -228,11 +228,26 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
       },
       {
         symbol: "AVICI",
-        theme: "Early stage",
-        name: "Avici",
+        theme: "Payments",
+        name: "AviciMoney",
         allocationPct: 3.5,
+        chain: "Solana",
         description:
-          "Early-stage project — small allocation while the thesis matures.",
+          "Crypto-neobank front end on Solana — self-custodial smart wallets, Visa cards, virtual IBANs, business accounts and stablecoin payroll.",
+        research: {
+          thesis:
+            "AviciMoney is the user-layer bet of the crypto-neobank stack: instead of building rails (telecom networks, stablecoin L1s), it packages crypto finance like a modern fintech app \u2014 self-custodial wallets, Visa card spending, virtual IBAN accounts, business treasury and stablecoin payroll \u2014 with card and service fees funding buybacks and burns so token holders participate in platform revenue.",
+          strengths: [
+            "User-facing products people already understand: cards, IBANs, payroll, business accounts",
+            "Revenue-linked token design \u2014 fees fund buybacks/burns rather than pure emissions",
+            "Virtual IBANs improve fiat on/off-ramps and cross-border account functionality",
+          ],
+          risks: [
+            "Thin liquidity and a small user base \u2014 the revenue flywheel needs far more scale to be durable",
+            "Execution depends on third-party rails: Solana, Visa and banking partners",
+            "Card/banking regulatory exposure (KYC/AML, licensing) typical for fintech",
+          ],
+        },
       },
       {
         symbol: "BOSON",
@@ -284,7 +299,21 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
         name: "OpenxAI Network",
         allocationPct: 1.4,
         description:
-          "Open, decentralized AI model hosting and deployment — early stage.",
+          "Decentralized AI protocol — permissionless creation, ownership and monetization of AI agents, with tokenized compute and low-code tooling.",
+        research: {
+          thesis:
+            "OpenxAI positions itself as an AI layer for Web3: a permissionless protocol where builders create, own and monetize AI agents end-to-end \u2014 code, app and infrastructure \u2014 without a platform intermediary, backed by tokenized compute marketed as materially cheaper than centralized cloud plus low-code tooling for shipping AI apps fast.",
+          strengths: [
+            "Team with ex-Fantom and Auki background; reported $9M+ in ecosystem spend",
+            "Integrations with Base and the Fetch.ai/ASI ecosystem plug it into large existing communities",
+            "Clear niche: agent ownership plus compute, not another model marketplace",
+          ],
+          risks: [
+            "Compute-cost claims (up to ~80% below AWS) are marketing until proven at scale",
+            "Crowded decentralized-compute segment (Akash, Render, io.net and others)",
+            "Microcap liquidity and early product maturity",
+          ],
+        },
       },
       {
         symbol: "MPC",

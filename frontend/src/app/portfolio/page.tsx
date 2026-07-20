@@ -146,8 +146,7 @@ export default function PortfolioPage() {
       <section className="mb-10 animate-fade-up">
         <h2 className="mb-1 text-xl font-semibold">Where the conviction sits</h2>
         <p className="mb-3 text-sm text-muted-foreground">
-          The same sleeve grouped by utility theme. &quot;Early stage&quot; is a
-          lifecycle bucket — positions too young to classify — not a theme.
+          The same sleeve grouped by utility theme.
         </p>
         <div className="h-5 flex rounded-full overflow-hidden animate-bar-grow" aria-hidden>
           {THEMES.map((slice, i) => (
