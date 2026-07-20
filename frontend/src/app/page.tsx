@@ -2,6 +2,8 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { WaitlistForm } from "@/components/WaitlistForm";
 import { WaitlistCounter } from "@/components/WaitlistCounter";
+import { SiteHeader } from "@/components/SiteHeader";
+import { SiteFooter } from "@/components/SiteFooter";
 
 export const metadata: Metadata = {
   title: "Follio | Professional Crypto Analysis Tools",
@@ -154,49 +156,10 @@ export default function LandingPage() {
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-[128px]" />
       </div>
 
-      {/* Header */}
-      <header className="relative border-b border-white/[0.08] backdrop-blur-sm bg-black/20 sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-xl font-bold tracking-tight">Follio</h1>
-          <div className="flex items-center gap-5">
-            <Link
-              href="/cockpit"
-              className="flex items-center gap-1.5 text-sm text-zinc-400 hover:text-white transition-colors"
-            >
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-              </span>
-              Cockpit
-            </Link>
-            <Link
-              href="/app/trade-review"
-              className="text-sm text-zinc-400 hover:text-white transition-colors"
-            >
-              Trade Review
-            </Link>
-            <Link
-              href="/research"
-              className="text-sm text-zinc-400 hover:text-white transition-colors"
-            >
-              Research
-            </Link>
-            <Link
-              href="/portfolio"
-              className="text-sm text-zinc-400 hover:text-white transition-colors"
-            >
-              Portfolio
-            </Link>
-            <Link
-              href="/app"
-              className="text-sm text-zinc-400 hover:text-white transition-colors"
-            >
-              Launch App
-            </Link>
-          </div>
-        </div>
-      </header>
+      {/* Header — shared site chrome (also fixes the old unlinked wordmark) */}
+      <SiteHeader />
 
+      <main id="main-content">
       {/* Hero Section */}
       <section className="relative py-24 sm:py-32">
         <div className="container mx-auto px-4 text-center">
@@ -570,21 +533,10 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="relative py-8 border-t border-white/[0.08]">
-        <div className="container mx-auto px-4 text-center text-sm text-zinc-500">
-          <p className="mb-2">Follio</p>
-          <div className="flex items-center justify-center gap-4">
-            <Link href="/terms" className="text-zinc-600 hover:text-zinc-400 transition-colors">
-              Terms of Service
-            </Link>
-            <span className="text-zinc-700">|</span>
-            <Link href="/privacy" className="text-zinc-600 hover:text-zinc-400 transition-colors">
-              Privacy Policy
-            </Link>
-          </div>
-        </div>
-      </footer>
+      </main>
+
+      {/* Footer — shared site chrome */}
+      <SiteFooter />
     </div>
   );
 }
