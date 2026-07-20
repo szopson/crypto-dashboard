@@ -69,6 +69,51 @@ const SLEEVE_TOTAL = ALL_TOKENS.reduce((s, t) => s + t.allocationPct, 0);
 const MAX_PCT = Math.max(...ALL_TOKENS.map((t) => t.allocationPct));
 const THEMES = themeBreakdown();
 
+// Distinct per-token donut palette (CMC-style) — hex because SVG strokes,
+// order matches ALL_TOKENS.
+const DONUT_PALETTE = [
+  "#3b82f6", // blue
+  "#22c55e", // green
+  "#f97316", // orange
+  "#06b6d4", // cyan
+  "#8b5cf6", // violet
+  "#ec4899", // pink
+  "#14b8a6", // teal
+  "#eab308", // yellow
+  "#6366f1", // indigo
+  "#84cc16", // lime
+  "#f43f5e", // rose
+  "#0ea5e9", // sky
+  "#d946ef", // fuchsia
+  "#f59e0b", // amber
+  "#ef4444", // red
+  "#a1a1aa", // zinc
+];
+const LEGEND_TOP = 7;
+
+// Donut segments: sorted by allocation desc so the legend reads like the
+// screenshot-style allocation widget; widths normalized to the true sum.
+const DONUT_TOKENS = [...ALL_TOKENS].sort(
+  (a, b) => b.allocationPct - a.allocationPct,
+);
+let donutCum = 0;
+const DONUT_SEGMENTS = DONUT_TOKENS.map((t, i) => {
+  const pct = (t.allocationPct / SLEEVE_TOTAL) * 100;
+  const seg = {
+    symbol: t.symbol,
+    displayPct: t.allocationPct,
+    pct,
+    offset: donutCum,
+    color: DONUT_PALETTE[i % DONUT_PALETTE.length],
+  };
+  donutCum += pct;
+  return seg;
+});
+const OTHERS_PCT = DONUT_TOKENS.slice(LEGEND_TOP).reduce(
+  (s, t) => s + t.allocationPct,
+  0,
+);
+
 export default function PortfolioPage() {
   return (
     <div className="relative mx-auto max-w-4xl overflow-x-clip px-6 py-12">
@@ -109,22 +154,58 @@ export default function PortfolioPage() {
         </div>
       </div>
 
-      {/* Sleeve at a glance — every token as a tier-colored segment */}
+      {/* Allocation — donut of the whole sleeve, one segment per token */}
       <section className="mb-8 animate-fade-up">
-        <h2 className="mb-1 text-xl font-semibold">The sleeve at a glance</h2>
-        <p className="mb-3 text-sm text-muted-foreground">
-          Every position as a share of the whole — colored by risk tier.
+        <h2 className="mb-1 text-xl font-semibold">Allocation</h2>
+        <p className="mb-4 text-sm text-muted-foreground">
+          Every position as a share of the whole sleeve.
         </p>
-        <div className="h-5 flex rounded-full overflow-hidden animate-bar-grow" aria-hidden>
-          {ALL_TOKENS.map((token, i) => (
-            <div
-              key={token.symbol}
-              className={`${TIER_ACCENT[token.tierId].bar} ${i > 0 ? "border-l border-background/60" : ""}`}
-              style={{ width: `${(token.allocationPct / SLEEVE_TOTAL) * 100}%` }}
-            />
-          ))}
+        <div className="flex flex-col items-center gap-6 sm:flex-row sm:justify-center sm:gap-12">
+          <svg
+            viewBox="0 0 42 42"
+            className="size-52 shrink-0 -rotate-90"
+            aria-hidden
+          >
+            {DONUT_SEGMENTS.map((seg) => (
+              <circle
+                key={seg.symbol}
+                cx="21"
+                cy="21"
+                r="15.915"
+                fill="none"
+                stroke={seg.color}
+                strokeWidth="4.5"
+                pathLength={100}
+                strokeDasharray={`${Math.max(seg.pct - 0.6, 0.2)} ${100 - Math.max(seg.pct - 0.6, 0.2)}`}
+                strokeDashoffset={-seg.offset}
+              />
+            ))}
+          </svg>
+          <div className="space-y-1.5 text-sm">
+            {DONUT_SEGMENTS.slice(0, LEGEND_TOP).map((seg) => (
+              <div key={seg.symbol} className="flex items-center gap-2.5 min-w-44">
+                <span
+                  className="size-2.5 rounded-full shrink-0"
+                  style={{ backgroundColor: seg.color }}
+                />
+                <span className="font-medium">{seg.symbol}</span>
+                <span className="ml-auto font-mono text-muted-foreground">
+                  {seg.displayPct.toFixed(1)}%
+                </span>
+              </div>
+            ))}
+            <div className="flex items-center gap-2.5 min-w-44">
+              <span className="size-2.5 rounded-full shrink-0 bg-zinc-600" />
+              <span className="font-medium text-muted-foreground">
+                Others ({DONUT_TOKENS.length - LEGEND_TOP})
+              </span>
+              <span className="ml-auto font-mono text-muted-foreground">
+                {OTHERS_PCT.toFixed(1)}%
+              </span>
+            </div>
+          </div>
         </div>
-        {/* Full data for screen readers — segments above are decorative */}
+        {/* Full data for screen readers — the donut is decorative */}
         <ul className="sr-only">
           {ALL_TOKENS.map((t) => (
             <li key={t.symbol}>
@@ -132,7 +213,7 @@ export default function PortfolioPage() {
             </li>
           ))}
         </ul>
-        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+        <div className="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
           {PORTFOLIO_TIERS.map((tier) => (
             <span key={tier.id} className="inline-flex items-center gap-1.5">
               <span className={`size-2 rounded-full ${TIER_ACCENT[tier.id].bar}`} />
@@ -273,6 +354,22 @@ export default function PortfolioPage() {
                             </ul>
                           </div>
                         </div>
+                        {token.research.catalysts &&
+                          token.research.catalysts.length > 0 && (
+                            <div>
+                              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-sky-400">
+                                Catalysts to watch
+                              </p>
+                              <ul className="space-y-1 text-muted-foreground">
+                                {token.research.catalysts.map((c, i) => (
+                                  <li key={i} className="flex gap-2">
+                                    <span aria-hidden className="text-sky-400">→</span>
+                                    {c}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
                         <p className="text-xs text-muted-foreground/70">
                           Descriptive project notes, not investment advice.
                         </p>

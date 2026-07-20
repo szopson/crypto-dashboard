@@ -36,6 +36,8 @@ export interface TokenResearch {
   thesis: string;
   strengths: string[];
   risks: string[];
+  /** Upcoming events / catalysts — factual and dated only where certain. */
+  catalysts?: string[];
 }
 
 export interface PortfolioToken {
@@ -92,6 +94,10 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
             "Technical complexity limits organic retail demand beyond the AI narrative",
             "Deep-drawdown volatility and potential exposure to future AI/compute-market regulation",
           ],
+          catalysts: [
+            "Subnet ecosystem expansion",
+            "Progression along the emission-halving curve",
+          ],
         },
       },
       {
@@ -114,6 +120,9 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
             "Competes with general-purpose L1s/L2s that can host the same apps",
             "Token demand depends on real network usage materializing",
           ],
+          catalysts: [
+            "New DePIN / machine-RWA deployments onboarding to the network",
+          ],
         }
       },
       {
@@ -135,6 +144,10 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
             "Fintech-grade regulatory exposure: KYC/AML, card licensing, compliance costs",
             "Value accrual depends on one core business — weak cash flow means weak buybacks",
             "Competitive Web3 payroll/payments segment",
+          ],
+          catalysts: [
+            "Deflationary regime fully in force since the final March 2026 unlocks",
+            "Buyback cadence tracking product revenue",
           ],
         },
       },
@@ -202,6 +215,9 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
             "Multi-project merger adds governance, integration and coordination risk",
             "Agent adoption still trails the 'decentralized AGI' marketing",
           ],
+          catalysts: [
+            "Completion of the ASI token merge and rebrand",
+          ],
         },
       },
       {
@@ -246,6 +262,10 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
             "Thin liquidity and a small user base \u2014 the revenue flywheel needs far more scale to be durable",
             "Execution depends on third-party rails: Solana, Visa and banking partners",
             "Card/banking regulatory exposure (KYC/AML, licensing) typical for fintech",
+          ],
+          catalysts: [
+            "Virtual IBAN rollout",
+            "Planned credit products",
           ],
         },
       },
@@ -313,6 +333,9 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
             "Crowded decentralized-compute segment (Akash, Render, io.net and others)",
             "Microcap liquidity and early product maturity",
           ],
+          catalysts: [
+            "Base and Fetch.ai/ASI integration milestones",
+          ],
         },
       },
       {
@@ -365,6 +388,10 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
             "Market timing depends on AR/robotics hardware adoption curves",
             "Small cap, thin liquidity, limited analyst coverage",
             "Concentrated single-team execution risk",
+          ],
+          catalysts: [
+            "Retail posemesh deployments scaling",
+            "AR / smart-glasses hardware cycle",
           ],
         }
       },
@@ -443,6 +470,10 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
             "Entrenched competition (Chainlink, Pyth, RedStone) with far larger network effects",
             "Conflicting circulating-supply data across trackers and extreme volatility since listing",
             "The AI inference exchange is new and unproven as a demand source",
+          ],
+          catalysts: [
+            "Traction of the AI inference exchange",
+            "Cross-chain feed expansion",
           ],
         },
       },
