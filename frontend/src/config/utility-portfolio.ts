@@ -79,7 +79,7 @@ export interface RiskTier {
   tokens: PortfolioToken[];
 }
 
-export const PORTFOLIO_SNAPSHOT_DATE = "2026-07-19";
+export const PORTFOLIO_SNAPSHOT_DATE = "2026-07-20";
 
 export const PORTFOLIO_TIERS: RiskTier[] = [
   {
@@ -94,7 +94,7 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
         chart: { kind: "tradingview", symbol: "BINANCE:TAOUSDT" },
         theme: "AI",
         name: "Bittensor",
-        allocationPct: 28.1,
+        allocationPct: 27.2,
         description:
           "Decentralized machine-intelligence network — subnets compete to serve AI workloads and are rewarded in TAO.",
         research: {
@@ -121,7 +121,7 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
         chart: { kind: "tradingview", symbol: "BYBIT:PEAQUSDT.P" },
         theme: "DePIN",
         name: "peaq",
-        allocationPct: 10.4,
+        allocationPct: 10.1,
         description:
           "Layer-1 built for DePIN and machine real-world assets — machines as first-class economic actors.",
         research: {
@@ -147,7 +147,7 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
         chart: { kind: "tradingview", symbol: "BYBIT:ZBCNUSDT.P" },
         theme: "Payments",
         name: "Zebec Network",
-        allocationPct: 8.0,
+        allocationPct: 7.7,
         description:
           "Payments infrastructure — continuous streaming of payroll and payments on-chain.",
         research: {
@@ -174,7 +174,7 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
         chart: { kind: "tradingview", symbol: "GATEIO:LYXUSDT" },
         theme: "Identity",
         name: "LUKSO",
-        allocationPct: 7.8,
+        allocationPct: 7.6,
         description:
           "Identity-centric layer-1 (Universal Profiles) targeting the creative and social economy.",
         research: {
@@ -197,7 +197,7 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
         chart: { kind: "tradingview", symbol: "KUCOIN:AZEROUSDT" },
         theme: "Privacy",
         name: "Aleph Zero",
-        allocationPct: 7.4,
+        allocationPct: 7.2,
         description:
           "Privacy-enhancing layer-1 combining zero-knowledge proofs with multi-party computation, sub-second finality.",
         research: {
@@ -220,7 +220,7 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
         chart: { kind: "tradingview", symbol: "BINANCE:FETUSDT" },
         theme: "AI",
         name: "Artificial Superintelligence Alliance",
-        allocationPct: 6.4,
+        allocationPct: 9.3,
         description:
           "Merged Fetch.ai / SingularityNET / Ocean stack — decentralized agentic-AI infrastructure and marketplaces.",
         research: {
@@ -246,7 +246,7 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
         chart: { kind: "tradingview", symbol: "GATEIO:DMTRUSDT" },
         theme: "AgriTech",
         name: "Dimitra",
-        allocationPct: 3.7,
+        allocationPct: 3.6,
         description:
           "Agritech data platform bringing satellite, sensor and ML tooling to emerging-market farming.",
         research: {
@@ -269,7 +269,7 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
         chart: { kind: "dexscreener", chain: "solana", pair: "3D854kknnQhu9xVaRNV154oZ9oN2WF3tXsq3LDu7fFMn" },
         theme: "Payments",
         name: "AviciMoney",
-        allocationPct: 3.5,
+        allocationPct: 3.4,
         chain: "Solana",
         description:
           "Crypto-neobank front end on Solana — self-custodial smart wallets, Visa cards, virtual IBANs, business accounts and stablecoin payroll.",
@@ -297,7 +297,7 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
         chart: { kind: "tradingview", symbol: "GATEIO:BOSONUSDT" },
         theme: "Commerce",
         name: "Boson Protocol",
-        allocationPct: 2.5,
+        allocationPct: 2.4,
         description:
           "Decentralized commerce — physical goods tokenized as redeemable on-chain vouchers.",
         research: {
@@ -320,7 +320,7 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
         chart: { kind: "tradingview", symbol: "GATEIO:ORAIUSDT" },
         theme: "AI",
         name: "Oraichain",
-        allocationPct: 2.3,
+        allocationPct: 2.2,
         description:
           "AI oracle layer and AI-centric chain — verifiable AI computation for smart contracts.",
         research: {
@@ -401,7 +401,7 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
         chart: { kind: "tradingview", symbol: "MEXC:AUKIUSDT" },
         theme: "Spatial computing",
         name: "Auki Labs (posemesh)",
-        allocationPct: 10.1,
+        allocationPct: 9.8,
         description:
           "Decentralized machine-perception network — shared spatial computing (the posemesh) for AR and robotics positioning.",
         research: {
@@ -438,7 +438,7 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
         chart: { kind: "dexscreener", chain: "solana", pair: "AUkyLNWsa4oYbeLtXcm59mYUPMRgkRcysc9P9yhPfzv" },
         theme: "Payments",
         name: "NodeRails",
-        allocationPct: 5.3,
+        allocationPct: 5.1,
         chain: "Solana",
         description:
           "Multi-chain crypto payments gateway — hosted checkouts, payment links, subscriptions and dispute protection across EVM, Solana and Sui.",
@@ -463,7 +463,7 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
         chart: { kind: "dexscreener", chain: "solana", pair: "D5D8VRNJz56bd6RN72F4Pk3d91UawMLhGXXXgJkGp1dM" },
         theme: "AI",
         name: "OCCA AI",
-        allocationPct: 1.6,
+        allocationPct: 1.5,
         chain: "Solana",
         description:
           "Operating layer for agent-run companies — on-chain identity, treasury and a verifiable trace of every AI agent's actions.",
