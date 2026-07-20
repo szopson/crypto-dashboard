@@ -563,3 +563,26 @@ export function maskedTotalPct(): number {
     0,
   );
 }
+
+/**
+ * Shared donut palette (CMC-style distinct colors) — single source for the
+ * /portfolio page SVG and the share-image canvas renderer.
+ */
+export const DONUT_PALETTE = [
+  "#3b82f6", // blue
+  "#22c55e", // green
+  "#f97316", // orange
+  "#06b6d4", // cyan
+  "#8b5cf6", // violet
+  "#ec4899", // pink
+  "#14b8a6", // teal
+  "#eab308", // yellow
+  "#6366f1", // indigo
+  "#84cc16", // lime
+  "#f43f5e", // rose
+  "#0ea5e9", // sky
+  "#d946ef", // fuchsia
+  "#f59e0b", // amber
+  "#ef4444", // red
+  "#a1a1aa", // zinc
+];

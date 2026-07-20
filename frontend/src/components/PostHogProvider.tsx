@@ -200,6 +200,15 @@ export const analytics = {
   },
 
   /**
+   * Track a portfolio-page share. `method` is native | copy | download.
+   */
+  trackPortfolioShare: (method: string) => {
+    if (POSTHOG_KEY) {
+      posthog.capture("portfolio_share", { method });
+    }
+  },
+
+  /**
    * Track a scorecard share (the trade-review viral loop). `method` is
    * native | copy | download; `surface` is where the share started.
    */

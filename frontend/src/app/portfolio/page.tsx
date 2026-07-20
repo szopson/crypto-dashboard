@@ -13,12 +13,14 @@ import Link from "next/link";
 import { AlertTriangle, ArrowRight, ChevronDown, LineChart } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
+import { SharePortfolioButton } from "@/components/SharePortfolioButton";
 import {
   PORTFOLIO_TIERS,
   PORTFOLIO_SNAPSHOT_DATE,
   tierTotalPct,
   themeBreakdown,
   maskedTotalPct,
+  DONUT_PALETTE,
   type PortfolioTheme,
   type RiskTierId,
   type TokenChart,
@@ -87,26 +89,6 @@ const MAX_PCT = Math.max(...PUBLIC_TOKENS.map((t) => t.allocationPct));
 const THEMES = themeBreakdown();
 void maskedTotalPct; // real values stay config-side only
 
-// Distinct per-token donut palette (CMC-style) — hex because SVG strokes,
-// order matches ALL_TOKENS.
-const DONUT_PALETTE = [
-  "#3b82f6", // blue
-  "#22c55e", // green
-  "#f97316", // orange
-  "#06b6d4", // cyan
-  "#8b5cf6", // violet
-  "#ec4899", // pink
-  "#14b8a6", // teal
-  "#eab308", // yellow
-  "#6366f1", // indigo
-  "#84cc16", // lime
-  "#f43f5e", // rose
-  "#0ea5e9", // sky
-  "#d946ef", // fuchsia
-  "#f59e0b", // amber
-  "#ef4444", // red
-  "#a1a1aa", // zinc
-];
 const LEGEND_TOP = 7;
 
 // Donut segments: disclosed tokens only, sorted desc, shares of the
@@ -149,11 +131,12 @@ export default function PortfolioPage() {
           hold and why, in percentages of the altcoin sleeve. Utility narratives
           only: AI compute, DePIN, payments, privacy, spatial computing.
         </p>
-        <p className="mt-3">
+        <div className="mt-3 flex flex-wrap items-center gap-3">
           <span className="inline-flex items-center rounded-full border border-(--glass-border) px-3 py-1 text-xs text-muted-foreground">
             Snapshot {PORTFOLIO_SNAPSHOT_DATE} · allocations drift with price
           </span>
-        </p>
+          <SharePortfolioButton />
+        </div>
       </header>
 
       {/* Risk banner — must precede every portfolio visualization */}
