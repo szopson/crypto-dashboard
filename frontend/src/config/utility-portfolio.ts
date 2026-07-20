@@ -375,7 +375,7 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
     label: "Moonshots",
     riskLabel: "Extreme risk",
     description:
-      "Sub-$1M microcaps — live or early products, but negligible liquidity, thin holder bases and no market validation. Lottery-ticket sizing; assume total loss is the base case.",
+      "~$100k market-cap microcaps — very early, negligible liquidity, thin holder bases. Most projects at this stage die; lottery-ticket sizing, total loss is the base case.",
     tokens: [
       {
         symbol: "NRL",
