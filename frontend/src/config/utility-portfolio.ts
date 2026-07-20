@@ -40,6 +40,12 @@ export interface TokenResearch {
   catalysts?: string[];
 }
 
+/** Embedded price chart source. TradingView for CEX-listed tokens,
+ * DEX Screener (verified pair address) for on-chain microcaps. */
+export type TokenChart =
+  | { kind: "tradingview"; symbol: string }
+  | { kind: "dexscreener"; chain: string; pair: string };
+
 export interface PortfolioToken {
   symbol: string;
   name: string;
@@ -54,6 +60,7 @@ export interface PortfolioToken {
   theme: PortfolioTheme;
   chain?: string;
   research?: TokenResearch;
+  chart?: TokenChart;
 }
 
 export interface RiskTier {
@@ -61,6 +68,14 @@ export interface RiskTier {
   label: string;
   riskLabel: string;
   description: string;
+  /**
+   * Hide per-token percentages in the UI (tier TOTAL stays visible).
+   * The real numbers stay here for tier totals and the donut aggregate —
+   * they must never render per token, and masked tokens must be excluded
+   * from theme totals (a theme sum minus its public tokens would leak the
+   * masked value).
+   */
+  maskAllocations?: boolean;
   tokens: PortfolioToken[];
 }
 
@@ -76,6 +91,7 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
     tokens: [
       {
         symbol: "TAO",
+        chart: { kind: "tradingview", symbol: "BINANCE:TAOUSDT" },
         theme: "AI",
         name: "Bittensor",
         allocationPct: 28.1,
@@ -102,6 +118,7 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
       },
       {
         symbol: "PEAQ",
+        chart: { kind: "tradingview", symbol: "BYBIT:PEAQUSDT.P" },
         theme: "DePIN",
         name: "peaq",
         allocationPct: 10.4,
@@ -127,6 +144,7 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
       },
       {
         symbol: "ZBCN",
+        chart: { kind: "tradingview", symbol: "BYBIT:ZBCNUSDT.P" },
         theme: "Payments",
         name: "Zebec Network",
         allocationPct: 8.0,
@@ -153,6 +171,7 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
       },
       {
         symbol: "LYX",
+        chart: { kind: "tradingview", symbol: "GATEIO:LYXUSDT" },
         theme: "Identity",
         name: "LUKSO",
         allocationPct: 7.8,
@@ -175,6 +194,7 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
       },
       {
         symbol: "AZERO",
+        chart: { kind: "tradingview", symbol: "KUCOIN:AZEROUSDT" },
         theme: "Privacy",
         name: "Aleph Zero",
         allocationPct: 7.4,
@@ -197,6 +217,7 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
       },
       {
         symbol: "FET",
+        chart: { kind: "tradingview", symbol: "BINANCE:FETUSDT" },
         theme: "AI",
         name: "Artificial Superintelligence Alliance",
         allocationPct: 6.4,
@@ -222,6 +243,7 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
       },
       {
         symbol: "DMTR",
+        chart: { kind: "tradingview", symbol: "GATEIO:DMTRUSDT" },
         theme: "AgriTech",
         name: "Dimitra",
         allocationPct: 3.7,
@@ -244,6 +266,7 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
       },
       {
         symbol: "AVICI",
+        chart: { kind: "dexscreener", chain: "solana", pair: "3D854kknnQhu9xVaRNV154oZ9oN2WF3tXsq3LDu7fFMn" },
         theme: "Payments",
         name: "AviciMoney",
         allocationPct: 3.5,
@@ -271,6 +294,7 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
       },
       {
         symbol: "BOSON",
+        chart: { kind: "tradingview", symbol: "GATEIO:BOSONUSDT" },
         theme: "Commerce",
         name: "Boson Protocol",
         allocationPct: 2.5,
@@ -293,6 +317,7 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
       },
       {
         symbol: "ORAI",
+        chart: { kind: "tradingview", symbol: "GATEIO:ORAIUSDT" },
         theme: "AI",
         name: "Oraichain",
         allocationPct: 2.3,
@@ -315,6 +340,7 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
       },
       {
         symbol: "OPENX",
+        chart: { kind: "dexscreener", chain: "base", pair: "0x7aD1dB1b8A8ce3040BC1807d7Af6A8BC88584600" },
         theme: "AI",
         name: "OpenxAI Network",
         allocationPct: 1.4,
@@ -340,6 +366,7 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
       },
       {
         symbol: "MPC",
+        chart: { kind: "tradingview", symbol: "KUCOIN:MPCUSDT" },
         theme: "Privacy",
         name: "Partisia Blockchain",
         allocationPct: 1.0,
@@ -371,6 +398,7 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
     tokens: [
       {
         symbol: "AUKI",
+        chart: { kind: "tradingview", symbol: "MEXC:AUKIUSDT" },
         theme: "Spatial computing",
         name: "Auki Labs (posemesh)",
         allocationPct: 10.1,
@@ -401,11 +429,13 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
     id: "moonshot",
     label: "Moonshots",
     riskLabel: "Extreme risk",
+    maskAllocations: true,
     description:
-      "~$100k market-cap microcaps — very early, negligible liquidity, thin holder bases. Most projects at this stage die; lottery-ticket sizing, total loss is the base case.",
+      "~$100k market-cap microcaps — very early, negligible liquidity, thin holder bases. The realistic base case is that a project simply doesn't make it; the ones that do are 100x-type bets. My personal rules here: never more than 0.1\u20130.3% of the overall portfolio per position, and after the first serious move I take the initial stake out and let the rest ride, so the project gets time to develop on house money. In aggregate this bucket always stays below 5% of my overall portfolio. Exact allocations stay private.",
     tokens: [
       {
         symbol: "NRL",
+        chart: { kind: "dexscreener", chain: "solana", pair: "AUkyLNWsa4oYbeLtXcm59mYUPMRgkRcysc9P9yhPfzv" },
         theme: "Payments",
         name: "NodeRails",
         allocationPct: 5.3,
@@ -418,6 +448,7 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
           strengths: [
             "Developer-friendly stack: APIs, webhooks and a coherent payment-intent model",
             "Live product in a real vertical (e-commerce payments), not just a whitepaper",
+            "Confirmed, active developer \u2014 the project has been recognized with hackathon awards",
             "Fully circulating supply \u2014 a clean spot market with no vesting cliffs ahead",
           ],
           risks: [
@@ -429,6 +460,7 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
       },
       {
         symbol: "OCCA",
+        chart: { kind: "dexscreener", chain: "solana", pair: "D5D8VRNJz56bd6RN72F4Pk3d91UawMLhGXXXgJkGp1dM" },
         theme: "AI",
         name: "OCCA AI",
         allocationPct: 1.6,
@@ -452,6 +484,7 @@ export const PORTFOLIO_TIERS: RiskTier[] = [
       },
       {
         symbol: "SWCH",
+        chart: { kind: "dexscreener", chain: "solana", pair: "2PBwRFq5omijBHpaarY2LENJfqe17v2tbZt7FZiUjee2" },
         theme: "Oracles",
         name: "Switchboard",
         allocationPct: 0.6,
@@ -500,10 +533,15 @@ export interface ThemeSlice {
   pct: number;
 }
 
-/** Theme totals derived from the canonical per-token theme field, desc. */
+/**
+ * Theme totals derived from the canonical per-token theme field, desc.
+ * Masked tiers are EXCLUDED — including them would let readers derive the
+ * hidden per-token numbers by subtracting public tokens from a theme total.
+ */
 export function themeBreakdown(): ThemeSlice[] {
   const totals = new Map<PortfolioTheme, number>();
   for (const tier of PORTFOLIO_TIERS) {
+    if (tier.maskAllocations) continue;
     for (const t of tier.tokens) {
       totals.set(t.theme, (totals.get(t.theme) ?? 0) + t.allocationPct);
     }
@@ -516,4 +554,12 @@ export function themeBreakdown(): ThemeSlice[] {
       if (b.theme === "Early stage") return -1;
       return b.pct - a.pct;
     });
+}
+
+/** Total of all masked tiers (rendered as one aggregated slice/segment). */
+export function maskedTotalPct(): number {
+  return PORTFOLIO_TIERS.filter((t) => t.maskAllocations).reduce(
+    (s, t) => s + tierTotalPct(t),
+    0,
+  );
 }

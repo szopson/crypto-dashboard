@@ -10,15 +10,26 @@
  * noise (~100.1%) can't overflow the track.
  */
 import Link from "next/link";
-import { AlertTriangle, ArrowRight, ChevronDown } from "lucide-react";
+import { AlertTriangle, ArrowRight, ChevronDown, LineChart } from "lucide-react";
+import { SiteHeader } from "@/components/SiteHeader";
+import { SiteFooter } from "@/components/SiteFooter";
 import {
   PORTFOLIO_TIERS,
   PORTFOLIO_SNAPSHOT_DATE,
   tierTotalPct,
   themeBreakdown,
+  maskedTotalPct,
   type PortfolioTheme,
   type RiskTierId,
+  type TokenChart,
 } from "@/config/utility-portfolio";
+
+function chartEmbedUrl(chart: TokenChart): string {
+  if (chart.kind === "tradingview") {
+    return `https://s.tradingview.com/widgetembed/?symbol=${encodeURIComponent(chart.symbol)}&interval=D&theme=dark&style=1&hidetopbar=1&hidelegend=1&saveimage=0&locale=en`;
+  }
+  return `https://dexscreener.com/${chart.chain}/${chart.pair}?embed=1&theme=dark&trades=0&info=0`;
+}
 
 export const metadata = {
   title: "Altcoin Utility Season Portfolio — Follio",
@@ -63,11 +74,18 @@ const THEME_COLOR: Record<PortfolioTheme, { bar: string; dot: string; chip: stri
 // All tokens flattened in tier order (core → frontier → moonshot, each already
 // sorted descending by allocation in the config).
 const ALL_TOKENS = PORTFOLIO_TIERS.flatMap((tier) =>
-  tier.tokens.map((t) => ({ ...t, tierId: tier.id })),
+  tier.tokens.map((t) => ({ ...t, tierId: tier.id, masked: !!tier.maskAllocations })),
 );
-const SLEEVE_TOTAL = ALL_TOKENS.reduce((s, t) => s + t.allocationPct, 0);
-const MAX_PCT = Math.max(...ALL_TOKENS.map((t) => t.allocationPct));
+const PUBLIC_TOKENS = ALL_TOKENS.filter((t) => !t.masked);
+// Display base = the DISCLOSED sleeve only (core + frontier). Masked-tier
+// weights are private and mathematically underivable only if they're outside
+// the base — showing public shares of a base that includes them would let
+// anyone reconstruct the hidden total by subtraction.
+const PUBLIC_TOTAL = PUBLIC_TOKENS.reduce((s, t) => s + t.allocationPct, 0);
+const disclosedPct = (v: number) => (v / PUBLIC_TOTAL) * 100;
+const MAX_PCT = Math.max(...PUBLIC_TOKENS.map((t) => t.allocationPct));
 const THEMES = themeBreakdown();
+void maskedTotalPct; // real values stay config-side only
 
 // Distinct per-token donut palette (CMC-style) — hex because SVG strokes,
 // order matches ALL_TOKENS.
@@ -91,32 +109,33 @@ const DONUT_PALETTE = [
 ];
 const LEGEND_TOP = 7;
 
-// Donut segments: sorted by allocation desc so the legend reads like the
-// screenshot-style allocation widget; widths normalized to the true sum.
-const DONUT_TOKENS = [...ALL_TOKENS].sort(
+// Donut segments: disclosed tokens only, sorted desc, shares of the
+// disclosed sleeve (sums to 100).
+const DONUT_TOKENS = [...PUBLIC_TOKENS].sort(
   (a, b) => b.allocationPct - a.allocationPct,
 );
 let donutCum = 0;
 const DONUT_SEGMENTS = DONUT_TOKENS.map((t, i) => {
-  const pct = (t.allocationPct / SLEEVE_TOTAL) * 100;
   const seg = {
     symbol: t.symbol,
-    displayPct: t.allocationPct,
-    pct,
+    displayPct: disclosedPct(t.allocationPct),
+    pct: disclosedPct(t.allocationPct),
     offset: donutCum,
     color: DONUT_PALETTE[i % DONUT_PALETTE.length],
   };
-  donutCum += pct;
+  donutCum += seg.pct;
   return seg;
 });
 const OTHERS_PCT = DONUT_TOKENS.slice(LEGEND_TOP).reduce(
-  (s, t) => s + t.allocationPct,
+  (s, t) => s + disclosedPct(t.allocationPct),
   0,
 );
 
 export default function PortfolioPage() {
   return (
-    <div className="relative mx-auto max-w-4xl overflow-x-clip px-6 py-12">
+    <>
+    <SiteHeader />
+    <main id="main-content" className="relative mx-auto max-w-4xl overflow-x-clip px-6 py-12">
       {/* Decorative accent glows */}
       <div aria-hidden className="glow-blob -z-10 -top-32 -right-24 h-80 w-80 bg-amber-500/20 animate-pulse-glow" />
       <div aria-hidden className="glow-blob -z-10 top-1/3 -left-32 h-80 w-80 bg-red-500/10" />
@@ -158,7 +177,8 @@ export default function PortfolioPage() {
       <section className="mb-8 animate-fade-up">
         <h2 className="mb-1 text-xl font-semibold">Allocation</h2>
         <p className="mb-4 text-sm text-muted-foreground">
-          Every position as a share of the whole sleeve.
+          Every position as a share of the disclosed sleeve (Utility Core +
+          Frontier). Moonshot sizing is private — see that tier&apos;s rules.
         </p>
         <div className="flex flex-col items-center gap-6 sm:flex-row sm:justify-center sm:gap-12">
           <svg
@@ -207,19 +227,24 @@ export default function PortfolioPage() {
         </div>
         {/* Full data for screen readers — the donut is decorative */}
         <ul className="sr-only">
-          {ALL_TOKENS.map((t) => (
+          {PUBLIC_TOKENS.map((t) => (
             <li key={t.symbol}>
-              {t.symbol} ({t.name}): {t.allocationPct.toFixed(1)} percent
+              {t.symbol} ({t.name}): {disclosedPct(t.allocationPct).toFixed(1)} percent of the disclosed sleeve
             </li>
           ))}
+          <li>Moonshot allocations are undisclosed.</li>
         </ul>
         <div className="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-          {PORTFOLIO_TIERS.map((tier) => (
+          {PORTFOLIO_TIERS.filter((t) => !t.maskAllocations).map((tier) => (
             <span key={tier.id} className="inline-flex items-center gap-1.5">
               <span className={`size-2 rounded-full ${TIER_ACCENT[tier.id].bar}`} />
-              {tier.label} {tierTotalPct(tier).toFixed(1)}%
+              {tier.label} {disclosedPct(tierTotalPct(tier)).toFixed(1)}%
             </span>
           ))}
+          <span className="inline-flex items-center gap-1.5">
+            <span className="size-2 rounded-full bg-red-500" />
+            Moonshots — sized privately
+          </span>
         </div>
       </section>
 
@@ -229,19 +254,22 @@ export default function PortfolioPage() {
         <p className="mb-3 text-sm text-muted-foreground">
           The same sleeve grouped by utility theme.
         </p>
+        {/* Masked-tier tokens are excluded from theme totals entirely —
+            shares are of the disclosed sleeve, so hidden values can't be
+            derived by subtraction. */}
         <div className="h-5 flex rounded-full overflow-hidden animate-bar-grow" aria-hidden>
           {THEMES.map((slice, i) => (
             <div
               key={slice.theme}
               className={`${THEME_COLOR[slice.theme].bar} ${i > 0 ? "border-l border-background/60" : ""}`}
-              style={{ width: `${(slice.pct / SLEEVE_TOTAL) * 100}%` }}
+              style={{ width: `${disclosedPct(slice.pct)}%` }}
             />
           ))}
         </div>
         <ul className="sr-only">
           {THEMES.map((s) => (
             <li key={s.theme}>
-              {s.theme}: {s.pct.toFixed(1)} percent
+              {s.theme}: {disclosedPct(s.pct).toFixed(1)} percent of the disclosed sleeve
             </li>
           ))}
         </ul>
@@ -251,10 +279,35 @@ export default function PortfolioPage() {
               <span className={`size-2 rounded-full ${THEME_COLOR[slice.theme].dot}`} />
               {slice.theme}
               <span className="ml-auto font-mono text-foreground/80">
-                {slice.pct.toFixed(1)}%
+                {disclosedPct(slice.pct).toFixed(1)}%
               </span>
             </span>
           ))}
+        </div>
+      </section>
+
+      {/* Context: where this sleeve sits in the whole portfolio + cycle
+          stance. First-person, descriptive, uncertain — a personal approach
+          being shared, never a recommendation (MiCA). */}
+      <section className="mb-10 rounded-xl border border-(--glass-border) bg-card p-5 animate-fade-up">
+        <h2 className="mb-2 text-xl font-semibold">How this fits my overall portfolio</h2>
+        <div className="space-y-3 text-sm text-muted-foreground">
+          <p>
+            This sleeve is the <span className="text-foreground font-medium">aggressive tail</span> of
+            my portfolio — not the core. The core of my overall allocation is
+            BTC, and I keep at least ~20% in stablecoins so there is always dry
+            powder for drawdowns. Everything on this page sits on top of that
+            base, sized so that a total wipeout would hurt but not matter.
+          </p>
+          <p>
+            <span className="text-foreground font-medium">My cycle framing</span> (a
+            personal guess, not a forecast): going by how previous cycles were
+            timed, I expect the cycle low somewhere around November. I&apos;m
+            building these positions gradually (DCA) before that, because
+            individual utility tokens have historically bottomed — and moved —
+            earlier than BTC itself. I may be completely wrong about both the
+            timing and the tokens; the risk banner above is not decoration.
+          </p>
         </div>
       </section>
 
@@ -270,9 +323,11 @@ export default function PortfolioPage() {
               >
                 {tier.riskLabel}
               </span>
-              <span className="ml-auto font-mono text-sm text-muted-foreground">
-                {tierTotalPct(tier).toFixed(1)}%
-              </span>
+              {!tier.maskAllocations && (
+                <span className="ml-auto font-mono text-sm text-muted-foreground">
+                  {disclosedPct(tierTotalPct(tier)).toFixed(1)}%
+                </span>
+              )}
             </div>
             <p className="mb-4 max-w-2xl text-sm text-muted-foreground">
               {tier.description}
@@ -292,17 +347,19 @@ export default function PortfolioPage() {
                       </span>
                     </p>
                     <p className="font-mono font-semibold shrink-0">
-                      {token.allocationPct.toFixed(1)}%
+                      {tier.maskAllocations ? "x%" : `${disclosedPct(token.allocationPct).toFixed(1)}%`}
                     </p>
                   </div>
-                  <div className="mt-2 h-1.5 rounded-full bg-muted overflow-hidden">
-                    <div
-                      className={`h-full rounded-full ${accent.bar} animate-bar-grow`}
-                      style={{
-                        width: `${(token.allocationPct / MAX_PCT) * 100}%`,
-                      }}
-                    />
-                  </div>
+                  {!tier.maskAllocations && (
+                    <div className="mt-2 h-1.5 rounded-full bg-muted overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${accent.bar} animate-bar-grow`}
+                        style={{
+                          width: `${(token.allocationPct / MAX_PCT) * 100}%`,
+                        }}
+                      />
+                    </div>
+                  )}
                   <p className="mt-2 text-sm text-muted-foreground">
                     {token.description}
                   </p>
@@ -313,6 +370,31 @@ export default function PortfolioPage() {
                       {token.theme}
                     </span>
                   </p>
+
+                  {/* Price chart — lazy iframe inside a closed <details>:
+                      nothing loads until the user opens it, so 16 embeds
+                      don't torpedo page load. */}
+                  {token.chart && (
+                    <details className="group/chart mt-3 rounded-lg border border-(--glass-border) bg-muted/20">
+                      <summary className="flex cursor-pointer items-center gap-2 px-3 py-2 text-sm font-medium list-none [&::-webkit-details-marker]:hidden">
+                        <LineChart className="size-4 text-muted-foreground" />
+                        Price chart
+                        <span className="ml-auto text-xs text-muted-foreground">
+                          {token.chart.kind === "tradingview" ? "TradingView" : "DEX Screener"}
+                        </span>
+                      </summary>
+                      <div className="px-2 pb-2">
+                        <iframe
+                          src={chartEmbedUrl(token.chart)}
+                          loading="lazy"
+                          title={`${token.symbol} price chart`}
+                          sandbox="allow-scripts allow-same-origin allow-popups"
+                          referrerPolicy="strict-origin-when-cross-origin"
+                          className="h-96 w-full rounded-md border-0"
+                        />
+                      </div>
+                    </details>
+                  )}
 
                   {/* Native <details> — expandable without client JS, keeps
                       the page a static server component. */}
@@ -383,12 +465,14 @@ export default function PortfolioPage() {
         );
       })}
 
-      {/* Footer notes */}
-      <footer className="border-t border-(--glass-border) pt-6 text-sm text-muted-foreground space-y-3">
+      {/* Content notes — <section>, not <footer>: the page-level footer
+          landmark belongs to the shared SiteFooter. */}
+      <section className="border-t border-(--glass-border) pt-6 text-sm text-muted-foreground space-y-3">
         <p>
-          Percentages are shares of the altcoin sleeve only — they say nothing
-          about absolute amounts or overall net-worth allocation. Rounding means
-          tiers and themes may not sum to exactly 100%.
+          Percentages are shares of the disclosed sleeve (Utility Core +
+          Frontier) — they say nothing about absolute amounts or overall
+          net-worth allocation, and Moonshot sizing is private by design.
+          Rounding means tiers and themes may not sum to exactly 100%.
         </p>
         <p>
           Want the process behind sizing and grading decisions like these? Try
@@ -401,7 +485,9 @@ export default function PortfolioPage() {
           </Link>{" "}
           — it grades your decision, not your PnL.
         </p>
-      </footer>
-    </div>
+      </section>
+    </main>
+    <SiteFooter />
+    </>
   );
 }
